@@ -251,11 +251,11 @@ grip = csaps(velocity,A_xr);
 
 AYP = 1;
 
-% for turn = 1:1:length(radii)
+for turn = 1:1:length(radii)
     % first define your vehicle characteristics:
         a = l*(1-WDF);
         b = l*WDF;
-        R = radii(15); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        R = radii(turn); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % update speed and downforce
         V = sqrt(R*32.2*AYP);
         LF = Cl*V^2; 
@@ -323,53 +323,47 @@ AYP = 1;
         x0 = [delta, beta, AYP];
         fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,V,R,wf,wr,WTR,IA_0f,IA_0r,A);
         initialRun = fun(x0)
-%                 
 %         
 %         
 %         
-        delta1 = .121;
-        beta1 = -.08;
-        AYP1 = 1.605;
-        x1 = [delta1 beta1 AYP1];
-        Test = fun(x0)
 %         
 %         
 %         
         Aeq = [];
         beq = [];
         nonlcon = [];
-        lbFwd = [0 -.2 1];
-        ubFwd = [.5 .2 2];
-        ubRev = [0 -.2 1];
-        lbRev = [.5 .2 2];
-        options = optimoptions('fmincon', 'Algorithm', 'sqp','MaxIter', 10000, 'MaxFunEvals', 1000000,'ConstraintTolerance',1e-12,'DiffMaxChange',.1);
-%         [x,fval,exitflag] = fmincon(fun,x0,[],[],Aeq,beq,lbFwd,ubRev,nonlcon,options);
+        lb = [0 -.2 1];
+        ub = [.5 .2 2];   
+        lb = []
+        ub = []
+%         options = optimoptions('fmincon', 'Algorithm', 'sqp','MaxIter', 10000, 'MaxFunEvals', 1000000);
+%         [x,fval,exitflag] = fmincon(fun,x0,[],[],Aeq,beq,lbFwd,ubRev,nonlcon,options)
 %         [x1,fval1,exitflag1] = fmincon(fun,x0,[],[],Aeq,beq,lbRev,ubRev,nonlcon,options);
         
 
-        rng default % For reproducibility
-        opts = optimoptions(@fmincon,'Algorithm','sqp');
-        problem = createOptimProblem('fmincon','objective',...
-        fun,'x0',x0,'lb',lbFwd,'ub',ubFwd,'options',opts);
-        ms = MultiStart;
-        [x,fun] = run(ms,problem,20)
+%         rng default % For reproducibility
+%         opts = optimoptions(@fmincon,'Algorithm','sqp');
+%         problem = createOptimProblem('fmincon','objective',fun,'x0',x0,'lb',lbFwd,'ub',ubFwd,'options',opts);
+%         ms = MultiStart(StartPointsToRun="bounds-ineqs");
+%         [x,fun] = run(ms,problem,100)
      
         
-%         opts_ps = optimoptions('paretosearch','Display','off','PlotFcn','psplotparetof','ParetoSetSize',100000);
-%         rng default % For reproducibility
-%         [x_ps1,fval_ps1,~,psoutput1] = paretosearch(fun,3,A,b,Aeq,beq,lb,ub,nonlcon,opts_ps);
+        opts_ps = optimoptions('paretosearch','Display','iter','PlotFcn','psplotparetof','ParetoSetSize',10000,MaxFunctionEvaluations=10000);
+        rng default % For reproducibility
+        [x_ps1,fval_ps1,~,psoutput1] = paretosearch(fun,3,[],[],Aeq,beq,lb,ub,nonlcon,opts_ps);
+        plot3(fval_ps1(:,1),fval_ps1(:,2),fval_ps1(:,3),'m*')
+        xlabel('Yaw Moment')
+        ylabel('SlipAngle (+.2094 rad)')
+        zlabel('diff_AY')
         
         
-        delta = x(1) % .1210
-        beta = x(2) % -.0800
-        AYP = x(3) % 1.6050
-%         deltaRev = x1(1) % .1210
-%         betaRev = x1(2) % -.0800
-%         AYPRev = x1(3) % 1.6050
-% 
+        delta = x_ps1(1) % .1210
+        beta = x_ps1(2) % -.0800
+        AYP = x_ps1(3) % 1.6050
 
-% 
-%         % update speed and downforce
+
+
+        % update speed and downforce
 
         V = sqrt(R*32.2*AYP);
         LF = Cl*V^2; 
@@ -438,9 +432,9 @@ AYP = 1;
         %F_lat = fnval([rad2deg(a_f);-wf;0],full_send_y)*.45*cos(delta);
         %F_drag = fnval([rad2deg(a_f);-wf;0],full_send_y)*.45*sin(delta);
         skid = 2*pi*R/V;
-        steering(15) = steer;
-        speed(15) = V;
-        lateralg(15) = AY/32.2;
+        steering(turn) = steer;
+        speed(turn) = V;
+        lateralg(turn) = AY/32.2;
 % 
 %         B = rad2deg(beta);
 %         af = rad2deg(a_f);
@@ -457,4 +451,4 @@ AYP = 1;
 %         betaValues(turn) = beta;
 %         deltaValues(turn) = delta;
 %         aypValues(turn) = AYP;
-% end
+end
