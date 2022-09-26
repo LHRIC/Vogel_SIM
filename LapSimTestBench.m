@@ -1,8 +1,3 @@
-% Jonathan Vogel
-% Clemson Formula SAE
-% Tradespace Analysis Project
-% 2019 Michigan Dynamic Event Lap Sim
-
 % 
 %            _____ _____ ______ _      ______ _____         _______ _____ ____  _   _   _____  _____   _____ _   _    _____ _  _____  __     ______  _    _   _____  _    _ __  __ ____  ______ _    _  _____ _  __
 %      /\   / ____/ ____|  ____| |    |  ____|  __ \     /\|__   __|_   _/ __ \| \ | | |_   _|/ ____| |_   _| \ | |  / ____( )/ ____| \ \   / / __ \| |  | | |  __ \| |  | |  \/  |  _ \|  ____| |  | |/ ____| |/ /
@@ -14,10 +9,6 @@
 
 clear all
 clc
-
-% The purpose of this code is to evaluate the points-scoring capacity of a
-% virtual vehicle around the 2019 FSAE Michigan Dynamic Event Tracks
-
 %% Section 0: Name all symbolic variables
 % Don't touch this. This is just naming a bunch of variables and making
 % them global so that all the other functions can access them
@@ -321,50 +312,24 @@ for turn = 1:1:length(radii)
         diff_AY = A_y-AY;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         x0 = [delta, beta, AYP];
-        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,V,R,wf,wr,WTR,IA_0f,IA_0r,A);
+        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,WTR,IA_0f,IA_0r,A);
         initialRun = fun(x0)
-%         
-%         
-%         
-%         
-%         
-%         
+
         Aeq = [];
         beq = [];
         nonlcon = [];
         lb = [0 -.2 1];
         ub = [.5 .2 2];   
-        lb = []
-        ub = []
-%         options = optimoptions('fmincon', 'Algorithm', 'sqp','MaxIter', 10000, 'MaxFunEvals', 1000000);
-%         [x,fval,exitflag] = fmincon(fun,x0,[],[],Aeq,beq,lbFwd,ubRev,nonlcon,options)
-%         [x1,fval1,exitflag1] = fmincon(fun,x0,[],[],Aeq,beq,lbRev,ubRev,nonlcon,options);
+       
+        x = fsolve(fun,x0)         
+        
         
 
-%         rng default % For reproducibility
-%         opts = optimoptions(@fmincon,'Algorithm','sqp');
-%         problem = createOptimProblem('fmincon','objective',fun,'x0',x0,'lb',lbFwd,'ub',ubFwd,'options',opts);
-%         ms = MultiStart(StartPointsToRun="bounds-ineqs");
-%         [x,fun] = run(ms,problem,100)
-     
-        
-        opts_ps = optimoptions('paretosearch','Display','iter','PlotFcn','psplotparetof','ParetoSetSize',10000,MaxFunctionEvaluations=10000);
-        rng default % For reproducibility
-        [x_ps1,fval_ps1,~,psoutput1] = paretosearch(fun,3,[],[],Aeq,beq,lb,ub,nonlcon,opts_ps);
-        plot3(fval_ps1(:,1),fval_ps1(:,2),fval_ps1(:,3),'m*')
-        xlabel('Yaw Moment')
-        ylabel('SlipAngle (+.2094 rad)')
-        zlabel('diff_AY')
-        
-        
-        delta = x_ps1(1) % .1210
-        beta = x_ps1(2) % -.0800
-        AYP = x_ps1(3) % 1.6050
-
-
+        delta = x(1) % .1210
+        beta = x(2) % -.0800
+        AYP = x(3) % 1.6050
 
         % update speed and downforce
-
         V = sqrt(R*32.2*AYP);
         LF = Cl*V^2; 
         % from downforce, update suspension travel (in):
@@ -434,21 +399,6 @@ for turn = 1:1:length(radii)
         skid = 2*pi*R/V;
         steering(turn) = steer;
         speed(turn) = V;
-        lateralg(turn) = AY/32.2;
-% 
-%         B = rad2deg(beta);
-%         af = rad2deg(a_f);
-%         ar = rad2deg(a_r);
-%         steer = rad2deg(delta);
-%         UG = rad2deg(delta-l/R)*32.2/AY;
-%         Ugradient(1) = UG;
-%         %F_lat = fnval([rad2deg(a_f);-wf;0],full_send_y)*.45*cos(delta);
-%         %F_drag = fnval([rad2deg(a_f);-wf;0],full_send_y)*.45*sin(delta);
-%         skid = 2*pi*R/V;
-%         steering(turn) = steer;
-%         speed(turn) = V;
-%         lateralg(turn) = AY/32.2;
-%         betaValues(turn) = beta;
-%         deltaValues(turn) = delta;
-%         aypValues(turn) = AYP;
+        lateralg(turn) = AY/32.2; 
 end
+% 

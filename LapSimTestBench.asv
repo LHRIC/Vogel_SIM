@@ -1,8 +1,3 @@
-% Jonathan Vogel
-% Clemson Formula SAE
-% Tradespace Analysis Project
-% 2019 Michigan Dynamic Event Lap Sim
-
 % 
 %            _____ _____ ______ _      ______ _____         _______ _____ ____  _   _   _____  _____   _____ _   _    _____ _  _____  __     ______  _    _   _____  _    _ __  __ ____  ______ _    _  _____ _  __
 %      /\   / ____/ ____|  ____| |    |  ____|  __ \     /\|__   __|_   _/ __ \| \ | | |_   _|/ ____| |_   _| \ | |  / ____( )/ ____| \ \   / / __ \| |  | | |  __ \| |  | |  \/  |  _ \|  ____| |  | |/ ____| |/ /
@@ -14,10 +9,6 @@
 
 clear all
 clc
-
-% The purpose of this code is to evaluate the points-scoring capacity of a
-% virtual vehicle around the 2019 FSAE Michigan Dynamic Event Tracks
-
 %% Section 0: Name all symbolic variables
 % Don't touch this. This is just naming a bunch of variables and making
 % them global so that all the other functions can access them
@@ -251,11 +242,11 @@ grip = csaps(velocity,A_xr);
 
 AYP = 1;
 
-% for turn = 1:1:length(radii)
+for turn = 1:1:length(radii)
     % first define your vehicle characteristics:
         a = l*(1-WDF);
         b = l*WDF;
-        R = radii(15); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        R = radii(turn); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % update speed and downforce
         V = sqrt(R*32.2*AYP);
         LF = Cl*V^2; 
@@ -321,107 +312,82 @@ AYP = 1;
         diff_AY = A_y-AY;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         x0 = [delta, beta, AYP];
-        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,V,R,wf,wr,WTR,IA_0f,IA_0r,A);
+        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,WTR,IA_0f,IA_0r,A);
         initialRun = fun(x0)
-%         
-%         
-%         
-%         
-%         
-%         
+
         Aeq = [];
         beq = [];
         nonlcon = [];
-%         lb = [0 -.2 1];
-%         ub = [.5 .2 2];   
-        lb = []
-        ub = []
-%         options = optimoptions('fmincon', 'Algorithm', 'sqp','MaxIter', 10000, 'MaxFunEvals', 1000000);
-%         [x,fval,exitflag] = fmincon(fun,x0,[],[],Aeq,beq,lbFwd,ubRev,nonlcon,options)
-%         [x1,fval1,exitflag1] = fmincon(fun,x0,[],[],Aeq,beq,lbRev,ubRev,nonlcon,options);
-        
-
-%         rng default % For reproducibility
-%         opts = optimoptions(@fmincon,'Algorithm','sqp');
-%         problem = createOptimProblem('fmincon','objective',fun,'x0',x0,'lb',lbFwd,'ub',ubFwd,'options',opts);
-%         ms = MultiStart(StartPointsToRun="bounds-ineqs");
-%         [x,fun] = run(ms,problem,100)
-     
-        
-        opts_ps = optimoptions('paretosearch','Display','iter','PlotFcn','psplotparetof','ParetoSetSize',10000,UseParallel=true);
-        rng default % For reproducibility
-        [x_ps1,fval_ps1,~,psoutput1] = paretosearch(fun,3,[],[],Aeq,beq,lb,ub,nonlcon,opts_ps);
-        plot3(fval_ps1(:,1),fval_ps1(:,2),fval_ps1(:,3),'m*')
-        xlabel('Yaw Moment')
-        ylabel('SlipAngle (+.2094 rad)')
-        zlabel('diff_AY')
+        lb = [0 -.2 1];
+        ub = [.5 .2 2];   
+       
+        x = fsolve(fun,x0)         
         
         
-        delta = x_ps1(1) % .1210
-        beta = x_ps1(2) % -.0800
-        AYP = x_ps1(3) % 1.6050
 
+        delta = x(1) % .1210
+        beta = x(2) % -.0800
+        AYP = x(3) % 1.6050
 
-
-        % update speed and downforce
-
-        V = sqrt(R*32.2*AYP);
-        LF = Cl*V^2; 
-        % from downforce, update suspension travel (in):
-        dxf = LF*CoP/2/WRF; 
-        dxr = LF*(1-CoP)/2/WRR; 
-        % from suspension heave, update static camber (rad):
-        IA_0f = IA_staticf - dxf*IA_gainf; 
-        IA_0r = IA_staticr - dxr*IA_gainr; 
-        % update load on each axle (lbs)
-        wf = (WF+LF*CoP)/2;
-        wr = (WR+LF*(1-CoP))/2;
-        % assume vehicle sideslip starts at 0 (rad)
-        A_y = V^2/R;
-        % calculate lateral load transfer (lbs)
-        WT = A_y*cg*W/mean([twf twr])/32.2/12;
-        % split f/r using LLTD
-        WTF = WT*LLTD;
-        WTR = WT*(1-LLTD);
-        % calculate f/r roll (rad)
-        phif = A_y*rg_f*pi/180/32.2;
-        phir = A_y*rg_r*pi/180/32.2;
-        % update individual wheel loads 
-        wfin = wf-WTF;
-        wfout = wf+WTF;
-        wrin = wr-WTR;
-        wrout = wr+WTR;
-        % update individual wheel camber (from roll, then from steer
-        % effects)
-        IA_f_in = -twf*sin(phif)*12/2*IA_gainf - IA_0f - KPIf*(1-cos(delta)) - casterf*sin(delta) +phif;
-        IA_f_out = -twf*sin(phif)*12/2*IA_gainf + IA_0f + KPIf*(1-cos(delta)) - casterf*sin(delta) + phif;
-        IA_r_in = -twr*sin(phir)*12/2*IA_gainr - IA_0r - KPIr*(1-cos(deltar)) - casterf*sin(deltar) +phir;
-        IA_r_out = -twr*sin(phir)*12/2*IA_gainr + IA_0r + KPIr*(1-cos(deltar)) - casterf*sin(deltar) + phir;
-        % calculate yaw rate
-        r = A_y/V;
-        % from yaw, sideslip and steer you can get slip angles
-        a_f = beta+a*r/V-delta;
-        a_r = beta-b*r/V;
-        % with slip angles, load and camber, calculate lateral force at
-        % the front
-        F_fin = -MF52_Fy_fcn(A,[-rad2deg(a_f) wfin -rad2deg(IA_f_in)])*sf_y*cos(delta);
-        F_fout = MF52_Fy_fcn(A,[rad2deg(a_f) wfout -rad2deg(IA_f_out)])*sf_y*cos(delta);
-        % before you calculate the rears, you ned to see what the diff is
-        % doing
-        % calculate the drag from aero and the front tires
-        F_x = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta); 
-        % calculate the grip penalty assuming the rears must overcome that
-        % drag
-        rscale = 1-(F_x/W/fnval(grip,V))^2; % WHY THE FUCK IS IT SQUARED %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % now calculate rear tire forces, with said penalty
-        F_rin = -MF52_Fy_fcn(A,[-rad2deg(a_r) wrin -rad2deg(IA_r_in)])*sf_y*rscale;
-        F_rout = MF52_Fy_fcn(A,[rad2deg(a_r) wrout -rad2deg(IA_r_out)])*sf_y*rscale;
-        % sum of forces and moments
-        F_y = F_fin+F_fout+F_rin+F_rout;
-        M_z_diff = F_x*T_lock*twr/2; % incl the differential contribution %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
-        M_z = (F_fin+F_fout)*a-(F_rin+F_rout)*b-M_z_diff;
-        % calculate resultant lateral acceleration
-        AY = F_y/(W/32.2);
+        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,WTR,IA_0f,IA_0r,A);
+%         % update speed and downforce
+%         V = sqrt(R*32.2*AYP);
+%         LF = Cl*V^2; 
+%         % from downforce, update suspension travel (in):
+%         dxf = LF*CoP/2/WRF; 
+%         dxr = LF*(1-CoP)/2/WRR; 
+%         % from suspension heave, update static camber (rad):
+%         IA_0f = IA_staticf - dxf*IA_gainf; 
+%         IA_0r = IA_staticr - dxr*IA_gainr; 
+%         % update load on each axle (lbs)
+%         wf = (WF+LF*CoP)/2;
+%         wr = (WR+LF*(1-CoP))/2;
+%         % assume vehicle sideslip starts at 0 (rad)
+%         A_y = V^2/R;
+%         % calculate lateral load transfer (lbs)
+%         WT = A_y*cg*W/mean([twf twr])/32.2/12;
+%         % split f/r using LLTD
+%         WTF = WT*LLTD;
+%         WTR = WT*(1-LLTD);
+%         % calculate f/r roll (rad)
+%         phif = A_y*rg_f*pi/180/32.2;
+%         phir = A_y*rg_r*pi/180/32.2;
+%         % update individual wheel loads 
+%         wfin = wf-WTF;
+%         wfout = wf+WTF;
+%         wrin = wr-WTR;
+%         wrout = wr+WTR;
+%         % update individual wheel camber (from roll, then from steer
+%         % effects)
+%         IA_f_in = -twf*sin(phif)*12/2*IA_gainf - IA_0f - KPIf*(1-cos(delta)) - casterf*sin(delta) +phif;
+%         IA_f_out = -twf*sin(phif)*12/2*IA_gainf + IA_0f + KPIf*(1-cos(delta)) - casterf*sin(delta) + phif;
+%         IA_r_in = -twr*sin(phir)*12/2*IA_gainr - IA_0r - KPIr*(1-cos(deltar)) - casterf*sin(deltar) +phir;
+%         IA_r_out = -twr*sin(phir)*12/2*IA_gainr + IA_0r + KPIr*(1-cos(deltar)) - casterf*sin(deltar) + phir;
+%         % calculate yaw rate
+%         r = A_y/V;
+%         % from yaw, sideslip and steer you can get slip angles
+%         a_f = beta+a*r/V-delta;
+%         a_r = beta-b*r/V;
+%         % with slip angles, load and camber, calculate lateral force at
+%         % the front
+%         F_fin = -MF52_Fy_fcn(A,[-rad2deg(a_f) wfin -rad2deg(IA_f_in)])*sf_y*cos(delta);
+%         F_fout = MF52_Fy_fcn(A,[rad2deg(a_f) wfout -rad2deg(IA_f_out)])*sf_y*cos(delta);
+%         % before you calculate the rears, you ned to see what the diff is
+%         % doing
+%         % calculate the drag from aero and the front tires
+%         F_x = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta); 
+%         % calculate the grip penalty assuming the rears must overcome that
+%         % drag
+%         rscale = 1-(F_x/W/fnval(grip,V))^2; % WHY THE FUCK IS IT SQUARED %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%         % now calculate rear tire forces, with said penalty
+%         F_rin = -MF52_Fy_fcn(A,[-rad2deg(a_r) wrin -rad2deg(IA_r_in)])*sf_y*rscale;
+%         F_rout = MF52_Fy_fcn(A,[rad2deg(a_r) wrout -rad2deg(IA_r_out)])*sf_y*rscale;
+%         % sum of forces and moments
+%         F_y = F_fin+F_fout+F_rin+F_rout;
+%         M_z_diff = F_x*T_lock*twr/2; % incl the differential contribution %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+%         M_z = (F_fin+F_fout)*a-(F_rin+F_rout)*b-M_z_diff;
+%         % calculate resultant lateral acceleration
+%         AY = F_y/(W/32.2);
 
         B = rad2deg(beta);
         af = rad2deg(a_f);
@@ -432,23 +398,9 @@ AYP = 1;
         %F_lat = fnval([rad2deg(a_f);-wf;0],full_send_y)*.45*cos(delta);
         %F_drag = fnval([rad2deg(a_f);-wf;0],full_send_y)*.45*sin(delta);
         skid = 2*pi*R/V;
-        steering(15) = steer;
-        speed(15) = V;
-        lateralg(15) = AY/32.2;
+        steering(turn) = steer;
+        speed(turn) = V;
+        lateralg(turn) = AY/32.2;
 % 
-%         B = rad2deg(beta);
-%         af = rad2deg(a_f);
-%         ar = rad2deg(a_r);
-%         steer = rad2deg(delta);
-%         UG = rad2deg(delta-l/R)*32.2/AY;
-%         Ugradient(1) = UG;
-%         %F_lat = fnval([rad2deg(a_f);-wf;0],full_send_y)*.45*cos(delta);
-%         %F_drag = fnval([rad2deg(a_f);-wf;0],full_send_y)*.45*sin(delta);
-%         skid = 2*pi*R/V;
-%         steering(turn) = steer;
-%         speed(turn) = V;
-%         lateralg(turn) = AY/32.2;
-%         betaValues(turn) = beta;
-%         deltaValues(turn) = delta;
-%         aypValues(turn) = AYP;
-% end
+end
+% 
