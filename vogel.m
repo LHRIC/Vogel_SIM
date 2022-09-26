@@ -20,7 +20,7 @@ global grip
         IA_f_out = -twf*sin(phif)*12/2*IA_gainf + IA_0f + KPIf*(1-cos(delta)) - casterf*sin(delta) + phif;
         IA_r_in = -twr*sin(phir)*12/2*IA_gainr - IA_0r - KPIr*(1-cos(deltar)) - casterf*sin(deltar) +phir;
         IA_r_out = -twr*sin(phir)*12/2*IA_gainr + IA_0r + KPIr*(1-cos(deltar)) - casterf*sin(deltar) + phir; 
-        r = A_y/V;
+        r = A_y/V;git b
         a_f = beta+a*r/V-delta;
         a_r = beta-b*r/V;
         F_fin = -MF52_Fy_fcn(A,[-rad2deg(a_f) wfin -rad2deg(IA_f_in)])*sf_y*cos(delta);
@@ -35,7 +35,7 @@ global grip
         AY = F_y/(W/32.2);
         diff_AY = A_y-AY; 
         %minimizing values
-        M_z =M_z;
+        M_z = M_z;
         slipAngle = a_f-deg2rad(-12);
         diff_AY =A_y-AY;
         output = [M_z slipAngle diff_AY]
