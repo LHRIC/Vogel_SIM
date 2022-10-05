@@ -1,4 +1,4 @@
-function [Total_Points]=LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP)
+function [output]=LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP)
 %% Section 0: Name all symbolic variables
 % Don't touch this. This is just naming a bunch of variables and making
 % them global so that all the other functions can access them
@@ -739,35 +739,12 @@ frontF = zeros(3,3);
 rearF = zeros(3,3);
 % then calculate loads based on those speeds and accelerations: 
 % see documentation spreadsheet for translation
-% frontF(3,:) = [WF/2 + Cl(j)*VX_max^2*CoP/2 - WF*AX_max*cg/l/2 , WF/2 + Cl(j)*VX_min^2*CoP/2 - WF*AX_min*cg/l/2, WF/2 + Cl(j)*VY_max^2*CoP/2 + WF*AY_max*cg/tw/2];
-% rearF(3,:) = [WR/2 + Cl(j)*VX_max^2*(1-CoP)/2 + WR*AX_max*cg/l/2 , WR/2 + Cl(j)*VX_min^2*(1-CoP)/2 + WR*AX_min*cg/l/2, WR/2 + Cl(j)*VY_max^2*(1-CoP)/2 + WR*AY_max*cg/tw/2];
-% frontF(2,:) = [0 0 (WF/2+WF*AY_max*cg/tw/2)*AY_max];
-% rearF(2,:) = [0 0 (WR/2+WR*AY_max*cg/tw/2)*AY_max];
-% frontF(1,:) = [0 -(WF/2 -WF*AX_min*cg/l/2)*AX_min 0];
-% rearF(1,:) = [W*AX_max/2 -(WR/2 +WR*AX_min*cg/l/2)*AX_min 0];
-%% Section 19: Plot Results
-disp('Plotting Results')
-% This is just to make some pretty pictures, feel free to comment this out
-figure
-plot(distance,velocity,'k')
-title('Endurance Simulation Velocity Trace')
-xlabel('Distance Travelled (d) [ft]')
-ylabel('Velocity (V) [ft/s]')
-figure
-plot(distance,acceleration,distance,lateral_accel)
-title('Endurance Simulation Acceleration Traces')
-xlabel('Distance Travelled (d) [ft]')
-ylabel('Acceleration [g]')
-legend('Longitudinal','Lateral')
-figure
-plot(distance_ax,velocity_ax,'k')
-title('Autocross Simulation Velocity Trace')
-xlabel('Distance Travelled (d) [ft]')
-ylabel('Velocity (V) [ft/s]')
-figure
-plot(distance_ax,acceleration_ax,distance_ax,lateral_accel_ax)
-title('Autocross Simulation Acceleration Traces')
-xlabel('Distance Travelled (d) [ft]')
-ylabel('Acceleration [g]')
-legend('Longitudinal','Lateral')
-disp('Analysis Complete')
+frontF(3,:) = [WF/2 + Cl*VX_max^2*CoP/2 - WF*AX_max*cg/l/2 , WF/2 + Cl*VX_min^2*CoP/2 - WF*AX_min*cg/l/2, WF/2 + Cl*VY_max^2*CoP/2 + WF*AY_max*cg/tw/2];
+rearF(3,:) = [WR/2 + Cl*VX_max^2*(1-CoP)/2 + WR*AX_max*cg/l/2 , WR/2 + Cl*VX_min^2*(1-CoP)/2 + WR*AX_min*cg/l/2, WR/2 + Cl*VY_max^2*(1-CoP)/2 + WR*AY_max*cg/tw/2];
+frontF(2,:) = [0 0 (WF/2+WF*AY_max*cg/tw/2)*AY_max];
+rearF(2,:) = [0 0 (WR/2+WR*AY_max*cg/tw/2)*AY_max];
+frontF(1,:) = [0 -(WF/2 -WF*AX_min*cg/l/2)*AX_min 0];
+rearF(1,:) = [W*AX_max/2 -(WR/2 +WR*AX_min*cg/l/2)*AX_min 0];
+
+output = struct('laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocity,'acceleration',acceleration,'lateral_accel',lateral_accel,'gear_counter',gear_counter,'path_length',path_length,'weights',weights,'distance',distance,'laptime_ax',laptime_ax,'time_elasped_ax',time_elapsed_ax,'velocity_ax',velocity_ax, 'acceleration_ax',acceleration_ax, 'lateral_accel_ax',lateral_accel_ax, 'gear_counter_ax',gear_counter_ax, 'path_length_ax',path_length_ax, 'weights_ax',weights_ax, 'distance_ax',distance_ax, 'accel_time',accel_time, 'Endurance_Score',Endurance_Score, 'Autocross_Score',Autocross_Score, 'Accel_Score', Accel_Score, 'Skidpad_Score',Skidpad_Score)
+% output = [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax accel_time Endurance_Score Autocross_Score Accel_Score Skidpad_Score];

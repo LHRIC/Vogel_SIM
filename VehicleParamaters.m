@@ -48,3 +48,38 @@ Cd = .0184; % .0245
 CoP = 48; % front downforce distribution (%)
 
 LapSimOutput = LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP);
+
+distance = LapSimOutput.distance;
+velocity = LapSimOutput.velocity;
+acceleration = LapSimOutput.acceleration;
+lateral_accel = LapSimOutput.lateral_accel;
+distance_ax = LapSimOutput.distance_ax;
+velocity_ax = LapSimOutput.velocity_ax;
+acceleration_ax = LapSimOutput.acceleration_ax;
+lateral_accel_ax = LapSimOutput.lateral_accel_ax;
+%% Section 19: Plot Results
+disp('Plotting Results')
+% This is just to make some pretty pictures, feel free to comment this out
+figure
+plot(distance,velocity,'k')
+title('Endurance Simulation Velocity Trace')
+xlabel('Distance Travelled (d) [ft]')
+ylabel('Velocity (V) [ft/s]')
+figure
+plot(distance,acceleration,distance,lateral_accel)
+title('Endurance Simulation Acceleration Traces')
+xlabel('Distance Travelled (d) [ft]')
+ylabel('Acceleration [g]')
+legend('Longitudinal','Lateral')
+figure
+plot(distance_ax,velocity_ax,'k')
+title('Autocross Simulation Velocity Trace')
+xlabel('Distance Travelled (d) [ft]')
+ylabel('Velocity (V) [ft/s]')
+figure
+plot(distance_ax,acceleration_ax,distance_ax,lateral_accel_ax)
+title('Autocross Simulation Acceleration Traces')
+xlabel('Distance Travelled (d) [ft]')
+ylabel('Acceleration [g]')
+legend('Longitudinal','Lateral')
+disp('Analysis Complete')

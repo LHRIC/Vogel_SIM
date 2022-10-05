@@ -1,6 +1,7 @@
 function Fy = MF52_Fy_fcn(A,X)
 % This function completes the MF5.2 Fitting of tire data provided by the
 % Tire Testing Consortium
+% This function is for Lateral Cases Only
 
 global FZ0 LFZO LCX LMUX LEX LKX  LHX LVX LCY LMUY LEY LKY LHY LVY ...
        LGAY LTR LRES LGAZ LXAL LYKA LVYKA LS LSGKP  LSGAL LGYR KY 
