@@ -79,7 +79,7 @@ WeightM(k) = W;
 clear LapSimOutput
 
 fprintf('Completed iteration %.0f of %.0f.\n', k, IterTotal);
-fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (Cl / (-0.3345 * 0.03824)), (Cd / (0.3345 * 0.03824)), W, T_axismax);
+fprintf('Run had a CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (Cl* -0.3345 * 0.03824), (Cd * 0.3345 * 0.03824), W, T_axismax);
 
 k = k + 1;
 

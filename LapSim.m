@@ -196,7 +196,7 @@ A_Xr(A_Xr < 0) = 0;
 % input for the lap sim codes:
 % accel is the maximum acceleration capacity as a function of velocity
 % (power limited) and grip is the same but (tire limited)
-accel = csaps(velocity,A_Xr);clc
+accel = csaps(velocity,A_Xr);
 grip = csaps(velocity,A_xr);
 
 AYP = 1;
@@ -276,7 +276,8 @@ for turn = 1:1:length(radii)
         lb = [0 -.2 1];
         ub = [.5 .2 2]; 
         % minimizing function
-        x = fsolve(fun,x0);
+        opts = optimset('Diagnostics','off', 'Display','off');
+        x = fsolve(fun, x0, opts);
         % output from minimizing
         delta = x(1);
         beta = x(2);
@@ -750,5 +751,5 @@ output = struct('laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocit
     ,lateral_accel,'gear_counter',gear_counter,'path_length',path_length,'weights',weights,'distance',distance,'laptime_ax',laptime_ax, ...
     'time_elasped_ax',time_elapsed_ax,'velocity_ax',velocity_ax, 'acceleration_ax',acceleration_ax, 'lateral_accel_ax',lateral_accel_ax, ...
     'gear_counter_ax',gear_counter_ax, 'path_length_ax',path_length_ax, 'weights_ax',weights_ax, 'distance_ax',distance_ax, 'accel_time' ...
-    ,accel_time, 'Endurance_Score',Endurance_Score, 'Autocross_Score',Autocross_Score, 'Accel_Score', Accel_Score, 'Skidpad_Score',Skidpad_Score)
+    ,accel_time, 'Endurance_Score',Endurance_Score, 'Autocross_Score',Autocross_Score, 'Accel_Score', Accel_Score, 'Skidpad_Score',Skidpad_Score);
 % output = [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax accel_time Endurance_Score Autocross_Score Accel_Score Skidpad_Score];
