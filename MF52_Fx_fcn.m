@@ -1,19 +1,21 @@
-function Fx = MF52_Fx_fcn(Bx,X)
+function Fx = MF52_Fx_fcn(Bx,X,SL)
 % This function completes the MF5.2 Fitting of tire data provided by the
 % Tire Testing Consortium
 % This function is Longitudinal cases only
+% Thit tire model is METRIC
 
 global FZ0 LFZO LCX LMUX LEX LKX  LHX LVX LCY LMUY LEY LKY LHY LVY ...
        LGAY LTR LRES LGAZ LXAL LYKA LVYKA LS LSGKP  LSGAL LGYR KY 
     
-SL = X(:,1);
-Fz     =  abs(X(:,2));
-GAMMAx  =  X(:,3)*pi/180;
+Fz     =  abs(X(:,1))
+Fz = Fz * 4.4482189159 % conver to newtons
+
+GAMMAx  =  X(:,2)*pi/180;
 
 
 GAMMAx = GAMMAx;
-Fz0PR  = FZ0;
-DFz    = (Fz-Fz0PR) ./ Fz0PR;
+Fz0PR  = 1000;
+DFz    = (Fz-Fz0PR) ./ Fz0PR
 
 % Setting initial parameters
 PCx1    = Bx(1);
@@ -48,22 +50,22 @@ SHx = RHx1;
 Ex = REx1+REx2*DFz;
 Cx = RCx1;
 GAMMAstar = sin(GAMMAx);
-Bx = (RBx1+RBx3*GAMMAstar)*cos(atan(RBx2*SL));
+Bxa = (RBx1+RBx3.*GAMMAstar)*cos(atan(RBx2*SL));
 ALPHA = 0; % Slip angle is defined as zero since this function is only used for straight line, can be revised later to include complete combined slip 
-Gxa0 = cos(Cx*atan(Bx*SHx-Ex(Bx*SHx-atan(Bx*SHx))));
-Gxa = cos(ALPHA)/Gxa0; % Gxa should actually have a bunch of stuff in the cos(x), see above comment
+Gxao = cos(Cx*atan(Bxa*SHx-Ex*(Bxa*SHx-atan(Bxa*SHx))));
+Gxa = cos(ALPHA)./Gxao; % Gxa should actually have a bunch of stuff in the cos(x), see above comment
 
 % Pure longitudinal 
 SHx = (PHx1 + PHx2 * DFz);
-Cx = pC1;
+Cx = PCx1;
 MUx = (PDx1 + PDx2 * DFz);
 Dx = MUx * Fz;
 Kx = Fz * (PKx1 + PKx2 * DFz) * exp(PKx3 * DFz);
-Bx = Kx / (Cx * Dx);
+Bxa = Kx / (Cx * Dx);
 SLx = SL + SHx;
 Ex = (PEx1 + PEx2 * DFz + PEx3 * (DFz)^2) * (1 - PEx4*sign(SLx));
-SVx = F_z * (PVx1 + PVx2 * DFz);
-Fx0 = Dx * sin(Cx * atan(Bx .* SLx - Ex .* (Bx .* SLx - atan(Bx .* SLx)))) + SVx;
+SVx = Fz * (PVx1 + PVx2 * DFz);
+Fx0 = Dx * sin(Cx * atan(Bxa .* SLx - Ex .* (Bxa .* SLx - atan(Bxa .* SLx)))) + SVx;
 
 % Combined Slip
-Fx = Fx0*Gxa;
+Fx = Fx0.*Gxa;

@@ -46,6 +46,7 @@ Cl = .0418; %279/418
 % Cd = linspace(.01,.03,2);
 Cd = .0184; % .0245
 CoP = 48; % front downforce distribution (%)
+%% Run simulation
 
 LapSimOutput = LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP);
 
