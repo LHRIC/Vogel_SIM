@@ -7,15 +7,15 @@ function Fx = MF52_Fx_fcn(Bx,X,SL)
 global FZ0 LFZO LCX LMUX LEX LKX  LHX LVX LCY LMUY LEY LKY LHY LVY ...
        LGAY LTR LRES LGAZ LXAL LYKA LVYKA LS LSGKP  LSGAL LGYR KY 
     
-Fz     =  abs(X(:,1))
-Fz = Fz * 4.4482189159 % conver to newtons
+Fz = abs(X(:,1));
+Fz = Fz * 4.4482189159; % convert to newtons
 
 GAMMAx  =  X(:,2)*pi/180;
 
 
 GAMMAx = GAMMAx;
-Fz0PR  = 1000;
-DFz    = (Fz-Fz0PR) ./ Fz0PR
+Fz0PR  = FZ0*4.4482189159;
+DFz    = (Fz-Fz0PR) ./ Fz0PR;
 
 % Setting initial parameters
 PCx1    = Bx(1);

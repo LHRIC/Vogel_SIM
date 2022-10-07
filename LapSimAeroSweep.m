@@ -9,7 +9,7 @@ clc
 %disp('Loading Vehicle Characteristics')
 % These are the basic vehicle architecture primary inputs:
 LLTD = 51.5; % Front lateral load transfer distribution (%)
-WBase = 600; % vehicle + driver weight (lbs)
+W = 660; % vehicle + driver weight (lbs)
 WDF = 50; % front weight distribution (%)
 cg = 13.2/12; % center of gravity height (ft)
 l = 60.5/12; % wheelbase (ft)
@@ -46,7 +46,7 @@ KPIr = 0; % rear kingpin inclination angle (deg)
 
 CoP = 48; % front downforce distribution (%)
 
-CLA = [-2.9:0.2:0.5] * -0.3345 * 0.03824; % Lift equation without Velocity component
+CLA = [-2.9:0.6:0.1] * -0.3345 * 0.03824; % Lift equation without Velocity component
 
 cdOffsetM = [0:0.1:0.4] * 0.3345 * 0.03824;
 
@@ -65,8 +65,6 @@ for i = 1:length(CLA)
     Cl = CLA(i);
     Cd = 0.24 * Cl + (0.3 * 0.3345 * 0.03824) + cdOffset;
 
-    W = WBase + (1.85 + 357*Cl + 10721*Cl^2);
-
 LapSimOutput = LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP);
 
 T_axismax = max(LapSimOutput.time_elapsed);
@@ -74,7 +72,6 @@ T_axismax = max(LapSimOutput.time_elapsed);
 ClaM(k) = Cl;
 CdaM(k) = Cd;
 TimeM(k) = T_axismax;
-WeightM(k) = W;
 
 clear LapSimOutput
 
@@ -104,5 +101,5 @@ ylabel('Cda')
 zlabel('Time(s)')
 g = colorbar;
 title(g, 'gradient')
-caxis([0 0.1])
+clim([0 0.1])
 hold off
