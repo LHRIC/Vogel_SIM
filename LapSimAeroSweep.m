@@ -97,6 +97,33 @@ ClaBest = ClaM(BestIndex);
 CdaBest = ClaM(BestIndex);
 WeightBest = WeightM(BestIndex);
 
+CoPM = [25:5:75];
+
+IterTotalCoP = length(CoPM);
+
+fprintf('Running %.0f iterations.\n', IterTotalCoP);
+
+for kCoP = 1:length(CoPM)
+    
+    CoPC = CoPM(kCoP);
+
+    LapSimOutput = LapSim(LLTD, WeightBest, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, ClaBest, CdaBest, CoPC);
+
+    T_axismax = max(LapSimOutput.time_elapsed);
+
+    TimeMCoP(kCoP) = T_axismax;
+
+    clear LapSimOutput
+
+    fprintf('Completed iteration %.0f of %.0f.\n', kCoP, IterTotalCoP);
+    fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (ClaBest / (-0.3345 * 0.03824)), (CdaBest / (0.3345 * 0.03824)), W, T_axismax);
+
+end
+
+%% Section 6: Balance Sweep
+
+
+
 %% Section 000: Data Visualization
 
 figure(3)
