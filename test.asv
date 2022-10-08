@@ -33,10 +33,7 @@ legend('vogel','ours')
 load("Hoosier_R25B_18.0x7.5-10_FX_12psi.mat")
 fnplt(full_send_x)
 
-wf = 333.16;
-IA = -.0041;
-SL = .11;
-sf_x = .6;
+Fz = 333.16
 
-evalF = MF52_Fx_fcn(B,[-wf rad2deg(-IA)],SL)*sf_x
-
+X = [Fz IA];
+evalF = MF52_Fx_fcn(B,X,SL)

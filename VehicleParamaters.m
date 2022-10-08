@@ -48,7 +48,9 @@ Cd = .0184; % .024
 CoP = 48; % front downforce distribution (%)
 %% Run simulation
 
-LapSimOutput = LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP);
+LapSimOutput = LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+    IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
+    casterr, KPIr, Cl, Cd, CoP);
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;

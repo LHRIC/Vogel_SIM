@@ -3,16 +3,15 @@ function Fy = MF52_Fy_fcn(A,X,alpha)
 % Tire Testing Consortium
 % This function is for Lateral Cases Only
 
-global FZ0 LFZO LCX LMUX LEX LKX  LHX LVX LCY LMUY LEY LKY LHY LVY ...
-       LGAY LTR LRES LGAZ LXAL LYKA LVYKA LS LSGKP  LSGAL LGYR KY 
+global FZ0
     
 ALPHA  =  X(:,1)*pi/180;
 Fz     =  (X(:,2));
 GAMMA  =  X(:,3)*pi/180;
 dpi = 0;
 
-gamma_star = GAMMA .* LGAY; %31 (%48 lgay=lg
-Fz0_prime  = abs(FZ0  .*  LFZO); %15,  NEED LFZO NOT LFZ0 TO MATCH TIRE PROP FILE
+gamma_star = GAMMA; %31 (%48 lgay=lg
+Fz0_prime  = abs(FZ0); %15,  NEED LFZO NOT LFZ0 TO MATCH TIRE PROP FILE
 dfz    = (Fz-Fz0_prime) ./ Fz0_prime; %14,  (%30)
 
 % Setting initial parameters
@@ -48,20 +47,20 @@ RBY1 = A(29);
 RBY2 = A(30);
 
 
-Kya = PKY1.*Fz0_prime.*(1 + PPY1.*dpi).*(1 - PKY3.*abs(gamma_star)).*sin(PKY4.*atan((Fz./Fz0_prime)./((PKY2+PKY5.*gamma_star.^2).*(1+PPY2.*dpi)))).*LKY; % (= ByCyDy = dFyo./dalphay at alphay = 0) (if gamma =0: =Kya0 = CFa) (PKY4=2)(4.E25)
+Kya = PKY1.*Fz0_prime.*(1 + PPY1.*dpi).*(1 - PKY3.*abs(gamma_star)).*sin(PKY4.*atan((Fz./Fz0_prime)./((PKY2+PKY5.*gamma_star.^2).*(1+PPY2.*dpi)))); % (= ByCyDy = dFyo./dalphay at alphay = 0) (if gamma =0: =Kya0 = CFa) (PKY4=2)(4.E25)
 SVyg = Fz.*(PVY3 + PVY4.*dfz).*gamma_star; % (4.E28)
 Kyg0 = Fz.*(PKY6 + PKY7 .*dfz).*(1 + PPY5.*dpi); % (=dFyo./dgamma at alpha = gamma = 0) (= CFgamma) (4.E30)
 signKya = sign(Kya);
 signKya(signKya == 0) = 1; % If [Kya = 0] then [sign(0) = 0]. This is done to avoid [num / 0 = NaN] in Eqn 4.E27
-SHy = (PHY1 + PHY2.*dfz).* LHY + ((Kyg0 .*gamma_star - SVyg)./Kya); % (4.E27) [sign(Kya) term explained on page 177]
-SVy = Fz.*(PVY1 + PVY2.*dfz).*LVY + SVyg; % (4.E29)
+SHy = (PHY1 + PHY2.*dfz) + ((Kyg0 .*gamma_star - SVyg)./Kya); % (4.E27) [sign(Kya) term explained on page 177]
+SVy = Fz.*(PVY1 + PVY2.*dfz) + SVyg; % (4.E29)
 alphay = ALPHA + SHy; % (4.E20)
-Cy = PCY1.*LCY; % (> 0) (4.E21)
+Cy = PCY1; % (> 0) (4.E21)
 muy = (PDY1 + PDY2 .* dfz).*(1 + PPY3.*dpi + PPY4 .*dpi.^2).*(1 - PDY3.*gamma_star.^2); % (4.E23)
 Dy = muy.*Fz; % (4.E22)
 signAlphaY = sign(alphay);
 signAlphaY(signAlphaY == 0) = 1;
-Ey = (PEY1 + PEY2.*dfz).*(1 + PEY5.*gamma_star.^2 - (PEY3 + PEY4.*gamma_star).*signAlphaY).*LEY; % (<=1)(4.E24)
+Ey = (PEY1 + PEY2.*dfz).*(1 + PEY5.*gamma_star.^2 - (PEY3 + PEY4.*gamma_star).*signAlphaY); % (<=1)(4.E24)
 if(any(Ey > 1))            
     Ey(Ey > 1) = 1;
 end % if Ey > 1

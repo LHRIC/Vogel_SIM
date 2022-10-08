@@ -35,8 +35,9 @@ PPY4= -0.9817
 PPY5= -0.9331
 RBY1= 4.9000
 RBY2= 2.200
+
 A = [PCY1 PDY1 PDY2 PDY3 PEY1 PEY2 PEY3 PEY4 PEY5 PKY1 PKY2 PKY3 PKY4 PKY5 PKY6 PKY7 PHY1 PHY2 PHY3 PVY1 PVY2 PVY3 PVY4 PPY1 PPY2 PPY3 PPY4 PPY5 RBY1 RBY2] 
-Fz = 150;
+Fz = 167;
 alpha = -13.4129:.01:13.4129;
 IA = 0;
 for i = 1:length(alpha)
@@ -85,6 +86,6 @@ end
 % SVy     = Fz .* ((PVy1+PVy2 .* DFz) .* LVY+(PVy3+PVy4 .* DFz) .* GAMMAy) .* LMUY; %39 (%56)
 % Fy0     = Dy .* sin(Cy .* atan(By .* ALPHAy-Ey .* (By .* ALPHAy-atan(By .* ALPHAy))))+SVy; %29 (%46)
 % Fy      = Fy0; %28
-
+figure
 plot(alpha, Fy)
 hold on

@@ -4,17 +4,16 @@ function Fx = MF52_Fx_fcn(Bx,X,SL)
 % This function is Longitudinal cases only
 % Thit tire model is METRIC
 
-global FZ0 LFZO LCX LMUX LEX LKX  LHX LVX LCY LMUY LEY LKY LHY LVY ...
-       LGAY LTR LRES LGAZ LXAL LYKA LVYKA LS LSGKP  LSGAL LGYR KY 
+global FZ0
     
 Fz = abs(X(:,1));
-Fz = Fz * 4.4482189159; % convert to newtons
+Fz = Fz;
 
 GAMMAx  =  X(:,2)*pi/180;
 
 
 GAMMAx = GAMMAx;
-Fz0PR  = FZ0*4.4482189159;
+Fz0PR  = abs(FZ0);
 DFz    = (Fz-Fz0PR) ./ Fz0PR;
 
 % Setting initial parameters

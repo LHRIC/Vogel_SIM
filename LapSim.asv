@@ -13,8 +13,9 @@ global r_max accel grip deccel lateral cornering gear shift_points...
 %disp('2019 Michigan Endurance Points Analysis')
 %disp('Loading Tire Model')
 
-global FZ0
-
+global FZ0 LFZO LCX LMUX LEX LKX  LHX LVX LCY LMUY LEY LKY LHY LVY ...
+       LGAY Ltr LRES LGAZ LXAL LYKA LVYKA LS LSGKP  LSGAL LGYR KY % most of these are scaling factors for the tire model, we no usey
+load('A1654run21_MF52_Fy_GV12.mat')
 FZ0 = 179.847; %Tire nominal load
 % then load in coefficients for Magic Formula 5.2 Tire Model:
 load("2022_Lateral_Coeff_B2356run4.mat")    
