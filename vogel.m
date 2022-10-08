@@ -1,12 +1,6 @@
 function [output] =vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,WTR,IA_0f,IA_0r,A)
 
 global grip
-<<<<<<< Updated upstream
-        delta = x(1)
-        beta = x(2) 
-        AYP = x(3)
-=======
->>>>>>> Stashed changes
         delta = x(1);
         beta = x(2) ;
         AYP = x(3) ;
