@@ -2,7 +2,6 @@ clear all
 global FZ0 LFZO LCX LMUX LEX LKX  LHX LVX LCY LMUY LEY LKY LHY LVY ...
        LGAY LTR LRES LGAZ LXAL LYKA LVYKA LS LSGKP  LSGAL LGYR KY
 
-
 load("2022_Lateral_Coeff_B2356run4.mat")
 load("A1654run21_MF52_Fy_GV12.mat")
 FZ0 = 150

@@ -1,4 +1,4 @@
-function Fy = MF52_Fy_fcn(A,X)
+function Fy = MF52_Fy_fcn(A,X,alpha)
 % This function completes the MF5.2 Fitting of tire data provided by the
 % Tire Testing Consortium
 % This function is for Lateral Cases Only
@@ -10,7 +10,6 @@ ALPHA  =  X(:,1)*pi/180;
 Fz     =  (X(:,2));
 GAMMA  =  X(:,3)*pi/180;
 dpi = 0;
-
 
 gamma_star = GAMMA .* LGAY; %31 (%48 lgay=lg
 Fz0_prime  = abs(FZ0  .*  LFZO); %15,  NEED LFZO NOT LFZ0 TO MATCH TIRE PROP FILE

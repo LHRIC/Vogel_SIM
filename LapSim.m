@@ -12,13 +12,13 @@ global r_max accel grip deccel lateral cornering gear shift_points...
 % bottom of the section
 %disp('2019 Michigan Endurance Points Analysis')
 %disp('Loading Tire Model')
+
 global FZ0 LFZO LCX LMUX LEX LKX  LHX LVX LCY LMUY LEY LKY LHY LVY ...
-    LGAY Ltr LRES LGAZ LXAL LYKA LVYKA LS LSGKP  LSGAL LGYR KY % most of these are scaling factors for the tire model, we no usey
+       LGAY Ltr LRES LGAZ LXAL LYKA LVYKA LS LSGKP  LSGAL LGYR KY % most of these are scaling factors for the tire model, we no usey
 FZ0 = -179.847; %Tire nominal load
 load('A1654run21_MF52_Fy_GV12.mat')
 % then load in coefficients for Magic Formula 5.2 Tire Model:
-load("2022_Lateral_Coeff_B2356run4.mat")
-
+load("2022_Lateral_Coeff_B2356run4.mat")    
 % Next you load in the longitudinal tire model
 % find your pathname and filename for the tire you want to load in
 load("Longitudinal_Coeff_UNSCALED.mat")
@@ -33,9 +33,13 @@ sf_y = .47;
 %% Section 2: Input Powertrain Model
 % change whatever you want here, this is the 2018 powertrain package iirc
 % just keep your units consistent please
+
 disp('Loading Engine Model')
-%disp('Loading Engine Model')
 engineSpeed = 6200:100:14100; % RPM
+
+%disp('Loading Engine Model')
+engineSpeed = [6200:100:14100]; % RPM
+
 % torque should be in N-m:
 engineTq = [41.57 42.98 44.43 45.65 46.44 47.09 47.52 48.58 49.57 50.41 51.43 51.48 51 49.311 48.94 48.66 49.62 49.60 47.89 47.91 48.09 48.57 49.07 49.31 49.58 49.56 49.84 50.10 50.00 50.00 50.75 51.25 52.01 52.44 52.59 52.73 53.34 53.72 52.11 52.25 51.66 50.5 50.34 50.50 50.50 50.55 50.63 50.17 50.80 49.73 49.35 49.11 48.65 48.28 48.28 47.99 47.68 47.43 47.07 46.67 45.49 45.37 44.67 43.8 43.0 42.3 42.00 41.96 41.70 40.43 39.83 38.60 38.46 37.56 36.34 35.35 33.75 33.54 32.63 31.63];
 primaryReduction = 76/36; % Transmission primary reduction (applies to all gears)
@@ -220,9 +224,9 @@ for turn = 1:1:length(radii)
         wf = (WF+LF*CoP)/2;
         wr = (WR+LF*(1-CoP))/2;
         % guess ackermann steer angle as starting steer angle
-        delta = l/R
+        delta = l/R;
         % assume vehicle sideslip starts at 0 (rad)
-        beta = deg2rad(0)
+        beta = deg2rad(0);
         A_y = V^2/R;
         % calculate lateral load transfer (lbs)
         WT = A_y*cg*W/mean([twf twr])/32.2/12;
@@ -272,8 +276,7 @@ for turn = 1:1:length(radii)
         diff_AY = A_y-AY;
         % Minimizing the objective function of M_z a_f-12degrees and a_y-AY 
         x0 = [delta, beta, AYP];  % initial values
-        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f, ...
-            casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,WTR,IA_0f,IA_0r,A);
+        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,WTR,IA_0f,IA_0r,A);         Aeq = [];
         % setting lower and upper bounds 
         lb = [0 -.2 1];
         ub = [.5 .2 2]; 
@@ -281,9 +284,9 @@ for turn = 1:1:length(radii)
         opts = optimset('Diagnostics','off', 'Display','off');
         x = fsolve(fun, x0, opts);
         % output from minimizing
-        delta = x(1)
-        beta = x(2)
-        AYP = x(3)
+        delta = x(1);
+        beta = x(2);
+        AYP = x(3);
         % recalculate values with optimized delta, beta, and AYP
         % update speed and downforce
         V = sqrt(R*32.2*AYP);
@@ -354,8 +357,7 @@ for turn = 1:1:length(radii)
         skid = 2*pi*R/V;
         steering(turn) = steer;
         speed(turn) = V;
-        lateralg(turn) = AY/32.2;
-        AYPoutput(turn) = AYP
+        lateralg(turn) = AY/32.2; 
 end
 
 % Braking Performance
@@ -382,8 +384,6 @@ for  i = 1:1:length(velocity)
     FZ_vals = [-250:1:-50];
     sl = [-.15:.01:0];
     for k = 1:length(sl)
-%           fxf(k) = fnval([sl(k);-wf;rad2deg(-IA_f)],full_send_x)*sf_x;
-%           fxr(k) = fnval([sl(k);-wr;rad2deg(-IA_r)],full_send_x)*sf_x;
           fxf(k) = MF52_Fx_fcn(lCoeff,[-wf rad2deg(-IA_f)],sl(k))*sf_x;
           fxr(k) = MF52_Fx_fcn(lCoeff,[-wr rad2deg(-IA_r)],sl(k))*sf_x;
     end
@@ -408,8 +408,6 @@ for  i = 1:1:length(velocity)
         FZ_vals = [-250:1:-50];
         sl = [-.15:.01:0];
         for k = 1:length(sl)
-%             fxf(k) = fnval([sl(k);-wf;rad2deg(-IA_f)],full_send_x)*sf_x;
-%             fxr(k) = fnval([sl(k);-wr;rad2deg(-IA_r)],full_send_x)*sf_x;
             fxf(k) = MF52_Fx_fcn(lCoeff,[-wf rad2deg(-IA_f)],sl(k))*sf_x;
             fxr(k) = MF52_Fx_fcn(lCoeff,[-wr rad2deg(-IA_r)],sl(k))*sf_x;
         end
@@ -747,12 +745,12 @@ frontF = zeros(3,3);
 rearF = zeros(3,3);
 % then calculate loads based on those speeds and accelerations: 
 % see documentation spreadsheet for translation
-% frontF(3,:) = [WF/2 + Cl*VX_max^2*CoP/2 - WF*AX_max*cg/l/2 , WF/2 + Cl*VX_min^2*CoP/2 - WF*AX_min*cg/l/2, WF/2 + Cl*VY_max^2*CoP/2 + WF*AY_max*cg/tw/2];
-% rearF(3,:) = [WR/2 + Cl*VX_max^2*(1-CoP)/2 + WR*AX_max*cg/l/2 , WR/2 + Cl*VX_min^2*(1-CoP)/2 + WR*AX_min*cg/l/2, WR/2 + Cl*VY_max^2*(1-CoP)/2 + WR*AY_max*cg/tw/2];
-% frontF(2,:) = [0 0 (WF/2+WF*AY_max*cg/tw/2)*AY_max];
-% rearF(2,:) = [0 0 (WR/2+WR*AY_max*cg/tw/2)*AY_max];
-% frontF(1,:) = [0 -(WF/2 -WF*AX_min*cg/l/2)*AX_min 0];
-% rearF(1,:) = [W*AX_max/2 -(WR/2 +WR*AX_min*cg/l/2)*AX_min 0];
+frontF(3,:) = [WF/2 + Cl*VX_max^2*CoP/2 - WF*AX_max*cg/l/2 , WF/2 + Cl*VX_min^2*CoP/2 - WF*AX_min*cg/l/2, WF/2 + Cl*VY_max^2*CoP/2 + WF*AY_max*cg/tw/2];
+rearF(3,:) = [WR/2 + Cl*VX_max^2*(1-CoP)/2 + WR*AX_max*cg/l/2 , WR/2 + Cl*VX_min^2*(1-CoP)/2 + WR*AX_min*cg/l/2, WR/2 + Cl*VY_max^2*(1-CoP)/2 + WR*AY_max*cg/tw/2];
+frontF(2,:) = [0 0 (WF/2+WF*AY_max*cg/tw/2)*AY_max];
+rearF(2,:) = [0 0 (WR/2+WR*AY_max*cg/tw/2)*AY_max];
+frontF(1,:) = [0 -(WF/2 -WF*AX_min*cg/l/2)*AX_min 0];
+rearF(1,:) = [W*AX_max/2 -(WR/2 +WR*AX_min*cg/l/2)*AX_min 0];
 
 output = struct('laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocity,'acceleration',acceleration,'lateral_accel' ...
     ,lateral_accel,'gear_counter',gear_counter,'path_length',path_length,'weights',weights,'distance',distance,'laptime_ax',laptime_ax, ...
