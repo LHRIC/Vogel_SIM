@@ -3,7 +3,7 @@ function [output] =vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,
 global grip
         delta = x(1)
         beta = x(2) 
-        AYP = x(3) 
+        AYP = x(3)
         V = sqrt(R*32.2*AYP);
         A_y = V^2/R;
         WT = A_y*cg*W/mean([twf twr])/32.2/12;

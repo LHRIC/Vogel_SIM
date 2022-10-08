@@ -345,12 +345,12 @@ weights = [t_t/summ t_b/summ t_c/summ];
 for i = 1:1:length(track_points)-2
     V_plot(i) = mean(velocity(i*interval-interval+1:i*interval));
 end
-%pointsize = 5;
-%scatter(track_points(1,2:end-1),track_points(2,2:end-1),100,V_plot,'marker','.')
-%title('2019 Michigan Autocross Simulation Track Summary')
-%h = colorbar;
-%set(get(h,'title'),'string','Velocity (V) [ft/s]');
-%set(gca,'XTick',[], 'YTick', [])
+pointsize = 5;
+scatter(track_points(1,2:end-1),track_points(2,2:end-1),100,V_plot,'marker','.')
+title('2019 Michigan Autocross Simulation Track Summary')
+h = colorbar;
+set(get(h,'title'),'string','Velocity (V) [ft/s]');
+set(gca,'XTick',[], 'YTick', [])
 %% Gear Counter
 for i = 1:1:length(velocity)
 V = velocity(i);
