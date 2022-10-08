@@ -4,6 +4,9 @@ global grip
         delta = x(1)
         beta = x(2) 
         AYP = x(3)
+        delta = x(1);
+        beta = x(2) ;
+        AYP = x(3) ;
         V = sqrt(R*32.2*AYP);
         A_y = V^2/R;
         WT = A_y*cg*W/mean([twf twr])/32.2/12;
@@ -37,5 +40,5 @@ global grip
         M_z = M_z;
         slipAngle = a_f-deg2rad(-12);
         diff_AY =A_y-AY;
-        output = [M_z slipAngle diff_AY]
+        output = [M_z slipAngle diff_AY];
 end

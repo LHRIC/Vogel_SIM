@@ -46,11 +46,9 @@ KPIr = 0; % rear kingpin inclination angle (deg)
 
 CoP = 48; % front downforce distribution (%)
 
-CLA = [-2.9:0.1:0.1] * -0.3345 * 0.03824; % Lift equation without Velocity component
+CLA = [-2.9:0.2:0.5] * -0.3345 * 0.03824; % Lift equation without Velocity component
 
-cdOffsetM = [0:0.05:0.4] * 0.3345 * 0.03824;
-
-%% Section 4: Sim Loop
+cdOffsetM = [0:0.1:0.4] * 0.3345 * 0.03824;
 
 k = 1;
 
@@ -81,89 +79,13 @@ WeightM(k) = W;
 clear LapSimOutput
 
 fprintf('Completed iteration %.0f of %.0f.\n', k, IterTotal);
-fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (Cl / (-0.3345 * 0.03824)), (Cd / (0.3345 * 0.03824)), W, T_axismax);
+fprintf('Run had a CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (Cl* -0.3345 * 0.03824), (Cd * 0.3345 * 0.03824), W, T_axismax);
 
 k = k + 1;
 
 end
 
 end
-
-%% Section 5: CoP Sweep
-
-[minTime, BestIndex] = min(TimeM);
-
-ClaBest = ClaM(BestIndex);
-CdaBest = ClaM(BestIndex);
-WeightBest = WeightM(BestIndex);
-
-CoPRange = [25:5:75];
-
-IterTotalCoP = length(CoPRange);
-
-fprintf('Running %.0f iterations.\n', IterTotalCoP);
-
-for kCoP = 1:length(CoPRange)
-    
-    CoPC = CoPRange(kCoP);
-
-    LapSimOutput = LapSim(LLTD, WeightBest, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, ClaBest, CdaBest, CoPC);
-
-    T_axismax = max(LapSimOutput.time_elapsed);
-
-    TimeMCoP(kCoP) = T_axismax;
-
-    clear LapSimOutput
-
-    fprintf('Completed iteration %.0f of %.0f.\n', kCoP, IterTotalCoP);
-    fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (ClaBest / (-0.3345 * 0.03824)), (CdaBest / (0.3345 * 0.03824)), W, T_axismax);
-
-end
-
-%% Section 6: CoP + CG Sweep
-
-CGRange = [50:60];
-
-IterTotalCoPCG = length(CoPRange) * length(CGRange);
-
-kCoPCG = 1;
-
-for iCG = 1:length(CGRange)
-
-    CG = CGRange(iCG);
-
-for iCoPG = 1:length(CoPRange)
-    
-    CoPCG = CoPRange(iCoPG);
-
-    LapSimOutput = LapSim(LLTD, WeightBest, WDF, CG, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, ClaBest, CdaBest, CoPCG);
-
-    T_axismax = max(LapSimOutput.time_elapsed);
-
-    TimeMCoPG(kCoPCG) = T_axismax;
-
-    CoPM(kCoPCG) = CoPCG;
-    CGM(kCoPCG) = CG;
-
-    clear LapSimOutput
-
-    fprintf('Completed iteration %.0f of %.0f.\n', kCoPCG, IterTotalCoPCG);
-    fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (ClaBest / (-0.3345 * 0.03824)), (CdaBest / (0.3345 * 0.03824)), W, T_axismax);
-
-    kCoPCG = kCoPCG + 1;
-
-end
-
-end
-%% Section 7: Balance Sweep
-% set lower Cl (like -2.5) at the best CoP and CG combo. Then gradually
-% increase Cl and move CoP forward to see how times change (representing
-% increasing fwng performance)
-[minTimeCoP, BestIndexCoP] = min(TimeMCoP);
-
-CoPBest = CoPRange(BestIndexCo);
-
-%% Section 000: Data Visualization
 
 figure(3)
 xlin = linspace(min(ClaM), max(ClaM), 100);
@@ -182,5 +104,5 @@ ylabel('Cda')
 zlabel('Time(s)')
 g = colorbar;
 title(g, 'gradient')
-clim([0 0.1])
+caxis([0 0.1])
 hold off
