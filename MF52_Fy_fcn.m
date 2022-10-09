@@ -1,5 +1,4 @@
-function Fy = MF52_Fy_fcn(A,X,alpha)
-% This function completes the MF5.2 Fitting of tire data provided by the
+function Fy = MF52_Fy_fcn(A,X)
 % Tire Testing Consortium
 % This function is for Lateral Cases Only
 

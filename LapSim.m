@@ -44,12 +44,11 @@ finalDrive = 37/11; % large sprocket/small sprocket
 shiftpoint = 14000; % optimal shiftpoint for most gears [RPM]
 drivetrainLosses = .85; % percent of torque that makes it to the rear wheels 
 shift_time = .25; % seconds
-T_lock = 90; % differential locking torque (0 =  open, 1 = locked)
+T_lock = 0; % differential locking torque (0 =  open, 1 = locked)
 
 % Intermediary Calcs/Save your results into the workspace
 gearTot = gear(end)*finalDrive*primaryReduction; % Final gear ratio after driven sprocket
 VMAX = floor(3.28*shiftpoint/(gearTot/tyreRadius*60/(2*pi))); % Max veloctiy at shiftpoint with unit converstion to ft/s
-T_lock = T_lock/100; % Convert to scale factor
 powertrainpackage = {engineSpeed engineTq primaryReduction gear finalDrive shiftpoint drivetrainLosses}; % Total powertrain package to be called by supsequent functions
 %% Section 3: Vehicle Architecture
 
@@ -236,10 +235,10 @@ for turn = 1:1:length(radii)
         x0 = [delta, beta, AYP];  % initial values
         fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,WTR,IA_0f,IA_0r,A);
         % minimizing function
-        lb = [0 -.4 1];
-        ub = [.5 .4 2];
-        opts = optimoptions('fsolve','Algorithm', 'trust-region-dogleg','Diagnostics','on', 'Display','iter-detailed');
-        x = lsqnonlin(fun, x0,lb,ub)
+        lb = [0 -.2 .5];
+        ub = [.5 .2 2];
+        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-10);
+        x = lsqnonlin(fun, x0,lb,ub,opts)
         % output from minimizing
         delta = x(1);
         beta = x(2);
