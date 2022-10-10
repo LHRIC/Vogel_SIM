@@ -46,9 +46,11 @@ KPIr = 0; % rear kingpin inclination angle (deg)
 
 CoP = 48; % front downforce distribution (%)
 
-CLA = [-2.9:0.2:0.5] * -0.3345 * 0.03824; % Lift equation without Velocity component
+CLA = [-2.9:0.4:0.5] * -0.3345 * 0.03824; % Lift equation without Velocity component
 
 cdOffsetM = [0:0.1:0.4] * 0.3345 * 0.03824;
+
+%% Section 4: Sim Loop
 
 k = 1;
 
@@ -67,19 +69,18 @@ for i = 1:length(CLA)
 
     W = WBase + (1.85 + 357*Cl + 10721*Cl^2);
 
-LapSimOutput = LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP);
-
-T_axismax = max(LapSimOutput.time_elapsed);
+LapSimOutput = LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r, pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP);
 
 ClaM(k) = Cl;
 CdaM(k) = Cd;
-TimeM(k) = T_axismax;
+TimeM(k) = LapSimOutput.laptime;
+TimeMAX(k) = LapSimOutput.laptime_ax;
 WeightM(k) = W;
 
 clear LapSimOutput
 
 fprintf('Completed iteration %.0f of %.0f.\n', k, IterTotal);
-fprintf('Run had a CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (Cl* -0.3345 * 0.03824), (Cd * 0.3345 * 0.03824), W, T_axismax);
+fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (Cl / (-0.3345 * 0.03824)), (Cd / (0.3345 * 0.03824)), W, T_axismax);
 
 k = k + 1;
 
@@ -87,7 +88,81 @@ end
 
 end
 
-figure(3)
+%% Section 5: CoP Sweep
+
+[minTime, BestIndex] = min(TimeM);
+
+ClaBest = ClaM(BestIndex);
+CdaBest = ClaM(BestIndex);
+WeightBest = WeightM(BestIndex);
+
+CoPRange = [35:5:65];
+
+IterTotalCoP = length(CoPRange);
+
+fprintf('Running %.0f iterations.\n', IterTotalCoP);
+
+for kCoP = 1:length(CoPRange)
+    
+    CoPC = CoPRange(kCoP);
+
+    LapSimOutput = LapSim(LLTD, WeightBest, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, ClaBest, CdaBest, CoPC);
+
+    TimeMCoP(kCoP) = LapSimOutput.laptime;
+    TimeMCoPAX(kCoP) = LapSimOutput.laptime_ax;
+
+    clear LapSimOutput
+
+    fprintf('Completed iteration %.0f of %.0f.\n', kCoP, IterTotalCoP);
+    fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (ClaBest / (-0.3345 * 0.03824)), (CdaBest / (0.3345 * 0.03824)), W, T_axismax);
+
+end
+
+%% Section 6: CoP + CG Sweep
+
+CGRange = [50:60];
+
+IterTotalCoPCG = length(CoPRange) * length(CGRange);
+
+kCoPCG = 1;
+
+for iCG = 1:length(CGRange)
+
+    CG = CGRange(iCG);
+
+for iCoPG = 1:length(CoPRange)
+    
+    CoPCG = CoPRange(iCoPG);
+
+    LapSimOutput = LapSim(LLTD, WeightBest, CG, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, ClaBest, CdaBest, CoPCG);
+
+    TimeMCoPCG(kCoPCG) = LapSimOutput.laptime;
+    TimeMCoPCGAX(kCoPCG) = LapSimOutput.laptime_ax;
+
+    CoPM(kCoPCG) = CoPCG;
+    CGM(kCoPCG) = CG;
+
+    clear LapSimOutput
+
+    fprintf('Completed iteration %.0f of %.0f.\n', kCoPCG, IterTotalCoPCG);
+    fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (ClaBest / (-0.3345 * 0.03824)), (CdaBest / (0.3345 * 0.03824)), W, T_axismax);
+
+    kCoPCG = kCoPCG + 1;
+
+end
+
+end
+%% Section 7: Balance Sweep
+% set lower Cl (like -2.5) at the best CoP and CG combo. Then gradually
+% increase Cl and move CoP forward to see how times change (representing
+% increasing fwng performance)
+[minTimeCoP, BestIndexCoP] = min(TimeMCoP);
+
+CoPBest = CoPRange(BestIndexCoP);
+
+%% Section 000: Data Visualization
+
+figure(1)
 xlin = linspace(min(ClaM), max(ClaM), 100);
 ylin = linspace(min(CdaM), max(CdaM), 100);
 [X,Y] = meshgrid(xlin, ylin);
@@ -99,10 +174,58 @@ axis tight; hold on
 plot3(ClaM/(-0.3345 * 0.03824),CdaM/(0.3345 * 0.03824),TimeM,'m.','MarkerSize',5)
 s.FaceColor = 'interp';
 s.EdgeColor = 'none';
+title('CL-CD-Laptime');
+subtitle('Endurance');
 xlabel('Cla')
 ylabel('Cda')
 zlabel('Time(s)')
 g = colorbar;
 title(g, 'gradient')
-caxis([0 0.1])
+clim([0 0.1])
 hold off
+
+figure(2)
+xlin = linspace(min(ClaM), max(ClaM), 100);
+ylin = linspace(min(CdaM), max(CdaM), 100);
+[X,Y] = meshgrid(xlin, ylin);
+Z = griddata(ClaM,CdaM,TimeMAX,X,Y,'v4');
+[dfdx, dfdy] = gradient(Z);
+s = mesh(X/(-0.3345 * 0.03824),Y/(0.3345 * 0.03824),Z, sqrt(dfdx.^2 + dfdy.^2));
+colormap(turbo);
+axis tight; hold on
+plot3(ClaM/(-0.3345 * 0.03824),CdaM/(0.3345 * 0.03824),TimeMAX,'m.','MarkerSize',5)
+s.FaceColor = 'interp';
+s.EdgeColor = 'none';
+title('CL-CD-Laptime');
+subtitle('Autocross');
+xlabel('Cla')
+ylabel('Cda')
+zlabel('Time(s)')
+g = colorbar;
+title(g, 'gradient')
+clim([0 0.1])
+hold off
+
+figure(3)
+plot(CoPRange, TimeMCoP(:, 1), 'b-')
+hold on
+plot(CoPRange, TimeMCoPAX(:, 1), 'b--')
+plot(CoPRange, TimeMCoP(:, 2), 'g-')
+plot(CoPRange, TimeMCoPAX(:, 2), 'g--')
+plot(CoPRange, TimeMCoP(:, 3), 'm-')
+plot(CoPRange, TimeMCoPAX(:, 3), 'm--')
+title('Time vs. Center of Pressure');
+subtitle('at various CL-CD combinations');
+xlabel('CoP Location (% front distribution)')
+ylabel('Time')
+legend('Best CL-CD Endurance', 'Best CL-CD AutoX','CL=-2, CD=1 Endurance','CL=-2, CD=1 AutoX', 'CL=-1.5, CD=0.85 Endurance','CL=-1.5, CD=0.85 AutoX');
+
+figure(4)
+CoPlin = linspace(min(CoPRange), max(CoPRange), 100);
+CGlin = linspace(min(CGRange), max(CGRange), 100);
+[XCoP,YCG] = meshgrid(CoPlin, CGlin);
+ZCoPCG = griddata(CoPRange,CdaM,TimeMAX,X,Y,'v4');
+[dfdx, dfdy] = gradient(Z);
+s = mesh(X/(-0.3345 * 0.03824),Y/(0.3345 * 0.03824),Z, sqrt(dfdx.^2 + dfdy.^2));
+colormap(turbo);
+axis tight; hold on
