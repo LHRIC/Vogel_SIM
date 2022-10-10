@@ -14,14 +14,13 @@ global r_max accel grip deccel lateral cornering gear shift_points...
 %disp('Loading Tire Model')
 
 global FZ0
-
 FZ0 = 179.847; %Tire nominal load
 % then load in coefficients for Magic Formula 5.2 Tire Model:
 load("2022_Lateral_Coeff_B2356run4.mat")    
 % Next you load in the longitudinal tire model
 % find your pathname and filename for the tire you want to load in
 load("Longitudinal_Coeff_UNSCALED.mat")
-tire_radius = 9.05/12; %ft
+tire_radius = 8/12; %ft
 tyreRadius = tire_radius/3.28; % converts to meters
 
 % finally, we have some scaling factors for longitudinal (x) and lateral
@@ -34,25 +33,22 @@ sf_y = .47;
 % just keep your units consistent please
 
 disp('Loading Engine Model')
-engineSpeed = 6200:100:14100; % RPM
 
-%disp('Loading Engine Model')
 engineSpeed = [6200:100:14100]; % RPM
 
 % torque should be in N-m:
 engineTq = [41.57 42.98 44.43 45.65 46.44 47.09 47.52 48.58 49.57 50.41 51.43 51.48 51 49.311 48.94 48.66 49.62 49.60 47.89 47.91 48.09 48.57 49.07 49.31 49.58 49.56 49.84 50.10 50.00 50.00 50.75 51.25 52.01 52.44 52.59 52.73 53.34 53.72 52.11 52.25 51.66 50.5 50.34 50.50 50.50 50.55 50.63 50.17 50.80 49.73 49.35 49.11 48.65 48.28 48.28 47.99 47.68 47.43 47.07 46.67 45.49 45.37 44.67 43.8 43.0 42.3 42.00 41.96 41.70 40.43 39.83 38.60 38.46 37.56 36.34 35.35 33.75 33.54 32.63 31.63];
 primaryReduction = 76/36; % Transmission primary reduction (applies to all gears)
 gear = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24]; % transmission gear ratios
-finalDrive = 40/12; % large sprocket/small sprocket
+finalDrive = 37/11; % large sprocket/small sprocket
 shiftpoint = 14000; % optimal shiftpoint for most gears [RPM]
 drivetrainLosses = .85; % percent of torque that makes it to the rear wheels 
 shift_time = .25; % seconds
-T_lock = 90; % differential locking torque (0 =  open, 1 = locked)
+T_lock = 0; % differential locking torque (0 =  open, 1 = locked)
 
 % Intermediary Calcs/Save your results into the workspace
 gearTot = gear(end)*finalDrive*primaryReduction; % Final gear ratio after driven sprocket
 VMAX = floor(3.28*shiftpoint/(gearTot/tyreRadius*60/(2*pi))); % Max veloctiy at shiftpoint with unit converstion to ft/s
-T_lock = T_lock/100; % Convert to scale factor
 powertrainpackage = {engineSpeed engineTq primaryReduction gear finalDrive shiftpoint drivetrainLosses}; % Total powertrain package to be called by supsequent functions
 %% Section 3: Vehicle Architecture
 
@@ -94,19 +90,19 @@ CoP = CoP/100;
 % built by finding a maximum cornering, braking, and acceleration capacity
 % for any given speed
 
-%disp('Generating g-g-V Diagram')
+disp('Generating g-g-V Diagram')
 
 deltar = 0;
 deltaf = 0;
-velocity = 15:5:130; % range of velocities at which sim will evaluate (ft/s)
-radii = [15:10:155]; % range of turn radii at which sim will evaluate (ft)
+velocity = 15:5:100; % range of velocities at which sim will evaluate (ft/s)
+radii = [15:5:115]; % range of turn radii at which sim will evaluate (ft)
 
 % First we will evaluate our Acceleration Capacity
 g = 1; % g is a gear indicator, and it will start at 1
 spcount = 1; % spcount is keeping track of how many gearshifts there are
 % shift_points tracks the actual shift point velocities
 shift_points(1) = 0; 
-%disp('     Acceleration Envelope')
+disp('     Acceleration Envelope')
 for  i = 1:1:length(velocity) % for each velocity
     gp = g; % Current gear = current gear (wow!)
     V = velocity(i); % find velocity
@@ -202,10 +198,8 @@ A_Xr(A_Xr < 0) = 0;
 % (power limited) and grip is the same but (tire limited)
 accel = csaps(velocity,A_Xr);
 grip = csaps(velocity,A_xr);
-fnplt(grip)
-hold on
-fnplt(accel)
-AYP = 1;
+
+AYP = .5;
 
 for turn = 1:1:length(radii)
     % first define your vehicle characteristics:
@@ -237,57 +231,21 @@ for turn = 1:1:length(radii)
         % calculate f/r roll (rad)
         phif = A_y*rg_f*pi/180/32.2;
         phir = A_y*rg_r*pi/180/32.2;
-        % update individual wheel loads 
-        wfin = wf-WTF;
-        wfout = wf+WTF;
-        wrin = wr-WTR;
-        wrout = wr+WTR;
-        % update individual wheel camber (from roll, then from steer
-        % effects)
-        IA_f_in = -twf*sin(phif)*12/2*IA_gainf - IA_0f - KPIf*(1-cos(delta)) - casterf*sin(delta) +phif;
-        IA_f_out = -twf*sin(phif)*12/2*IA_gainf + IA_0f + KPIf*(1-cos(delta)) - casterf*sin(delta) + phif;
-        IA_r_in = -twr*sin(phir)*12/2*IA_gainr - IA_0r - KPIr*(1-cos(deltar)) - casterf*sin(deltar) +phir;
-        IA_r_out = -twr*sin(phir)*12/2*IA_gainr + IA_0r + KPIr*(1-cos(deltar)) - casterf*sin(deltar) + phir;
-        % calculate yaw rate
-        r = A_y/V;
-        % from yaw, sideslip and steer you can get slip angles
-        a_f = beta+a*r/V-delta;
-        a_r = beta-b*r/V;
-        % with slip angles, load and camber, calculate lateral force at
-        % the front
-        F_fin = -MF52_Fy_fcn(A,[-rad2deg(a_f) wfin -rad2deg(IA_f_in)])*sf_y*cos(delta);
-        F_fout = MF52_Fy_fcn(A,[rad2deg(a_f) wfout -rad2deg(IA_f_out)])*sf_y*cos(delta);
-        % before you calculate the rears, you ned to see what the diff is
-        % doing
-        % calculate the drag from aero and the front tires
-        F_x = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta); 
-        % calculate the grip penalty assuming the rears must overcome that
-        % drag
-        rscale = 1-(F_x/W/fnval(grip,V))^2; % WHY THE FUCK IS IT SQUARED %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % now calculate rear tire forces, with said penalty
-        F_rin = -MF52_Fy_fcn(A,[-rad2deg(a_r) wrin -rad2deg(IA_r_in)])*sf_y*rscale;
-        F_rout = MF52_Fy_fcn(A,[rad2deg(a_r) wrout -rad2deg(IA_r_out)])*sf_y*rscale;
-        % sum of forces and moments
-        F_y = F_fin+F_fout+F_rin+F_rout;
-        M_z_diff = F_x*T_lock*twr/2; % incl the differential contribution %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
-        M_z = (F_fin+F_fout)*a-(F_rin+F_rout)*b-M_z_diff;
-        % calculate resultant lateral acceleration
-        AY = F_y/(W/32.2);
-        % compare to the initial guess
-        diff_AY = A_y-AY;
         % Minimizing the objective function of M_z a_f-12degrees and a_y-AY 
         x0 = [delta, beta, AYP];  % initial values
-        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,WTR,IA_0f,IA_0r,A);         Aeq = [];
-        % setting lower and upper bounds 
-        lb = [0 -.2 1];
-        ub = [.5 .2 2]; 
+        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,WTR,IA_0f,IA_0r,A);
         % minimizing function
-        opts = optimset('Diagnostics','off', 'Display','off');
-        x = fsolve(fun, x0, opts);
+        lb = [0 -.2 .5];
+        ub = [.5 .2 2];
+        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-16,Display="none");
+        x = lsqnonlin(fun, x0,lb,ub,opts);
         % output from minimizing
         delta = x(1);
         beta = x(2);
         AYP = x(3);
+        deltaTest(turn) = rad2deg(delta);
+        betaTest(turn) = rad2deg(beta);
+        AYPTest(turn) = AYP;
         % recalculate values with optimized delta, beta, and AYP
         % update speed and downforce
         V = sqrt(R*32.2*AYP);
@@ -316,6 +274,10 @@ for turn = 1:1:length(radii)
         wfout = wf+WTF;
         wrin = wr-WTR;
         wrout = wr+WTR;
+        wfin1(turn) = wf-WTF;
+        wfout1(turn) = wf+WTF;
+        wrin1(turn) = wr-WTR;
+        wrout1(turn) = wr+WTR;
         % update individual wheel camber (from roll, then from steer
         % effects)
         IA_f_in = -twf*sin(phif)*12/2*IA_gainf - IA_0f - KPIf*(1-cos(delta)) - casterf*sin(delta) +phif;
@@ -334,7 +296,9 @@ for turn = 1:1:length(radii)
         % before you calculate the rears, you ned to see what the diff is
         % doing
         % calculate the drag from aero and the front tires
-        F_x = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta); 
+        f_xTest(turn) = (F_fin+F_fout)*sin(delta)/cos(delta);
+        f_xplt(turn) = (F_fin+F_fout)*sin(delta)/cos(delta)/110;
+        F_x = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta);
         % calculate the grip penalty assuming the rears must overcome that
         % drag
         rscale = 1-(F_x/W/fnval(grip,V))^2; % Comes from traction circle
@@ -353,17 +317,33 @@ for turn = 1:1:length(radii)
         steer = rad2deg(delta);
         UG = rad2deg(delta-l/R)*32.2/AY;
         Ugradient(1) = UG;
-        %F_lat = fnval([rad2deg(a_f);-wf;0],full_send_y)*.45*cos(delta);
-        %F_drag = fnval([rad2deg(a_f);-wf;0],full_send_y)*.45*sin(delta);
         skid = 2*pi*R/V;
         steering(turn) = steer;
         speed(turn) = V;
-        lateralg(turn) = AY/32.2; 
+        lateralg(turn) = AY/32.2 ;
 end
+lateralg
+wfin1
+wfout1
+wrin1
+wfout1
+velocity_y = lateralg.*32.2.*radii;
+velocity_y = sqrt(velocity_y);
+figure(1)
+plot(velocity_y,f_xplt,'o')
+hold on
+plot(velocity_y,lateralg,'o')
+hold on
+lateral = csaps(velocity_y,lateralg);
+fnplt(lateral)
+figure(2)
 
+plot(velocity_y,wfin1,'m',velocity_y,wfout1,'c',velocity_y, wrin1,'b',velocity_y,wrout1,'g')
+legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+grid on
 % Braking Performance
-velocity = 15:5:130;
-%disp('     Braking Envelope')
+velocity = 15:5:100;
+disp('     Braking Envelope')
 % the braking sim works exactly the same as acceleration, except now all 4
 % tires are contributing to the total braking capacity
 for  i = 1:1:length(velocity)
@@ -441,6 +421,18 @@ lateral = csaps(velocity_y,lateralg);
 radii = velocity_y.^2./lateralg/32.2;
 % max velocity as a function of instantaneous turn radius
 cornering = csaps(radii,velocity_y);
+figure
+tiledlayout(2,3)
+nexttile
+fnplt(grip)
+nexttile
+fnplt(accel)
+nexttile
+fnplt(lateral)
+nexttile
+fnplt(cornering)
+nexttile
+fnplt(deccel)
 %% Section 7: Load Endurance Track Coordinates
 %disp('Loading Endurance Track Coordinates')
 [data text] = xlsread('Endurance_Coordinates_1.xlsx','Scaled');

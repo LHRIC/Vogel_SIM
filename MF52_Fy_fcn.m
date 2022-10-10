@@ -1,5 +1,4 @@
-function Fy = MF52_Fy_fcn(A,X,alpha)
-% This function completes the MF5.2 Fitting of tire data provided by the
+function Fy = MF52_Fy_fcn(A,X)
 % Tire Testing Consortium
 % This function is for Lateral Cases Only
 
@@ -46,7 +45,7 @@ PPY5 = A(28);
 RBY1 = A(29);
 RBY2 = A(30);
 
-
+% 
 Kya = PKY1.*Fz0_prime.*(1 + PPY1.*dpi).*(1 - PKY3.*abs(gamma_star)).*sin(PKY4.*atan((Fz./Fz0_prime)./((PKY2+PKY5.*gamma_star.^2).*(1+PPY2.*dpi)))); % (= ByCyDy = dFyo./dalphay at alphay = 0) (if gamma =0: =Kya0 = CFa) (PKY4=2)(4.E25)
 SVyg = Fz.*(PVY3 + PVY4.*dfz).*gamma_star; % (4.E28)
 Kyg0 = Fz.*(PKY6 + PKY7 .*dfz).*(1 + PPY5.*dpi); % (=dFyo./dgamma at alpha = gamma = 0) (= CFgamma) (4.E30)
@@ -70,16 +69,15 @@ By = Kya./(Cy.*Dy); % (4.E26) [sign(Dy) term explained on page 177]
 Fy = Dy .* sin(Cy.*atan(By.*alphay-Ey.*(By.*alphay - atan(By.*alphay))))+ SVy; % (4.E19)
 
 
-% SHy     = (PHy1+PHy2 .* DFz) .* LHY + PHy3 .* GAMMAy; %38,  (%55)
+% SHy     = (PHY1+PHY2 .* dfz) + PHY3 .* GAMMA; %38,  (%55)
 % ALPHAy  = ALPHA+SHy;  %30 (%47)
-% Cy      = PCy1 .* LCY;  %32 (%49)
-% MUy     = (PDy1+PDy2 .* DFz) .* (1.0-PDy3 .* GAMMAy.^2) .* LMUY; %34 (%51)
+% Cy      = PCY1;  %32 (%49)
+% MUy     = (PDY1+PDY2 .* dfz) .* (1.0-PDY3 .* GAMMA.^2); %34 (%51)
 % Dy      = MUy .* Fz; %33 (%50)
-% Kya = PKY1.*FZ0.*(1 + PPY1.*dpi).*(1 - PKY3.*abs(GAMMAy)).*sin(PKY4.*atan((Fz./FZ0)./((PKY2+PKY5.*GAMMAy.^2).*(1+PPY2.*dpi)))).*zeta3.*LKYBy      = KY ./ (Cy .* Dy);  %37 (%54)
-% % NOTE, PER SVEN @TNO: "SIGN(ALPHAY)"IS CORRECT AS IN DOCUMENTATION & BELOW; IT'S NOT SUPPOSED TO BE "SIGN(GAMMAY)"
-% Ey      = (PEy1+PEy2 .* DFz) .* (1.0-(PEy3+PEy4 .* GAMMAy) .* sign(ALPHAy)) .* LEY; %35 (%52)
+% KY      = PKY1 .* FZ0 .* sin(2.0 .* atan(Fz ./ (PKY2 .* FZ0))) .* (1.0-PKY3 .* abs(GAMMA)); %36 (%53)
+% By      = KY ./ (Cy .* Dy);  %37 (%54)
+% Ey      = (PEY1+PEY2 .* dfz) .* (1.0-(PEY3+PEY4 .* GAMMA) .* sign(ALPHAy)); %35 (%52)
 % % NOTE: LVY MULTIPLIES ONLY PVY1&2 IN DOCUMENTATION; ORIG VERSION MULT ALL TERMS
-% SVy     = Fz .* ((PVy1+PVy2 .* DFz) .* LVY+(PVy3+PVy4 .* DFz) .* GAMMAy) .* LMUY; %39 (%56)
+% SVy     = Fz .* ((PVY1+PVY2 .* dfz)+(PVY3+PVY4 .* dfz) .* GAMMA); %39 (%56)
 % Fy0     = Dy .* sin(Cy .* atan(By .* ALPHAy-Ey .* (By .* ALPHAy-atan(By .* ALPHAy))))+SVy; %29 (%46)
 % Fy      = Fy0; %28
-% Fy = Fy
