@@ -22,11 +22,15 @@ global grip
         IA_f_out = -twf*sin(phif)*12/2*IA_gainf + IA_0f + KPIf*(1-cos(delta)) - casterf*sin(delta) + phif;
         IA_r_in = -twr*sin(phir)*12/2*IA_gainr - IA_0r - KPIr*(1-cos(deltar)) - casterf*sin(deltar) +phir;
         IA_r_out = -twr*sin(phir)*12/2*IA_gainr + IA_0r + KPIr*(1-cos(deltar)) - casterf*sin(deltar) + phir; 
-        % calculate yaw rate
+
+
+%         calculate yaw rate
         r = A_y/V;
-        % from yaw, sideslip and steer you can get slip angles
+%         from yaw, sideslip and steer you can get slip angles
         a_f = beta+a*r/V-delta;
         a_r = beta-b*r/V;
+
+
         % with slip angles, load and camber, calculate lateral force at
         % the front
         F_fin = -MF52_Fy_fcn(A,[-rad2deg(a_f) wfin -rad2deg(IA_f_in)])*sf_y*cos(delta);
@@ -37,8 +41,10 @@ global grip
         % drag
         rscale = 1-(F_x/W/fnval(grip,V))^2;
         % now calculate rear tire forces, with said penalty
-        F_rin = -MF52_Fy_fcn(A,[-rad2deg(a_r) wrin -rad2deg(IA_r_in)])*sf_y*rscale;
-        F_rout = MF52_Fy_fcn(A,[rad2deg(a_r) wrout -rad2deg(IA_r_out)])*sf_y*rscale;
+%         F_rin = -MF52_Fy_fcn(A,[-rad2deg(a_r) wrin -rad2deg(IA_r_in)])*sf_y*rscale;
+%         F_rout = MF52_Fy_fcn(A,[rad2deg(a_r) wrout -rad2deg(IA_r_out)])*sf_y*rscale;
+        F_rin = -MF52_Fy_fcn(A,[-rad2deg(a_r) wrin -rad2deg(IA_r_in)])*sf_y;
+        F_rout = MF52_Fy_fcn(A,[rad2deg(a_r) wrout -rad2deg(IA_r_out)])*sf_y;
         % sum of forces and moments
         F_y = F_fin+F_fout+F_rin+F_rout;
         M_z_diff = F_x*T_lock*twr/2;       
