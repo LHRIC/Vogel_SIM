@@ -1,15 +1,14 @@
 clear all
 % clc
-close all
 % Vechicle Paramaters
 
 %% Section 1: Vehicle Architecture
 disp('Loading Vehicle Characteristics')
 % These are the basic vehicle architecture primary inputs:
-LLTD = 20; % Front lateral load transfer distribution (%)
+LLTD = 51.5; % Front lateral load transfer distribution (%)
 W = 650; % vehicle + driver weight (lbs)
-WDF = 55; % front weight distribution (%)
-cg = 12.5/12; % center of gravity height (ft)
+WDF = 45; % front weight distribution (%)
+cg = 50/12; % center of gravity height (ft)
 l = 60.63/12; % wheelbase (ft)
 twf = 50.5/12; % front track width (ft)
 twr = 48.5/12; % rear track width (ft)

@@ -95,7 +95,7 @@ disp('Generating g-g-V Diagram')
 deltar = 0;
 deltaf = 0;
 velocity = 15:5:100; % range of velocities at which sim will evaluate (ft/s)
-radii = [10:10:155]; % range of turn radii at which sim will evaluate (ft)
+radii = [15:5:115]; % range of turn radii at which sim will evaluate (ft)
 
 % First we will evaluate our Acceleration Capacity
 g = 1; % g is a gear indicator, and it will start at 1
@@ -237,15 +237,15 @@ for turn = 1:1:length(radii)
         % minimizing function
         lb = [0 -.2 .5];
         ub = [.5 .2 2];
-        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-10);
-        x = lsqnonlin(fun, x0,lb,ub,opts)
+        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-16,Display="none");
+        x = lsqnonlin(fun, x0,lb,ub,opts);
         % output from minimizing
         delta = x(1);
         beta = x(2);
         AYP = x(3);
-        deltaTest(turn) = rad2deg(delta)
-        betaTest(turn) = rad2deg(beta)
-        AYPTest(turn) = AYP
+        deltaTest(turn) = rad2deg(delta);
+        betaTest(turn) = rad2deg(beta);
+        AYPTest(turn) = AYP;
         % recalculate values with optimized delta, beta, and AYP
         % update speed and downforce
         V = sqrt(R*32.2*AYP);
@@ -274,6 +274,10 @@ for turn = 1:1:length(radii)
         wfout = wf+WTF;
         wrin = wr-WTR;
         wrout = wr+WTR;
+        wfin1(turn) = wf-WTF;
+        wfout1(turn) = wf+WTF;
+        wrin1(turn) = wr-WTR;
+        wrout1(turn) = wr+WTR;
         % update individual wheel camber (from roll, then from steer
         % effects)
         IA_f_in = -twf*sin(phif)*12/2*IA_gainf - IA_0f - KPIf*(1-cos(delta)) - casterf*sin(delta) +phif;
@@ -292,7 +296,9 @@ for turn = 1:1:length(radii)
         % before you calculate the rears, you ned to see what the diff is
         % doing
         % calculate the drag from aero and the front tires
-        F_x = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta); 
+        f_xTest(turn) = (F_fin+F_fout)*sin(delta)/cos(delta);
+        f_xplt(turn) = (F_fin+F_fout)*sin(delta)/cos(delta)/110;
+        F_x = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta);
         % calculate the grip penalty assuming the rears must overcome that
         % drag
         rscale = 1-(F_x/W/fnval(grip,V))^2; % Comes from traction circle
@@ -314,9 +320,27 @@ for turn = 1:1:length(radii)
         skid = 2*pi*R/V;
         steering(turn) = steer;
         speed(turn) = V;
-        lateralg(turn) = AY/32.2 
+        lateralg(turn) = AY/32.2 ;
 end
+lateralg
+wfin1
+wfout1
+wrin1
+wfout1
+velocity_y = lateralg.*32.2.*radii;
+velocity_y = sqrt(velocity_y);
+figure(1)
+plot(velocity_y,f_xplt,'o')
+hold on
+plot(velocity_y,lateralg,'o')
+hold on
+lateral = csaps(velocity_y,lateralg);
+fnplt(lateral)
+figure(2)
 
+plot(velocity_y,wfin1,'m',velocity_y,wfout1,'c',velocity_y, wrin1,'b',velocity_y,wrout1,'g')
+legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+grid on
 % Braking Performance
 velocity = 15:5:100;
 disp('     Braking Envelope')

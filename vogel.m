@@ -49,5 +49,6 @@ global grip
         M_z = M_z;
         slipAngle = a_f-deg2rad(-12);
         diff_AY =A_y-AY;
-        output = [M_z slipAngle diff_AY]
+        output = [M_z slipAngle diff_AY];
+%         error = ((M_z.^2) + (slipAngle.^2) + (diff_AY.^2))
 end
