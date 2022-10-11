@@ -1,0 +1,11 @@
+clear variables
+close all
+clc
+
+track = readtable('circle_tracktestpoints.xlsx');
+pathpoints = [track.X, track.Y];
+x = linspace(1,height(track)-1,1000);
+ppv = pchip(t,path_points');
+vehicle_path = ppval(ppv,x);
+vehicle_path_EN = vehicle_path;
+Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
