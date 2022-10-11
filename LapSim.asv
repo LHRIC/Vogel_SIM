@@ -4,7 +4,7 @@ function [output]=LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r,pg, WRF, WRR,
 % them global so that all the other functions can access them
 global r_max accel grip deccel lateral cornering gear shift_points...
     top_speed r_min path_boundaries tire_radius shift_time...
-    powertrainpackage track_width path_boundaries_ax
+    powertrainpackage track_width path_boundaries_ax OptimParameterSet
 %% Section 1: Input Tire Model
 % this section is required, everything should be pre-loaded so no need to
 % touch any of this, unless you want to change the tire being evaluated.
@@ -13,6 +13,8 @@ global r_max accel grip deccel lateral cornering gear shift_points...
 %disp('2019 Michigan Endurance Points Analysis')
 %disp('Loading Tire Model')
 
+
+
 global FZ0
 FZ0 = 179.847; %Tire nominal load
 % then load in coefficients for Magic Formula 5.2 Tire Model:
@@ -20,6 +22,7 @@ load("2022_Lateral_Coeff_B2356run4.mat")
 % Next you load in the longitudinal tire model
 % find your pathname and filename for the tire you want to load in
 load("Longitudinal_Coeff_UNSCALED.mat")
+load("Lateral_Tire-Model_Optim_Params.mat")
 tire_radius = 8/12; %ft
 tyreRadius = tire_radius/3.28; % converts to meters
 
@@ -91,12 +94,11 @@ CoP = CoP/100;
 % for any given speed
 
 disp('Generating g-g-V Diagram')
-
 deltar = 0;
 deltaf = 0;
 velocity = 15:5:100; % range of velocities at which sim will evaluate (ft/s)
-radii = [15:5:115]; % range of turn radii at which sim will evaluate (ft)
-
+% radii = [10:5:120]; % range of turn radii at which sim will evaluate (ft)
+radii = 80
 % First we will evaluate our Acceleration Capacity
 g = 1; % g is a gear indicator, and it will start at 1
 spcount = 1; % spcount is keeping track of how many gearshifts there are
@@ -200,7 +202,9 @@ accel = csaps(velocity,A_Xr);
 grip = csaps(velocity,A_xr);
 
 AYP = .5;
+cg = (10:1:15)/12;
 
+for i = 1:length(cg)
 for turn = 1:1:length(radii)
     % first define your vehicle characteristics:
         a = l*(1-WDF);
@@ -237,15 +241,15 @@ for turn = 1:1:length(radii)
         % minimizing function
         lb = [0 -.2 .5];
         ub = [.5 .2 2];
-        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-16);
-        x = lsqnonlin(fun, x0,lb,ub,opts)
+        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-16,Display="none");
+        x = lsqnonlin(fun, x0,lb,ub,opts);
         % output from minimizing
         delta = x(1);
         beta = x(2);
         AYP = x(3);
-        deltaTest(turn) = rad2deg(delta)
-        betaTest(turn) = rad2deg(beta)
-        AYPTest(turn) = AYP
+        deltaTest(turn) = rad2deg(delta);
+        betaTest(turn) = rad2deg(beta);
+        AYPTest(turn) = AYP;
         % recalculate values with optimized delta, beta, and AYP
         % update speed and downforce
         V = sqrt(R*32.2*AYP);
@@ -274,10 +278,10 @@ for turn = 1:1:length(radii)
         wfout = wf+WTF;
         wrin = wr-WTR;
         wrout = wr+WTR;
-        wfin1 = wf-WTF;
-        wfout1 = wf+WTF;
-        wrin1 = wr-WTR;
-        wrout1(turn) = wr+WTR;
+%         wfin1(turn) = wf-WTF;
+%         wfout1(turn) = wf+WTF;
+%         wrin1(turn) = wr-WTR;
+%         wrout1(turn) = wr+WTR;
         % update individual wheel camber (from roll, then from steer
         % effects)
         IA_f_in = -twf*sin(phif)*12/2*IA_gainf - IA_0f - KPIf*(1-cos(delta)) - casterf*sin(delta) +phif;
@@ -296,7 +300,7 @@ for turn = 1:1:length(radii)
         % before you calculate the rears, you ned to see what the diff is
         % doing
         % calculate the drag from aero and the front tires
-        f_xTest(turn) = (F_fin+F_fout)*sin(delta)/cos(delta)
+        f_xTest(turn) = (F_fin+F_fout)*sin(delta)/cos(delta);
         f_xplt(turn) = (F_fin+F_fout)*sin(delta)/cos(delta)/110;
         F_x = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta);
         % calculate the grip penalty assuming the rears must overcome that
@@ -307,6 +311,7 @@ for turn = 1:1:length(radii)
         F_rout = MF52_Fy_fcn(A,[rad2deg(a_r) wrout -rad2deg(IA_r_out)])*sf_y*rscale;
         % sum of forces and moments
         F_y = F_fin+F_fout+F_rin+F_rout;
+        F_yCount = F_y
         M_z_diff = F_x*T_lock*twr/2; % incl the differential contribution %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
         M_z = (F_fin+F_fout)*a-(F_rin+F_rout)*b-M_z_diff;
         % calculate resultant lateral acceleration
@@ -320,8 +325,19 @@ for turn = 1:1:length(radii)
         skid = 2*pi*R/V;
         steering(turn) = steer;
         speed(turn) = V;
-        lateralg(turn) = AY/32.2 
+        lateralg(turn) = AY/32.2 ;
 end
+end
+
+plot(cg,F_yCount,'r')
+
+
+
+lateralg
+wfin1;
+wfout1;
+wrin1;
+wfout1;
 velocity_y = lateralg.*32.2.*radii;
 velocity_y = sqrt(velocity_y);
 figure(1)
@@ -331,6 +347,14 @@ plot(velocity_y,lateralg,'o')
 hold on
 lateral = csaps(velocity_y,lateralg);
 fnplt(lateral)
+grid on 
+grid minor
+hold off
+
+figure(2)
+plot(velocity_y,wfin1,'m',velocity_y,wfout1,'c',velocity_y, wrin1,'b',velocity_y,wrout1,'g')
+legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+grid on
 % Braking Performance
 velocity = 15:5:100;
 disp('     Braking Envelope')
@@ -393,6 +417,10 @@ for  i = 1:1:length(velocity)
     A_X(i) = AX;
 end
 
+
+% lateralgScaled = lateralg*.8
+% velocity_y = lateralgScaled.*32.2.*radii;
+% velocity_y = sqrt(velocity_y);
 velocity_y = lateralg.*32.2.*radii;
 velocity_y = sqrt(velocity_y);
 
@@ -409,20 +437,37 @@ velocity = 15:5:130;
 % lateral g's as a function of velocity
 lateral = csaps(velocity_y,lateralg);
 radii = velocity_y.^2./lateralg/32.2;
+% lateral = csaps(velocity_y,lateralg);
+% radii = velocity_y.^2./lateralg/32.2;
 % max velocity as a function of instantaneous turn radius
 cornering = csaps(radii,velocity_y);
+figure
+fnplt(lateral)
+hold on
+grid on
+grid minor
 figure
 tiledlayout(2,3)
 nexttile
 fnplt(grip)
+grid on
+grid minor
 nexttile
 fnplt(accel)
+grid on
+grid minor
 nexttile
 fnplt(lateral)
+grid on
+grid minor
 nexttile
 fnplt(cornering)
+grid on
+grid minor
 nexttile
 fnplt(deccel)
+grid on
+grid minor
 %% Section 7: Load Endurance Track Coordinates
 %disp('Loading Endurance Track Coordinates')
 [data text] = xlsread('Endurance_Coordinates_1.xlsx','Scaled');

@@ -8,11 +8,16 @@ disp('Loading Vehicle Characteristics')
 LLTD = 51.5; % Front lateral load transfer distribution (%)
 W = 650; % vehicle + driver weight (lbs)
 WDF = 45; % front weight distribution (%)
-cg = 50/12; % center of gravity height (ft)
+cg = 10; % center of gravity height (in)
 l = 60.63/12; % wheelbase (ft)
 twf = 50.5/12; % front track width (ft)
 twr = 48.5/12; % rear track width (ft)
 
+% W = W*0.45359237 ; % convert to Kg
+% cg = cg/39.37; % conver to m
+% l = l/3.281; % convert to m
+% twf = twf/3.281; % convert to m
+% twr = twr/3.281; % convert to m
 %% Section 2: Input Suspension Kinematics
 disp('Loading Suspension Kinematics')
 % this section is actually optional. So if you set everything to zero, you
@@ -88,26 +93,26 @@ t = tiledlayout(2, 2);
 
 nexttile
 plot(distance,velocity,'k')
-title('Endurance Simulation Velocity Trace')
+title('Endurance Simulation Velocity Trace 10')
 xlabel('Distance Travelled (d) [ft]')
 ylabel('Velocity (V) [ft/s]')
 
 nexttile
 plot(distance,acceleration,distance,lateral_accel)
-title('Endurance Simulation Acceleration Traces')
+title('Endurance Simulation Acceleration Traces 10')
 xlabel('Distance Travelled (d) [ft]')
 ylabel('Acceleration [g]')
 legend('Longitudinal','Lateral')
 
 nexttile
 plot(distance_ax,velocity_ax,'k')
-title('Autocross Simulation Velocity Trace')
+title('Autocross Simulation Velocity Trace 10')
 xlabel('Distance Travelled (d) [ft]')
 ylabel('Velocity (V) [ft/s]')
 
 nexttile
 plot(distance_ax,acceleration_ax,distance_ax,lateral_accel_ax)
-title('Autocross Simulation Acceleration Traces')
+title('Autocross Simulation Acceleration Traces 10')
 xlabel('Distance Travelled (d) [ft]')
 ylabel('Acceleration [g]')
 legend('Longitudinal','Lateral')
