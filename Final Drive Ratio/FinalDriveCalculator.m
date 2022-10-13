@@ -13,7 +13,7 @@ g = 9.8;
 
 % Engine Data Import 
     engine_torque_data = readmatrix('Engine Data');
-    engine_gear_ratio = [1/10, 2/10, 3/10, 3.5/10, 3.75/10];
+    engine_gear_ratio = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24];
 
     figure();
         plot(engine_torque_data(:,1), engine_torque_data(:,2))
