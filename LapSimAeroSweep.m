@@ -46,9 +46,9 @@ KPIr = 0; % rear kingpin inclination angle (deg)
 
 CoP = 48; % front downforce distribution (%)
 
-CLA = [-2.9:0.4:0.5] * -0.3345 * 0.03824; % Lift equation without Velocity component
+CLA = [-2.9:0.4:0.5] * -0.6125; % Lift equation without Velocity component
 
-cdOffsetM = [0:0.1:0.4] * 0.3345 * 0.03824;
+cdOffsetM = [0:0.1:0.4] * 0.6125;
 
 %% Section 4: Sim Loop
 
@@ -65,9 +65,9 @@ for j = 1:length(cdOffsetM)
 for i = 1:length(CLA)
 
     Cl = CLA(i);
-    Cd = 0.24 * Cl + (0.3 * 0.3345 * 0.03824) + cdOffset;
+    Cd = 0.24 * Cl + (0.3 * 0.6125) + cdOffset;
 
-    W = WBase + (1.85 + 357*Cl + 10721*Cl^2);
+    W = WBase + (5.38 + 24.7*Cl + 23.7*Cl^2);
 
 LapSimOutput = LapSim(LLTD, W, WDF, cg, l, twf, twr, rg_f, rg_r, pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP);
 
@@ -80,7 +80,7 @@ WeightM(k) = W;
 clear LapSimOutput
 
 fprintf('Completed iteration %.0f of %.0f.\n', k, IterTotal);
-fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (Cl / (-0.3345 * 0.03824)), (Cd / (0.3345 * 0.03824)), W, T_axismax);
+fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (Cl / (-0.6125)), (Cd / (0.6125)), W, T_axismax);
 
 k = k + 1;
 
@@ -96,11 +96,16 @@ ClaBest = ClaM(BestIndex);
 CdaBest = ClaM(BestIndex);
 WeightBest = WeightM(BestIndex);
 
+ClaRange = [ClaBEst -2 -1.5];
+CdaRange = [CdaBest 1 0.85];
+
 CoPRange = [35:5:65];
 
 IterTotalCoP = length(CoPRange);
 
 fprintf('Running %.0f iterations.\n', IterTotalCoP);
+
+for iCoP = 1:length(ClaRange)
 
 for kCoP = 1:length(CoPRange)
     
@@ -114,7 +119,7 @@ for kCoP = 1:length(CoPRange)
     clear LapSimOutput
 
     fprintf('Completed iteration %.0f of %.0f.\n', kCoP, IterTotalCoP);
-    fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (ClaBest / (-0.3345 * 0.03824)), (CdaBest / (0.3345 * 0.03824)), W, T_axismax);
+    fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (ClaBest / (-0.6125)), (CdaBest / (0.6125)), W, T_axismax);
 
 end
 
@@ -145,7 +150,7 @@ for iCoPG = 1:length(CoPRange)
     clear LapSimOutput
 
     fprintf('Completed iteration %.0f of %.0f.\n', kCoPCG, IterTotalCoPCG);
-    fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (ClaBest / (-0.3345 * 0.03824)), (CdaBest / (0.3345 * 0.03824)), W, T_axismax);
+    fprintf('Config with CLA of %.2f, CDA of %.2f, and weight of %.2f resulted with a time of %.2f seconds.\n', (ClaBest / (-0.6125)), (CdaBest / (0.6125)), W, T_axismax);
 
     kCoPCG = kCoPCG + 1;
 
@@ -168,10 +173,10 @@ ylin = linspace(min(CdaM), max(CdaM), 100);
 [X,Y] = meshgrid(xlin, ylin);
 Z = griddata(ClaM,CdaM,TimeM,X,Y,'v4');
 [dfdx, dfdy] = gradient(Z);
-s = mesh(X/(-0.3345 * 0.03824),Y/(0.3345 * 0.03824),Z, sqrt(dfdx.^2 + dfdy.^2));
+s = mesh(X/(-0.6125),Y/(0.6125),Z, sqrt(dfdx.^2 + dfdy.^2));
 colormap(turbo);
 axis tight; hold on
-plot3(ClaM/(-0.3345 * 0.03824),CdaM/(0.3345 * 0.03824),TimeM,'m.','MarkerSize',5)
+plot3(ClaM/(-0.6125),CdaM/(0.6125),TimeM,'m.','MarkerSize',5)
 s.FaceColor = 'interp';
 s.EdgeColor = 'none';
 title('CL-CD-Laptime');
@@ -190,10 +195,10 @@ ylinAX = linspace(min(CdaM), max(CdaM), 100);
 [XAX,YAX] = meshgrid(xlinAX, ylinAX);
 ZAX = griddata(ClaM,CdaM,TimeMAX,XAX,YAX,'v4');
 [dfdxAX, dfdyAX] = gradient(ZAX);
-s = mesh(XAX/(-0.3345 * 0.03824),YAX/(0.3345 * 0.03824),ZAX, sqrt(dfdxAX.^2 + dfdyAX.^2));
+s = mesh(XAX/(-0.6125),YAX/(0.6125),ZAX, sqrt(dfdxAX.^2 + dfdyAX.^2));
 colormap(turbo);
 axis tight; hold on
-plot3(ClaM/(-0.3345 * 0.03824),CdaM/(0.3345 * 0.03824),TimeMAX,'m.','MarkerSize',5)
+plot3(ClaM/(-0.6125),CdaM/(0.6125),TimeMAX,'m.','MarkerSize',5)
 s.FaceColor = 'interp';
 s.EdgeColor = 'none';
 title('CL-CD-Laptime');
