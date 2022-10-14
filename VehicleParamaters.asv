@@ -8,7 +8,7 @@ disp('Loading Vehicle Characteristics')
 LLTD = .515; % Front lateral load transfer distribution (%)
 W = 650; % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
-cg = 13.5; % center of gravity height (in)
+cg = 12.5; % center of gravity height (in)
 L = 60.63/12; % wheelbase (ft)
 twf = 50.5/12; % front track width (ft)
 twr = 48.5/12; % rear track width (ft)
@@ -54,36 +54,13 @@ Cd = .0184*47.8802589804; % .024
 CoP = .48; % front downforce distribution 
 %% Run simulation
 
+cgLinspace = linspace(9,15,3)
+
+for i = 1:length(cgLinspace)
 
 LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
     IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
     casterr, KPIr, Cl, Cd, CoP);
-
-
-
-CG = linspace(9,15,3);
-
-% for i = 1:length(CG)
-% 
-%     cg = CG(i);
-% 
-% LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
-%     IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-%     casterr, KPIr, Cl, Cd, CoP);
-% 
-% distance(i) = LapSimOutput.distance;
-% velocity(i) = LapSimOutput.velocity;
-% acceleration(i) = LapSimOutput.acceleration;
-% lateral_accel(i) = LapSimOutput.lateral_accel;
-% Endurance_time(i) = LapSimOutput.laptime;
-% Accel_time(i) = LapSimOutput.accel_time;
-% Endurance_score(i) = LapSimOutput.Endurance_Score;
-% Accel_score(i) = LapSimOutput.Accel_Score;
-% Skidpad_score(i) = LapSimOutput.Skidpad_Score;
-% 
-% end
-% 
-% plot(CG,Endurance_time,'r')
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
@@ -94,6 +71,8 @@ Accel_time = LapSimOutput.accel_time;
 Endurance_score = LapSimOutput.Endurance_Score;
 Accel_score = LapSimOutput.Accel_Score;
 Skidpad_score = LapSimOutput.Skidpad_Score;
+
+end
 
 X = [' Endurance time: ',num2str(Endurance_time)];
 disp(X)

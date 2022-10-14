@@ -396,27 +396,33 @@ cornering = polyfit(radii,velocity_y,3);
 
 
 figure
-tiledlayout(2,3)
+t = tiledlayout(2,3);
+title(t, "CG Height: " + cg + "m ("+ cg*39.37 +" inches)")
 nexttile
 range = linspace(4.5,30);
 plot(velocity,A_xr,'o',range,polyval(grip,range))
+title('Tire limited and Grip limited Acceleration vs Velocity')
 grid on
 grid minor
 hold on
 fnplt(accel)
+legend('Tire Limited','Grip Limited')
 nexttile
 plot(velocity,A_X,'o',range,polyval(deccel,range))
+title('Braking Acceleration vs Velocity')
 grid on
 grid minor
 nexttile
 range = linspace(4.5,velocity_y(end));
 plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
+title('Lateral Acceleration vs Velocity')
 hold on
 grid on
 grid minor
 nexttile
 range = linspace(3.5,radii(end));
 plot(radii,velocity_y,'o',range,polyval(cornering,range))
+title('Lateral Acceleration vs Radius')
 grid on
 grid minor
 
