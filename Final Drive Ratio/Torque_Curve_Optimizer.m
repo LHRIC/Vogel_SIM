@@ -1,7 +1,7 @@
-function [t] = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,distance)
+function [t] = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,distance, plot_data)
 
     % combined_engine_acc_vel = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,75);
-    engine_acc_vel = Gear_Acc_Vel_Curves(engine_acc_vel, engine_gear_ratio, final_drive_ratio);
+    engine_acc_vel = Gear_Acc_Vel_Curves(engine_acc_vel, engine_gear_ratio, final_drive_ratio, plot_data);
     
     % lienarize and combine domains for every gear ratio
     combined_engine_acc_vel = [];
@@ -33,7 +33,7 @@ function [t] = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_dri
             [min_val, min_I] = min(abs(diff));  % finds the index and value of minimum difference
     
             if min_val == 0 % intersection criteria
-                disp("INTERSECTION")
+%                 disp("INTERSECTION")
                 x0Int = x0I(1) + min_I; % finds index of intersection in gear i-1 domain
                 xqInt = xqI(1) + min_I; % finds index of intersection in gear i domain
                 
@@ -43,7 +43,7 @@ function [t] = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_dri
     
             else % intersection does not occur
                 
-                disp("NO INTERSECTION")
+%                 disp("NO INTERSECTION")
                 
                 % Combines gear i and i-1 data at redline. Trims left side of
                 % gear i-1
@@ -52,11 +52,13 @@ function [t] = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_dri
         end
     end 
     
-    figure();
-        plot(combined_engine_acc_vel(:,1), combined_engine_acc_vel(:,2))
-        title("Ideal Acceleration Curve ")
-        xlabel("Velocity (m/s)")
-        ylabel("Acceleration (m/s^2)")
+    if plot_data
+        figure();
+            plot(combined_engine_acc_vel(:,1), combined_engine_acc_vel(:,2))
+            title("Ideal Acceleration Curve ")
+            xlabel("Velocity (m/s)")
+            ylabel("Acceleration (m/s^2)")
+    end 
     
     % Distance/Velocity calculation
     distance_velocity_curve = cumtrapz(combined_engine_acc_vel(:,1),combined_engine_acc_vel(:,1)./combined_engine_acc_vel(:,2));
@@ -78,24 +80,25 @@ function [t] = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_dri
     time_distance_curve = [distance_velocity_curve.', time_velocity_curve.'];
 
     % Curve plotting
-    figure();
-        plot(xq, distance_velocity_curve)
-        title("Distance/Speed Curve")
-        xlabel("Velocity (m/s)")
-        ylabel("Distance (m)")
-
-    figure();
-        plot(xq, time_velocity_curve)
-        title("Time/Speed Curve")
-        xlabel("Velocity (m/s)")
-        ylabel("Time (s)")
-
-     figure();
-        plot(time_distance_curve(:,1), time_distance_curve(:,2))
-        title("Time/Distance Curve")
-        xlabel("Distance (m)")
-        ylabel("Time (s)")
-
+    if plot_data
+        figure();
+            plot(xq, distance_velocity_curve)
+            title("Distance/Speed Curve")
+            xlabel("Velocity (m/s)")
+            ylabel("Distance (m)")
+    
+        figure();
+            plot(xq, time_velocity_curve)
+            title("Time/Speed Curve")
+            xlabel("Velocity (m/s)")
+            ylabel("Time (s)")
+    
+         figure();
+            plot(time_distance_curve(:,1), time_distance_curve(:,2))
+            title("Time/Distance Curve")
+            xlabel("Distance (m)")
+            ylabel("Time (s)")
+    end 
     % Distance time search 
     [~, minI] = min(abs(time_distance_curve(:,1)-distance));
     t = time_distance_curve(minI,2);
