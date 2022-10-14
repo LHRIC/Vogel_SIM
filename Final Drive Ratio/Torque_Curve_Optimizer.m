@@ -1,85 +1,62 @@
-function [t] = Torque_Curve_Optimizer(engine_acc_vel,acc_max, engine_gear_ratio,final_drive_ratio,distance, plot_data)
+function [t] = Torque_Curve_Optimizer(engine_data,f_max, effective_mass, engine_gear_ratio, final_drive_ratio, distance, plot_data)
 
     % combined_engine_acc_vel = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,75);
-    engine_acc_vel = Gear_Acc_Vel_Curves(engine_acc_vel, engine_gear_ratio, final_drive_ratio, plot_data);
+    engine_data = Gear_Curves(engine_data, engine_gear_ratio, final_drive_ratio, plot_data);
     
     % lienarize and combine domains for every gear ratio
-    combined_engine_acc_vel = [];
+    combined_engine_data = [];
     
     for i = 1:length(engine_gear_ratio)
-    
-        % Re-fits acc/vel data for gear i to the closest integer domain with a constant step size
-        x = engine_acc_vel(:, 2*i-1); y = engine_acc_vel(:,2*i); % pulls data for gear i
-        xq = ceil(x(1)):1:floor(x(end)); % new domain with step 1
-        p = pchip(x, y, xq); % interpolates data for gear i over new domain
-        
-        % transposes two data sets 
-        xq = xq.'; p = p.';
-        
+
         % fist iteration check
         if i == 1
-            combined_engine_acc_vel = [xq, p];
+            % Re-fits acc/vel data for gear i to the closest integer domain with a constant step size
+            x = engine_data(:, 2*i-1); y = engine_data(:,2*i); % pulls data for gear i
+            xq = ceil(x(1)):0.1:floor(x(end)); % new domain with step 1
+            p = pchip(x, y, xq); % interpolates data for gear i over new domain
+            
+            % transposes two data sets 
+            xq = xq.'; p = p.';
+
+            combined_engine_data = [xq, p];
         else
             
-            % Checks for intersection between acc/vel curves for gears i, i-1
-            x0 = combined_engine_acc_vel(:,1); y0 = combined_engine_acc_vel(:,2); % gear i-1 data
-            int = intersect(x0,xq); % find intersection of gear domains (velocity both gears can use)
-            
-            xqI = [find(xq==int(1)),find(xq==int(end))]; % index range of intersection in gear i domain
-            x0I = [find(x0==int(1)), find(x0==int(end))]; % index range of intersection in gear i-1 domain
-            
-            diff = y0(x0I(1):x0I(end) - p(xqI(1):xqI(end))); % difference between both curves (old - new)
-    
-            [min_val, min_I] = min(abs(diff));  % finds the index and value of minimum difference
-    
-            if min_val == 0 % intersection criteria
-%                 disp("INTERSECTION")
-                x0Int = x0I(1) + min_I; % finds index of intersection in gear i-1 domain
-                xqInt = xqI(1) + min_I; % finds index of intersection in gear i domain
-                
-                % Combines gear i and i-1 data at intersection. Trims right
-                % side of gear i and left side of gear i-1
-                combined_engine_acc_vel = [combined_engine_acc_vel(1:x0Int,:); [xq(xqInt:end), p(xqInt:end)]];
-    
-            else % intersection does not occur
-                
-%                 disp("NO INTERSECTION")
-                
-                % Combines gear i and i-1 data at redline. Trims left side of
-                % gear i-1
-                combined_engine_acc_vel = [combined_engine_acc_vel; [xq(xqI(2)+1:end), p(xqI(2)+1:end)]];
-            end
+            gear_i_data = engine_data(:,2*i-1:2*i);
+            combined_engine_data = CurveIntersect(combined_engine_data, gear_i_data);
         end
     end 
     
      % flattens curve to take into account tractive limits 
-    for i = 1:length(combined_engine_acc_vel(:,2))
-        if combined_engine_acc_vel(i,2) > acc_max
-            combined_engine_acc_vel(i,2) = acc_max;
+    for i = 1:length(combined_engine_data(:,2))
+        if combined_engine_data(i,2) > f_max
+            combined_engine_data(i,2) = f_max;
         end 
     end 
 
     if plot_data
         figure();
-            plot(combined_engine_acc_vel(:,1), combined_engine_acc_vel(:,2))
+            plot(combined_engine_data(:,1), combined_engine_data(:,2))
             title("Ideal Acceleration Curve ")
             xlabel("Velocity (m/s)")
-            ylabel("Acceleration (m/s^2)")
+            ylabel("Motive Force (N)")
     end 
     
+    % Converts motive force to acceleration
+    combined_engine_data(:,2) = combined_engine_data(:,2)./effective_mass;
+
     % Distance/Velocity calculation
-    distance_velocity_curve = cumtrapz(combined_engine_acc_vel(:,1),combined_engine_acc_vel(:,1)./combined_engine_acc_vel(:,2));
+    distance_velocity_curve = cumtrapz(combined_engine_data(:,1),combined_engine_data(:,1)./combined_engine_data(:,2));
 
     % Re-fits dis/vel data for to the closest integer domain with a constant step size
-    x = combined_engine_acc_vel(:,1); y = distance_velocity_curve; % pulls data for curve
+    x = combined_engine_data(:,1); y = distance_velocity_curve; % pulls data for curve
     xq = ceil(x(1)):0.1:floor(x(end)); % new domain with step 0.1
     distance_velocity_curve = pchip(x, y, xq); % interpolates data over new domain
     
     % Time/Velocity calculation
-    time_velocity_curve = cumtrapz(combined_engine_acc_vel(:,1), 1./combined_engine_acc_vel(:,2));
+    time_velocity_curve = cumtrapz(combined_engine_data(:,1), 1./combined_engine_data(:,2));
     
     % Re-fits dis/vel data for to the closest integer domain with a constant step size
-    x = combined_engine_acc_vel(:,1); y = time_velocity_curve; % pulls data for curve
+    x = combined_engine_data(:,1); y = time_velocity_curve; % pulls data for curve
     xq = ceil(x(1)):0.1:floor(x(end)); % new domain with step 0.1
     time_velocity_curve = pchip(x, y, xq); % interpolates data over new domain
 

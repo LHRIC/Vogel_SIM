@@ -10,11 +10,12 @@ g = 9.81;
 % Vehicle Specs
 Rt = 0.2032; % wheel radius
 redline = 12000; % desired maximum rpm
-acc_max = 100;
+f_max = 12000;
+drag_coeff = 1.2923; % N/(m/s)^2
 
 % Engine Data 
 engine_torque_data = readmatrix('Inline_Torque.csv');
-engine_primary_reduction = 1;
+engine_primary_reduction = 2.11;
 engine_gear_ratio = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24];
 
 % Plots Engine Data
@@ -39,14 +40,14 @@ redline_I = find(engine_torque_data(:,1)>redline);
 engine_torque_data = engine_torque_data(1:redline_I(1),:);
 
 % Data conversion factors
-rpm_mps = (2*pi()*Rt)/60; % rpm to m/s
-Nm_mps2 = 1/(Rt*effective_mass); % Nm to m/s2
+rpm_conv = (2*pi()*Rt)/60; % rpm to m/s
+Nm_conv = 1/(Rt); % Nm to N
 
 % Converts engine torque data to acceleration(m/s2) / velocity(m/s) 
-engine_acc_vel = [engine_torque_data(:,1)*rpm_mps, engine_torque_data(:,2)*Nm_mps2];
+engine_force_vel = [engine_torque_data(:,1)*rpm_conv, engine_torque_data(:,2)*Nm_conv];
 
 % Declare
-time_calc = @(FDr) Torque_Curve_Optimizer(engine_acc_vel, acc_max, engine_gear_ratio, FDr, 75, false);
+time_calc = @(FDr) Torque_Curve_Optimizer(engine_force_vel, f_max, effective_mass, engine_gear_ratio, FDr, 75, false);
 
 % DONT QUESTION THIS, I'm too dumb to debug why fminsearch is not working and this is my solution
 times = [];
@@ -69,11 +70,8 @@ figure();
     xlabel("Final Drive Ratio")
     ylabel("75m Drag Time")
 
-[~,min_I] = min(times);
-final_drive_ratio = i_range(min_I);
-
 disp("75m drag time:")
-disp(Torque_Curve_Optimizer(engine_acc_vel, acc_max, engine_gear_ratio, final_drive_ratio, 75, true))
+disp(Torque_Curve_Optimizer(engine_force_vel, f_max, effective_mass, engine_gear_ratio, final_drive_ratio, 75, true))
 
 disp("Final Drive Ratio:")
 disp(final_drive_ratio)
