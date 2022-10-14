@@ -69,12 +69,12 @@ end
 %     dd = d/interval;
 %     for j = 1:1:interval
 %         count = count-1;
-%         ay_r(count) = vel^2/(r*32.2);
+%         ay_r(count) = vel^2/(r*9.81);
 %         if vel < vmax
 %             ax_r(count) = AX*(1-(min(AY,ay_r(count))/AY)^2);
-%             tt = roots([0.5*32.2*ax_r(count) vel -dd]);
+%             tt = roots([0.5*9.81*ax_r(count) vel -dd]);
 %             dt_r(count) = max(tt);
-%             dv = 32.2*ax_r(count)*dt_r(count);
+%             dv = 9.81*ax_r(count)*dt_r(count);
 %             dvmax = vmax-vel;
 %             dv_r(count) = min(dv,dvmax);
 %             v_r(count) = vel+dv_r(count); 
@@ -93,7 +93,7 @@ end
 %% Initiate forward sim
 
 count = 0;
-    v = 30;
+    v = 30*.3048;
     vel = v;
     gears = find((shift_points-vel)>0);
     gear = gears(1)-1;
@@ -123,7 +123,7 @@ for i = 1:1:length(segment)
     for j = 1:1:interval
         count = count+1;
         vehicle_gear(count) = gear;
-        ay_f(count) = vel^2/(r*32.2);
+        ay_f(count) = vel^2/(r*9.81);
         if shifting == 1 & vel < vmax;
             dt_f(count) = dd/vel;
             time_shifting = time_shifting+dt_f(count);
@@ -133,9 +133,9 @@ for i = 1:1:length(segment)
             vel = vel;
         elseif vel < vmax
             ax_f(count) = AX*(1-(min(AY,ay_f(count))/AY)^2);
-            tt = roots([0.5*32.2*ax_f(count) vel -dd]);
+            tt = roots([0.5*9.81*ax_f(count) vel -dd]);
             dt_f(count) = max(tt);
-            dv = 32.2*ax_f(count)*dt_f(count);
+            dv = 9.81*ax_f(count)*dt_f(count);
             dvmax = vmax-vel;
             dv_f(count) = min(dv,dvmax);
             v_f(count) = vel+dv_f(count); 
@@ -193,12 +193,12 @@ for i = length(segment):-1:1
     dd = d/interval;
     for j = 1:1:interval
         count = count-1;
-        ay_r(count) = vel^2/(r*32.2);
+        ay_r(count) = vel^2/(r*9.81);
         if vel < vmax
             ax_r(count) = AX*(1-(min(AY,ay_r(count))/AY)^2);
-            tt = roots([0.5*32.2*ax_r(count) vel -dd]);
+            tt = roots([0.5*9.81*ax_r(count) vel -dd]);
             dt_r(count) = max(tt);
-            dv = 32.2*ax_r(count)*dt_r(count);
+            dv = 9.81*ax_r(count)*dt_r(count);
             dvmax = vmax-vel;
             dv_r(count) = min(dv,dvmax);
             v_r(count) = vel+dv_r(count); 
@@ -248,7 +248,7 @@ end
 %     for j = 1:1:interval
 %         count = count+1;
 %         vehicle_gear(count) = gear;
-%         ay_f(count) = vel^2/(r*32.2);
+%         ay_f(count) = vel^2/(r*9.81);
 %         if shifting == 1 & vel < vmax;
 %             dt_f(count) = dd/vel;
 %             time_shifting = time_shifting+dt_f(count);
@@ -258,9 +258,9 @@ end
 %             vel = vel;
 %         elseif vel < vmax
 %             ax_f(count) = AX*(1-(min(AY,ay_f(count))/AY)^2);
-%             tt = roots([0.5*32.2*ax_f(count) vel -dd]);
+%             tt = roots([0.5*9.81*ax_f(count) vel -dd]);
 %             dt_f(count) = max(tt);
-%             dv = 32.2*ax_f(count)*dt_f(count);
+%             dv = 9.81*ax_f(count)*dt_f(count);
 %             dvmax = vmax-vel;
 %             dv_f(count) = min(dv,dvmax);
 %             v_f(count) = vel+dv_f(count); 
@@ -314,8 +314,8 @@ for i = 1:1:length(VD)
     t_elapsed = t_elapsed+dtime(i);
     time_elapsed(i) = t_elapsed;
 end
-AY_outlier = find(lateral_accel > fnval(lateral,116));
-lateral_accel(AY_outlier) = fnval(lateral,116);
+AY_outlier = find(lateral_accel > fnval(lateral,116*.3048));
+lateral_accel(AY_outlier) = fnval(lateral,116*.3048);
 throttle = 0;
 brake = 0;
 corner = 0;

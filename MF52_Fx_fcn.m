@@ -1,15 +1,14 @@
 function Fx = MF52_Fx_fcn(Bx,X,SL)
-% This function completes the MF5.2 Fitting of tire data provided by the
+% This function completes the MF6.2 Fitting of tire data provided by the
 % Tire Testing Consortium
 % This function is Longitudinal cases only
-% Thit tire model is METRIC
+% This tire model is METRIC
 
 global FZ0
     
 Fz = abs(X(:,1));
-Fz = Fz;
 
-GAMMAx  =  X(:,2)*pi/180;
+GAMMAx  =  X(:,2);
 
 
 GAMMAx = GAMMAx;
