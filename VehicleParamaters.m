@@ -61,29 +61,25 @@ LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ..
 
 
 
-CG = linspace(9,15,3);
+CG = linspace(9,13.5,20)/39.37;
 
-% for i = 1:length(CG)
-% 
-%     cg = CG(i);
-% 
-% LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
-%     IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-%     casterr, KPIr, Cl, Cd, CoP);
-% 
-% distance(i) = LapSimOutput.distance;
-% velocity(i) = LapSimOutput.velocity;
-% acceleration(i) = LapSimOutput.acceleration;
-% lateral_accel(i) = LapSimOutput.lateral_accel;
-% Endurance_time(i) = LapSimOutput.laptime;
-% Accel_time(i) = LapSimOutput.accel_time;
-% Endurance_score(i) = LapSimOutput.Endurance_Score;
-% Accel_score(i) = LapSimOutput.Accel_Score;
-% Skidpad_score(i) = LapSimOutput.Skidpad_Score;
-% 
-% end
-% 
-% plot(CG,Endurance_time,'r')
+for i = 1:length(CG)
+
+    cg = CG(i);
+
+LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+    IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
+    casterr, KPIr, Cl, Cd, CoP);
+
+Endurance_time(i) = LapSimOutput.laptime;
+
+end
+
+plot(CG*39.37,Endurance_time,'r')
+title('CG sensitivity')
+legend('CG height','Endurance laptime')
+grid on
+grid minor
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;

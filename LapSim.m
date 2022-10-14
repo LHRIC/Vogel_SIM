@@ -422,7 +422,7 @@ grid minor
 nexttile
 range = linspace(3.5,radii(end));
 plot(radii,velocity_y,'o',range,polyval(cornering,range))
-title('Lateral Acceleration vs Radius')
+title('Velocity vs Radius')
 grid on
 grid minor
 
