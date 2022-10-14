@@ -8,7 +8,7 @@ disp('Loading Vehicle Characteristics')
 LLTD = .515; % Front lateral load transfer distribution (%)
 W = 650; % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
-cg = 10; % center of gravity height (in)
+cg = 20; % center of gravity height (in)
 L = 60.63/12; % wheelbase (ft)
 twf = 50.5/12; % front track width (ft)
 twr = 48.5/12; % rear track width (ft)
@@ -61,7 +61,7 @@ distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
 acceleration = LapSimOutput.acceleration;
 lateral_accel = LapSimOutput.lateral_accel;
-Endurance_time = LapSimOutput.laptime
+Endurance_time = LapSimOutput.laptime;
 Accel_time = LapSimOutput.accel_time;
 Endurance_score = LapSimOutput.Endurance_Score;
 Accel_score = LapSimOutput.Accel_Score;
