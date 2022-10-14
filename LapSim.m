@@ -17,11 +17,11 @@ global r_max accel grip deccel lateral cornering gear shift_points...
 
 global FZ0
 FZ0 = 800; %Tire nominal load (N)
-load("Lateral_Tire-Model_Optim_Params.mat")
+load("Tire Modeling/Lateral_Tire-Model_Optim_Params.mat")
    
 % Next you load in the longitudinal tire model
 % find your pathname and filename for the tire you want to load in
-load("12.mat") 
+load("Tire Modeling/12.mat") 
 tire_radius = .2032; % (meters)
 
 
@@ -86,8 +86,8 @@ IA_gainr = IA_roll_inducedr*IA_compensationr;
 disp('Generating g-g-V Diagram')
 deltar = 0;
 deltaf = 0;
-velocity = 4.572:1.524:30.48; % range of velocities at which sim will evaluate (m/s)
-radii = 3.048:1.524:36.576; % range of turn radii at which sim will evaluate (m)
+velocity = 4.5:1.5:22.5; % range of velocities at which sim will evaluate (m/s)
+radii = 6.5:1.5:36; % range of turn radii at which sim will evaluate (m)
 % First we will evaluate our Acceleration Capacity
 g = 1; % g is a gear indicator, and it will start at 1
 spcount = 1; % spcount is keeping track of how many gearshifts there are
@@ -116,7 +116,7 @@ for  i = 1:1:length(velocity) % for each velocity
 %         wr = wr+Ax*cg*WS/L/24; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         wr = wr+Ax*cg*W/L/2; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         IA_r = L*sin(pitch)/2*IA_gainr + IA_0r;% - KPIr*(1-cos(deltar)) + casterf*sin(deltar);
-        sl = 0:.01:.2;
+        sl = 0:.01:1;
         fxr = zeros(1,length(sl));
         for k = 1:length(sl)
               fxr(k) = MF52_Fx_fcn(lCoeff,[-wr -IA_r],sl(k))*sf_x;
@@ -150,22 +150,24 @@ A_Xr(A_Xr < 0) = 0;
 % accel is the maximum acceleration capacity as a function of velocity
 % (power limited) and grip is the same but (tire limited)
 accel = csaps(velocity,A_Xr);
-grip = csaps(velocity,A_xr);
+gripspline = csaps(velocity,A_xr);
+grip = polyfit(velocity,A_xr,3)
 
 
-hold off
-figure
-hold on
-hold on
-fnplt(grip)
-grid on
-grid minor
-hold on
-fnplt(accel)
-grid on
-grid minor
-figure
-plot(1:1:18,A_xr)
+
+% range = linspace(4.5,30);
+% hold off
+% figure
+% hold on
+% plot(velocity,A_xr,'o',velocity,A_Xr,'o',range,polyval(grip,range))
+% hold on
+% % fnplt(gripspline)
+% grid on
+% grid minor
+% hold on
+% fnplt(accel)
+% grid on
+% grid minor
 
 AYP = .5;
 disp('Lateral Acceleration Envelope')
@@ -263,7 +265,7 @@ for turn = 1:1:length(radii)
         f_xplt(turn) = (F_fin+F_fout)*sin(delta)/cos(delta)/400;
         % calculate the grip penalty assuming the rears must overcome that
         % drag
-        rscale = 1-(F_xDrag/W/fnval(grip,V))^2; % Comes from traction circle
+        rscale = 1-(F_xDrag/W/polyval(grip,V))^2; % Comes from traction circle
         % now calculate rear tire forces, with said penalty
         F_rin = -MF52_Fy_fcn([-a_r wrin -IA_r_in])*sf_y*rscale; 
         F_rout = MF52_Fy_fcn([a_r wrout -IA_r_out])*sf_y*rscale;
@@ -289,6 +291,8 @@ for turn = 1:1:length(radii)
 %         speed(turn) = V;
 
 end
+
+
 lateralg 
 figure
 plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
@@ -302,13 +306,13 @@ grid on
 hold off
 velocity_y = lateralg.*9.81.*radii;
 velocity_y = sqrt(velocity_y);
+range = linspace(4.5,velocity_y(end));
+hold on
+lateral = polyfit(velocity_y,lateralg,3);
 figure
 plot(velocity_y,f_xplt,'o')
 hold on
-plot(velocity_y,lateralg,'o')
-hold on
-lateral = csaps(velocity_y,lateralg);
-fnplt(lateral)
+plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
 grid on 
 grid minor
 hold off
@@ -374,8 +378,8 @@ legend('Wr','Wf')
 grid on
 grid minor
 
-% velocity_y = lateralg.*9.81.*radii;
-% velocity_y = sqrt(velocity_y);
+velocity_y = lateralg.*9.81.*radii;
+velocity_y = sqrt(velocity_y);
 
 r_max = max(radii);
 spcount = spcount+1;
@@ -391,6 +395,7 @@ lateral = csaps(velocity_y,lateralg);
 radii = velocity_y.^2./lateralg/9.81;
 % max velocity as a function of instantaneous turn radius
 cornering = csaps(radii,velocity_y);
+range = linspace(4.5,30);
 figure
 fnplt(lateral)
 hold on
@@ -403,7 +408,7 @@ fnplt(grip)
 grid on
 grid minor
 nexttile
-fnplt(accel)
+plot(range,polyval(grip,range))
 grid on
 grid minor
 nexttile
