@@ -23,7 +23,7 @@ global path_boundaries r_min r_max cornering accel grip deccel lateral...
 interval = 5;
 sections = 3000;
 VMAX = top_speed;
-r_min = 4.5;
+r_min
 
 t = 1:height(track);
 path_points = [track.X, track.Y]'/1000;
@@ -346,10 +346,8 @@ pointsize = 5;
 scatter(track_points(1,2:end-1),track_points(2,2:end-1),100,V_plot,'marker','.')
 title('2019 Michigan Endurance Simulation Track Summary')
 h = colorbar;
-set(get(h,'title'),'string','Velocity (V) [m/s]');
+set(get(h,'title'),'string','Velocity (V) [ft/s]');
 set(gca,'XTick',[], 'YTick', [])
-grid on 
-grid minor
 
 %% Gear Counter
 for i = 1:1:length(velocity)
