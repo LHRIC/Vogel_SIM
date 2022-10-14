@@ -17,11 +17,11 @@ global r_max accel grip deccel lateral cornering gear shift_points...
 
 global FZ0
 FZ0 = 800; %Tire nominal load (N)
-load("Lateral_Tire-Model_Optim_Params.mat")
+load("Tire Modeling/Lateral_Tire-Model_Optim_Params.mat")
    
 % Next you load in the longitudinal tire model
 % find your pathname and filename for the tire you want to load in
-load("12.mat") 
+load("Tire Modeling/12.mat") 
 tire_radius = .2032; % (meters)
 
 
