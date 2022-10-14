@@ -1,28 +1,33 @@
-function [lap_time time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(path_positions)
+function [lap_time time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance vehicle_path] = lap_information(track)
 global path_boundaries r_min r_max cornering accel grip deccel lateral...
     shift_points top_speed shift_time
 %% Generate vehicle trajectory
 % this is done the same way as in the main lap sim code so I will not
 % replicate that explanation here
 
+
+% path_positions(end+1) = path_positions(1);
+% path_positions(end+1) = path_positions(2);
+
+% t = 1:1:length(path_positions);
+% for i = 1:1:length(path_positions)
+%     coeff = path_boundaries(i,1:2);
+%     x2 = max(path_boundaries(i,3:4));
+%     x1 = min(path_boundaries(i,3:4));
+%     position = path_positions(i);
+%     x3 = x1+position*(x2-x1);
+%     y3 = polyval(coeff,x3);
+%     path_points(i,:) = [x3 y3];             
+% end
+
 interval = 5;
 sections = 3000;
-path_positions(end+1) = path_positions(1);
-path_positions(end+1) = path_positions(2);
 VMAX = top_speed;
-t = 1:1:length(path_positions);
-for i = 1:1:length(path_positions)
-    coeff = path_boundaries(i,1:2);
-    x2 = max(path_boundaries(i,3:4));
-    x1 = min(path_boundaries(i,3:4));
-    position = path_positions(i);
-    x3 = x1+position*(x2-x1);
-    y3 = polyval(coeff,x3);
-    path_points(i,:) = [x3 y3];             
-end
 
-x = linspace(1,t(end-1),sections);
-ppv = pchip(t,path_points');
+t = 1:height(track);
+path_points = [track.X, track.Y]';
+x = linspace(1,t(end-1),1000);
+ppv = pchip(t,path_points);
 vehicle_path = ppval(ppv,x);
 path_length = arclength(vehicle_path(1,:),vehicle_path(2,:));
 

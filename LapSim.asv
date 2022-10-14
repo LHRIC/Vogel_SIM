@@ -291,8 +291,7 @@ for turn = 1:1:length(radii)
 
 end
 
-% load("lateralg.mat")
-% 
+
 % lateralg 
 % figure
 % plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
@@ -422,7 +421,7 @@ grid on
 grid minor
 
 %% Section 7: Load Endurance Track Coordinates
-%disp('Loading Endurance Track Coordinates')
+disp('Loading Endurance Track Coordinates')
 [data text] = xlsread('Endurance_Coordinates_1_SI.xlsx','Scaled');
 
 % the coordinates are now contained within 'data'. This is a 5 column
@@ -486,33 +485,45 @@ xx = xx.endurance_racing_line;
 % xx = x;
 % x(end+1) = x(1);
 % x(end+1) = x(2);
+
 %% Section 10: Generate Final Endurance Trajectory
-x = xx;
-% Plot finished line
-x(end+1) = x(1);
-x(end+1) = x(2);
-for i = 1:1:length(x)
-    % for each gate, find the position defined between the cones
-    coeff = path_boundaries(i,1:2);
-    x2 = max(path_boundaries(i,3:4));
-    x1 = min(path_boundaries(i,3:4));
-    position = x(i);
-    % place the car within via linear interpolation
-    x3 = x1+position*(x2-x1);
-    y3 = polyval(coeff,x3);
-    %plot(x3,y3,'og')
-    % the actual car's trajectory defined in x-y coordinates:
-    path_points(i,:) = [x3 y3];
-end
+% x = xx;
+% % Plot finished line
+% x(end+1) = x(1);
+% x(end+1) = x(2);
+% for i = 1:1:length(x)
+%     % for each gate, find the position defined between the cones
+%     coeff = path_boundaries(i,1:2);
+%     x2 = max(path_boundaries(i,3:4));
+%     x1 = min(path_boundaries(i,3:4));
+%     position = x(i);
+%     % place the car within via linear interpolation
+%     x3 = x1+position*(x2-x1);
+%     y3 = polyval(coeff,x3);
+%     %plot(x3,y3,'og')
+%     % the actual car's trajectory defined in x-y coordinates:
+%     path_points(i,:) = [x3 y3];
+% end
+% 
+% x = linspace(1,t(end-1),1000);
+% ppv = pchip(t,path_points');
+% vehicle_path = ppval(ppv,x);
+% vehicle_path_EN = vehicle_path;
+% Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
+
+
+%%%%%%custom track
+track = readtable('Track Creation/17_lincoln_endurance.xlsx');
+t = 1:height(track);
+path_points = [track.X, track.Y]';
 
 x = linspace(1,t(end-1),1000);
-ppv = pchip(t,path_points');
+ppv = pchip(t,path_points);
 vehicle_path = ppval(ppv,x);
-vehicle_path_EN = vehicle_path;
-Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
+
 %% Section 11: Simulate Endurance Lap
 %disp('Plotting Vehicle Trajectory')
-[laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(xx);
+[laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance vehicle_path] = lap_information(xx);
 % %% Section 12: Load Autocross Track Coordinates
 % %disp('Loading Autocross Track Coordinates')
 % [data text] = xlsread('Autocross_Coordinates_2_SI.xlsx','Scaled');
@@ -606,7 +617,7 @@ Endurance_Score =250*((Tmax/(laptime+13))-1)/(Tmax/Tmin-1)+25;
 % define skidpad turn radius (m)
 path_radius = 7.62+tw/2+.1524;
 % determine speed possible to take:
-speed = fnval(cornering,path_radius);
+speed = polyval(cornering,path_radius);
 % calculate skidpad time
 skidpad_time = path_radius*2*pi/speed;
 % calculate score based on 2019 times
@@ -699,7 +710,6 @@ for i = 1:1:length(segment)
     t_accel_elapsed = t_accel_elapsed+dt_f(count);
     t_accel(i) = t_accel_elapsed;
 end
-plot(1:length(dt_f),dt_f)
 accel_time = sum(dt_f(2:end))+.1;
 % calculate accel score:
 Tmin_accel = 4.109;

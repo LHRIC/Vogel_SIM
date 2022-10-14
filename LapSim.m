@@ -463,9 +463,9 @@ for i = 1:1:length(outside)
     path_boundaries(i,:) = [coeff x_bound];
 end
 %% Section 8: Load Endurance Racing Line
-disp('Loading Endurance Racing Line')
-xx = load('endurance_racing_line.mat');
-xx = xx.endurance_racing_line;
+% disp('Loading Endurance Racing Line')
+% xx = load('endurance_racing_line.mat');
+% xx = xx.endurance_racing_line;
 % Section 9: Optimize Endurance Racing Line
 % The pre-loaded racing line should work for most applications; however,
 % if you have the need to re-evaluate or generate a new optimized racing
@@ -485,34 +485,47 @@ xx = xx.endurance_racing_line;
 % xx = x;
 % x(end+1) = x(1);
 % x(end+1) = x(2);
-%% Section 10: Generate Final Endurance Trajectory
-x = xx;
-% Plot finished line
-x(end+1) = x(1);
-x(end+1) = x(2);
-for i = 1:1:length(x)
-    % for each gate, find the position defined between the cones
-    coeff = path_boundaries(i,1:2);
-    x2 = max(path_boundaries(i,3:4));
-    x1 = min(path_boundaries(i,3:4));
-    position = x(i);
-    % place the car within via linear interpolation
-    x3 = x1+position*(x2-x1);
-    y3 = polyval(coeff,x3);
-    %plot(x3,y3,'og')
-    % the actual car's trajectory defined in x-y coordinates:
-    path_points(i,:) = [x3 y3];
-end
 
+%% Section 10: Generate Final Endurance Trajectory
+% x = xx;
+% % Plot finished line
+% x(end+1) = x(1);
+% x(end+1) = x(2);
+% for i = 1:1:length(x)
+%     % for each gate, find the position defined between the cones
+%     coeff = path_boundaries(i,1:2);
+%     x2 = max(path_boundaries(i,3:4));
+%     x1 = min(path_boundaries(i,3:4));
+%     position = x(i);
+%     % place the car within via linear interpolation
+%     x3 = x1+position*(x2-x1);
+%     y3 = polyval(coeff,x3);
+%     %plot(x3,y3,'og')
+%     % the actual car's trajectory defined in x-y coordinates:
+%     path_points(i,:) = [x3 y3];
+% end
+% 
+% x = linspace(1,t(end-1),1000);
+% ppv = pchip(t,path_points');
+% vehicle_path = ppval(ppv,x);
+% vehicle_path_EN = vehicle_path;
+% Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
+
+
+%%%%%%custom track
+track = readtable('Track Creation/17_lincoln_endurance.xls');
+
+t = 1:height(track);
+path_points = [track.X, track.Y]';
 x = linspace(1,t(end-1),1000);
-ppv = pchip(t,path_points');
+ppv = pchip(t,path_points);
 vehicle_path = ppval(ppv,x);
-vehicle_path_EN = vehicle_path;
-Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
+
 %% Section 11: Simulate Endurance Lap
 %disp('Plotting Vehicle Trajectory')
-[laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(xx);
-% %% Section 12: Load Autocross Track Coordinates
+[laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance vehicle_path] = lap_information(track);
+
+%% Section 12: Load Autocross Track Coordinates
 % %disp('Loading Autocross Track Coordinates')
 % [data text] = xlsread('Autocross_Coordinates_2_SI.xlsx','Scaled');
 % outside = data(:,2:3);
@@ -544,7 +557,7 @@ Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
 
 
 %save('path_boundaries.mat','path_boundaries');
-% %% Section 13: Load Autocross Racing Line
+%% Section 13: Load Autocross Racing Line
 % %disp('Loading Autocross Racing Line')
 % xx = load('autocross_racing_line.mat');
 % xx = xx.autocross_racing_line;
