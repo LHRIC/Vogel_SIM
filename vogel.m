@@ -6,7 +6,7 @@ global grip
         AYP = x(3) ;
         V = sqrt(R*32.2*AYP);
         A_y = V^2/R;
-        WT = A_y*cg*W/mean([twf twr])/32.2/12;
+        WT = A_y*cg*W/mean([twf twr])/32.2;
         WTF = WT*LLTD;
         WTR = WT*(1-LLTD);
         phif = A_y*rg_f*pi/180/32.2;
