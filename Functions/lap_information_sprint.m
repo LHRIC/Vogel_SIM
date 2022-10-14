@@ -42,7 +42,7 @@ for i = 1:length(RT)
     r = max(r_min,RT(i));
     r = min(r,r_max);
     RT(i) = r;
-    Vmax(i) = min(VMAX,fnval(cornering,r));
+    Vmax(i) = min(VMAX,polyval(cornering,r));
     x1(i) = track_points(1,i+1);
     x2(i) = track_points(1,i+2);
     y1(i) = track_points(2,i+1);
@@ -60,12 +60,12 @@ end
 %     r = RT(i);
 % 
 % 
-%     vmax = min(116,fnval(cornering,r));
+%     vmax = min(116,polyval(cornering,r));
 %     if vmax < 0
 %         vmax = VMAX;
 %     end
-%     AX = fnval(deccel,vel);
-%     AY = fnval(lateral,vel);
+%     AX = polyval(deccel,vel);
+%     AY = polyval(lateral,vel);
 %     dd = d/interval;
 %     for j = 1:1:interval
 %         count = count-1;
@@ -113,12 +113,12 @@ for i = 1:1:length(segment)
         shifting = 0;
     end
 
-    vmax = min(VMAX,fnval(cornering,r));
+    vmax = min(VMAX,polyval(cornering,r));
     if vmax < 0
         vmax = VMAX;
     end
     AX = fnval(accel,vel);
-    AY = fnval(lateral,vel);
+    AY = polyval(lateral,vel);
     dd = d/interval;
     for j = 1:1:interval
         count = count+1;
@@ -184,12 +184,12 @@ for i = length(segment):-1:1
     r = RT(i);
 
 
-    vmax = min(VMAX,fnval(cornering,r));
+    vmax = min(VMAX,polyval(cornering,r));
     if vmax < 0
         vmax = VMAX;
     end
-    AX = fnval(deccel,vel);
-    AY = fnval(lateral,vel);
+    AX = polyval(deccel,vel);
+    AY = polyval(lateral,vel);
     dd = d/interval;
     for j = 1:1:interval
         count = count-1;
@@ -238,12 +238,12 @@ end
 %         shifting = 0;
 %     end
 % 
-%     vmax = min(VMAX,fnval(cornering,r));
+%     vmax = min(VMAX,polyval(cornering,r));
 %     if vmax < 0
 %         vmax = VMAX;
 %     end
 %     AX = fnval(accel,vel);
-%     AY = fnval(lateral,vel);
+%     AY = polyval(lateral,vel);
 %     dd = d/interval;
 %     for j = 1:1:interval
 %         count = count+1;
@@ -314,8 +314,8 @@ for i = 1:1:length(VD)
     t_elapsed = t_elapsed+dtime(i);
     time_elapsed(i) = t_elapsed;
 end
-AY_outlier = find(lateral_accel > fnval(lateral,116*.3048));
-lateral_accel(AY_outlier) = fnval(lateral,116*.3048);
+AY_outlier = find(lateral_accel > polyval(lateral,116*.3048));
+lateral_accel(AY_outlier) = polyval(lateral,116*.3048);
 throttle = 0;
 brake = 0;
 corner = 0;

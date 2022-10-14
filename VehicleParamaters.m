@@ -8,7 +8,7 @@ disp('Loading Vehicle Characteristics')
 LLTD = .515; % Front lateral load transfer distribution (%)
 W = 650; % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
-cg = 13.5; % center of gravity height (in)
+cg = 5; % center of gravity height (in)
 L = 60.63/12; % wheelbase (ft)
 twf = 50.5/12; % front track width (ft)
 twr = 48.5/12; % rear track width (ft)
@@ -60,26 +60,26 @@ LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ..
     casterr, KPIr, Cl, Cd, CoP);
 
 
-
-CG = linspace(9,13.5,20)/39.37;
-
-for i = 1:length(CG)
-
-    cg = CG(i);
-
-LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
-    IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-    casterr, KPIr, Cl, Cd, CoP);
-
-Endurance_time(i) = LapSimOutput.laptime;
-
-end
-
-plot(CG*39.37,Endurance_time,'r')
-title('CG sensitivity')
-legend('CG height','Endurance laptime')
-grid on
-grid minor
+% 
+% CG = linspace(9,13.5,20)/39.37;
+% 
+% for i = 1:length(CG)
+% 
+%     cg = CG(i);
+% 
+% LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+%     IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
+%     casterr, KPIr, Cl, Cd, CoP);
+% 
+% Endurance_time(i) = LapSimOutput.laptime;
+% 
+% end
+% 
+% plot(CG*39.37,Endurance_time,'r')
+% title('CG sensitivity')
+% legend('CG height','Endurance laptime')
+% grid on
+% grid minor
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
