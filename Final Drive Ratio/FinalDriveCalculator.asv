@@ -28,7 +28,7 @@ figure();
  effective_mass = 294.835;
 
 % Final Drive Ratio
-final_drive_ratio = 5;
+final_drive_ratio = 38/6;
 
 %% Accel Test 
 
@@ -48,29 +48,15 @@ engine_acc_vel = [engine_torque_data(:,1)*rpm_mps, engine_torque_data(:,2)*Nm_mp
 % Declare
 time_calc = @(FDr) Torque_Curve_Optimizer(engine_acc_vel, acc_max, engine_gear_ratio, FDr, 75, false);
 
-% DONT QUESTION THIS, I'm too dumb to debug why fminsearch is not working and this is my solution
+figure ();
 times = [];
-i_range = linspace(1,10,50);
-for i = i_range
-    times = [times, time_calc(i)];
-end 
-figure();
-    plot(i_range, times)
-    xlabel("Final Drive Ratio")
-    ylabel("75m Drag Time")
+for i = 2:0.05:10
+    times = [times, fminsearch(time_calc,i)];
 
-times = [];
-i_range = linspace(2,6,200);
-for i = i_range
-    times = [times, time_calc(i)];
 end 
-figure();
-    plot(i_range, times)
-    xlabel("Final Drive Ratio")
-    ylabel("75m Drag Time")
 
-[~,min_I] = min(times);
-final_drive_ratio = i_range(min_I);
+figure();
+    plot(1:0.05:10, times)
 
 disp("75m drag time:")
 disp(Torque_Curve_Optimizer(engine_acc_vel, acc_max, engine_gear_ratio, final_drive_ratio, 75, true))
