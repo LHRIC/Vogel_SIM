@@ -1,4 +1,4 @@
-function [t] = Torque_Curve_Optimizer(engine_data,f_max, effective_mass, engine_gear_ratio, final_drive_ratio, distance, plot_data)
+function [t] = AccelSim(engine_data, f_max, R_fun, effective_mass, engine_gear_ratio, final_drive_ratio, distance, plot_data)
 
     % combined_engine_acc_vel = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,75);
     engine_data = Gear_Curves(engine_data, engine_gear_ratio, final_drive_ratio, plot_data);
@@ -6,6 +6,8 @@ function [t] = Torque_Curve_Optimizer(engine_data,f_max, effective_mass, engine_
     % lienarize and combine domains for every gear ratio
     combined_engine_data = [];
     
+    % Combines engine curves for each individual gear at motive force
+    % crossover point
     for i = 1:length(engine_gear_ratio)
 
         % fist iteration check
@@ -26,17 +28,29 @@ function [t] = Torque_Curve_Optimizer(engine_data,f_max, effective_mass, engine_
         end
     end 
     
-     % flattens curve to take into account tractive limits 
+    % subtracts resistive forces
+    for i = 1:length(combined_engine_data(:,2))
+        motive_force = combined_engine_data(i,2) - R_fun(combined_engine_data(i,1));
+        if motive_force < 0
+            motive_force = 0;
+        end
+        combined_engine_data(i,2) = motive_force;
+    end 
+
+    %
+
+    % flattens curve to take into account tractive limits 
     for i = 1:length(combined_engine_data(:,2))
         if combined_engine_data(i,2) > f_max
             combined_engine_data(i,2) = f_max;
         end 
     end 
-
+    
+    % Plots cumulative motive force
     if plot_data
         figure();
             plot(combined_engine_data(:,1), combined_engine_data(:,2))
-            title("Ideal Acceleration Curve ")
+            title("Ideal Motive Force Curve ")
             xlabel("Velocity (m/s)")
             ylabel("Motive Force (N)")
     end 
@@ -67,19 +81,19 @@ function [t] = Torque_Curve_Optimizer(engine_data,f_max, effective_mass, engine_
     if plot_data
         figure();
             plot(xq, distance_velocity_curve)
-            title("Distance/Speed Curve")
+            % title("Distance/Speed Curve")
             xlabel("Velocity (m/s)")
             ylabel("Distance (m)")
     
         figure();
             plot(xq, time_velocity_curve)
-            title("Time/Speed Curve")
+            % title("Time/Speed Curve")
             xlabel("Velocity (m/s)")
             ylabel("Time (s)")
     
          figure();
             plot(time_distance_curve(:,1), time_distance_curve(:,2))
-            title("Time/Distance Curve")
+            % title("Time/Distance Curve")
             xlabel("Distance (m)")
             ylabel("Time (s)")
     end 

@@ -34,7 +34,7 @@ function [combined_curve] = CurveIntersect(curve1, curve2)
         [~, int_I] = min(abs(diff));
         [int_val] = diff(int_I);
 
-        if abs(int_val) < mean([range(y1),range(y2)])/100
+        if abs(int_val) < mean([range(y1),range(y2)])/1000
 %             disp("Curve Intersection!")
                 dx1 = int_I+int1_D(1)-1;
                 dx2 = int_I+int2_D(1);
