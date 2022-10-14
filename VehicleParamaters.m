@@ -8,13 +8,13 @@ disp('Loading Vehicle Characteristics')
 LLTD = .515; % Front lateral load transfer distribution (%)
 W = 650; % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
-cg = 10; % center of gravity height (in)
+cg = 5; % center of gravity height (in)
 L = 60.63/12; % wheelbase (ft)
 twf = 50.5/12; % front track width (ft)
 twr = 48.5/12; % rear track width (ft)
 
 W = W*4.4482216153; % convert to N
-cg = cg/39.37; % conver to m
+cg = cg/39.37; % convert to m
 L = L/3.280839895013123; % convert to m
 twf = twf/3.280839895013123; % convert to m
 twr = twr/3.280839895013123; % convert to m
@@ -51,17 +51,41 @@ disp('Loading Aero Model')
 Cl = .0418*47.8802589804; %279/418
 % Cd = linspace(.01,.03,2);
 Cd = .0184*47.8802589804; % .024
-CoP = .48; % front downforce distribution (%% Run simulation
+CoP = .48; % front downforce distribution 
+%% Run simulation
+
 
 LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
     IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
     casterr, KPIr, Cl, Cd, CoP);
 
+
+% 
+% CG = linspace(9,13.5,20)/39.37;
+% 
+% for i = 1:length(CG)
+% 
+%     cg = CG(i);
+% 
+% LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+%     IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
+%     casterr, KPIr, Cl, Cd, CoP);
+% 
+% Endurance_time(i) = LapSimOutput.laptime;
+% 
+% end
+% 
+% plot(CG*39.37,Endurance_time,'r')
+% title('CG sensitivity')
+% legend('CG height','Endurance laptime')
+% grid on
+% grid minor
+
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
 acceleration = LapSimOutput.acceleration;
 lateral_accel = LapSimOutput.lateral_accel;
-Endurance_time = LapSimOutput.laptime
+Endurance_time = LapSimOutput.laptime;
 Accel_time = LapSimOutput.accel_time;
 Endurance_score = LapSimOutput.Endurance_Score;
 Accel_score = LapSimOutput.Accel_Score;

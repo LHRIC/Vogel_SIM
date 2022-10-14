@@ -39,7 +39,7 @@ global grip
         F_xDrag = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta); 
         % calculate the grip penalty assuming the rears must overcome that
         % drag
-        rscale = 1-(F_xDrag/W/fnval(grip,V))^2; % Comes from traction circle
+        rscale = 1-(F_xDrag/W/(polyval(grip,V)))^2; % Comes from traction circle
         % now calculate rear tire forces, with said penalty
         F_rin = -MF52_Fy_fcn([-a_r wrin -IA_r_in])*sf_y*rscale; 
         F_rout = MF52_Fy_fcn([a_r wrout -IA_r_out])*sf_y*rscale;

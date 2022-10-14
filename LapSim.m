@@ -17,11 +17,11 @@ global r_max accel grip deccel lateral cornering gear shift_points...
 
 global FZ0
 FZ0 = 800; %Tire nominal load (N)
-load("Lateral_Tire-Model_Optim_Params.mat")
+load("Tire Modeling/Lateral_Tire-Model_Optim_Params.mat")
    
 % Next you load in the longitudinal tire model
 % find your pathname and filename for the tire you want to load in
-load("12.mat") 
+load("Tire Modeling/12.mat") 
 tire_radius = .2032; % (meters)
 
 
@@ -86,8 +86,8 @@ IA_gainr = IA_roll_inducedr*IA_compensationr;
 disp('Generating g-g-V Diagram')
 deltar = 0;
 deltaf = 0;
-velocity = 4.572:1.524:30.48; % range of velocities at which sim will evaluate (m/s)
-radii = 3.048:1.524:36.576; % range of turn radii at which sim will evaluate (m)
+velocity = 4.5:1.5:22.5; % range of velocities at which sim will evaluate (m/s)
+radii = 6.5:1.5:36; % range of turn radii at which sim will evaluate (m)
 % First we will evaluate our Acceleration Capacity
 g = 1; % g is a gear indicator, and it will start at 1
 spcount = 1; % spcount is keeping track of how many gearshifts there are
@@ -116,7 +116,7 @@ for  i = 1:1:length(velocity) % for each velocity
 %         wr = wr+Ax*cg*WS/L/24; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         wr = wr+Ax*cg*W/L/2; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         IA_r = L*sin(pitch)/2*IA_gainr + IA_0r;% - KPIr*(1-cos(deltar)) + casterf*sin(deltar);
-        sl = 0:.01:.2;
+        sl = 0:.01:1;
         fxr = zeros(1,length(sl));
         for k = 1:length(sl)
               fxr(k) = MF52_Fx_fcn(lCoeff,[-wr -IA_r],sl(k))*sf_x;
@@ -150,22 +150,23 @@ A_Xr(A_Xr < 0) = 0;
 % accel is the maximum acceleration capacity as a function of velocity
 % (power limited) and grip is the same but (tire limited)
 accel = csaps(velocity,A_Xr);
-grip = csaps(velocity,A_xr);
+grip = polyfit(velocity,A_xr,3);
 
 
-hold off
-figure
-hold on
-hold on
-fnplt(grip)
-grid on
-grid minor
-hold on
-fnplt(accel)
-grid on
-grid minor
-figure
-plot(1:1:18,A_xr)
+
+% range = linspace(4.5,30);
+% hold off
+% figure
+% hold on
+% plot(velocity,A_xr,'o',velocity,A_Xr,'o',range,polyval(grip,range))
+% hold on
+% % fnplt(gripspline)
+% grid on
+% grid minor
+% hold on
+% fnplt(accel)
+% grid on
+% grid minor
 
 AYP = .5;
 disp('Lateral Acceleration Envelope')
@@ -263,7 +264,7 @@ for turn = 1:1:length(radii)
         f_xplt(turn) = (F_fin+F_fout)*sin(delta)/cos(delta)/400;
         % calculate the grip penalty assuming the rears must overcome that
         % drag
-        rscale = 1-(F_xDrag/W/fnval(grip,V))^2; % Comes from traction circle
+        rscale = 1-(F_xDrag/W/polyval(grip,V))^2; % Comes from traction circle
         % now calculate rear tire forces, with said penalty
         F_rin = -MF52_Fy_fcn([-a_r wrin -IA_r_in])*sf_y*rscale; 
         F_rout = MF52_Fy_fcn([a_r wrout -IA_r_out])*sf_y*rscale;
@@ -289,33 +290,35 @@ for turn = 1:1:length(radii)
 %         speed(turn) = V;
 
 end
-lateralg 
-figure
-plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
-legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-grid on
-hold off
-figure
-plot(radii,wfin1,'m',radii,wfout1,'c',radii, wrin1,'b',radii,wrout1,'g')
-legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-grid on
-hold off
-velocity_y = lateralg.*9.81.*radii;
-velocity_y = sqrt(velocity_y);
-figure
-plot(velocity_y,f_xplt,'o')
-hold on
-plot(velocity_y,lateralg,'o')
-hold on
-lateral = csaps(velocity_y,lateralg);
-fnplt(lateral)
-grid on 
-grid minor
-hold off
+
+
+% lateralg 
+% figure
+% plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
+% legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+% grid on
+% hold off
+% figure
+% plot(radii,wfin1,'m',radii,wfout1,'c',radii, wrin1,'b',radii,wrout1,'g')
+% legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+% grid on
+% hold off
+% velocity_y = lateralg.*9.81.*radii;
+% velocity_y = sqrt(velocity_y);
+% range = linspace(4.5,velocity_y(end));
+% hold on
+% lateral = polyfit(velocity_y,lateralg,3);
+% figure
+% plot(velocity_y,f_xplt,'o')
+% hold on
+% plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
+% grid on 
+% grid minor
+% hold off
 
 
 % Braking Performance
-velocity = 4.572:1.524:30.48;
+velocity = 4.5:1.5:22.5; % range of velocities at which sim will evaluate (m/s)
 disp('     Braking Envelope')
 % the braking sim works exactly the same as acceleration, except now all 4
 % tires are contributing to the total braking capacity
@@ -369,13 +372,13 @@ for  i = 1:1:length(velocity)
     wr_test(i) = wr;
     wf_test(i) = wf;
 end
-plot(velocity,wr_test,'r',velocity,wf_test,'b')
-legend('Wr','Wf')
-grid on
-grid minor
+% plot(velocity,wr_test,'r',velocity,wf_test,'b')
+% legend('Wr','Wf')
+% grid on
+% grid minor
 
-% velocity_y = lateralg.*9.81.*radii;
-% velocity_y = sqrt(velocity_y);
+velocity_y = lateralg.*9.81.*radii;
+velocity_y = sqrt(velocity_y);
 
 r_max = max(radii);
 spcount = spcount+1;
@@ -384,42 +387,47 @@ top_speed = V;
 VMAX = top_speed;
 % make the rest of your functions for the GGV diagram
 % braking as a function of speed
-deccel = csaps(velocity,A_X);
-fnplt(deccel)
+deccel = polyfit(velocity,A_X,3);
 % lateral g's as a function of velocity
-lateral = csaps(velocity_y,lateralg);
+lateral = polyfit(velocity_y,lateralg,4);
 radii = velocity_y.^2./lateralg/9.81;
 % max velocity as a function of instantaneous turn radius
-cornering = csaps(radii,velocity_y);
+cornering = polyfit(radii,velocity_y,3);
+
+
 figure
-fnplt(lateral)
+t = tiledlayout(2,3);
+title(t, "CG Height: " + cg + "m ("+ cg*39.37 +" inches)")
+nexttile
+range = linspace(4.5,30);
+plot(velocity,A_xr,'o',range,polyval(grip,range))
+title('Tire limited and Grip limited Acceleration vs Velocity')
+grid on
+grid minor
+hold on
+fnplt(accel)
+legend('Tire Limited','Grip Limited')
+nexttile
+plot(velocity,A_X,'o',range,polyval(deccel,range))
+title('Braking Acceleration vs Velocity')
+grid on
+grid minor
+nexttile
+range = linspace(4.5,velocity_y(end));
+plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
+title('Lateral Acceleration vs Velocity')
 hold on
 grid on
 grid minor
-figure
-tiledlayout(2,3)
 nexttile
-fnplt(grip)
+range = linspace(3.5,radii(end));
+plot(radii,velocity_y,'o',range,polyval(cornering,range))
+title('Velocity vs Radius')
 grid on
 grid minor
-nexttile
-fnplt(accel)
-grid on
-grid minor
-nexttile
-fnplt(lateral)
-grid on
-grid minor
-nexttile
-fnplt(cornering)
-grid on
-grid minor
-nexttile
-fnplt(deccel)
-grid on
-grid minor
+
 %% Section 7: Load Endurance Track Coordinates
-%disp('Loading Endurance Track Coordinates')
+disp('Loading Endurance Track Coordinates')
 [data text] = xlsread('Endurance_Coordinates_1_SI.xlsx','Scaled');
 
 % the coordinates are now contained within 'data'. This is a 5 column
@@ -511,82 +519,82 @@ Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
 %disp('Plotting Vehicle Trajectory')
 [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(xx);
 % %% Section 12: Load Autocross Track Coordinates
-% %disp('Loading Autocross Track Coordinates')
-% [data text] = xlsread('Autocross_Coordinates_2_SI.xlsx','Scaled');
-% outside = data(:,2:3);
-% inside = data(:,4:5);
-% t = [1:length(outside)];
-% pp_out = spline(t,outside');
-% pp_in = spline(t,inside');
-% 
-% %plot(outside(:,1),outside(:,2),'ok')
-% %hold on
-% %plot(inside(:,1),inside(:,2),'ok')
-% clear path_boundaries
-% for i = 1:1:length(outside)
-%     gate_in = inside(i,:);
-%     gate_out = outside(i,:);
-%     %plot([gate_in(1) gate_out(1)],[gate_in(2) gate_out(2)],'-k')
-%     x1 = gate_in(1);
-%     x2 = gate_out(1);
-%     y1 = gate_in(2);
-%     y2 = gate_out(2);
-%     coeff = polyfit([x1, x2], [y1, y2], 1);
-%     gate_width = sqrt((x2-x1)^2+(y2-y1)^2);
-%     path_width = gate_width-tw;
-%     x_fs = tw/(2*gate_width);
-%     x_bound = [min(x1,x2)+x_fs*abs(x2-x1),max(x1,x2)-x_fs*abs(x2-x1)];
-%     path_boundaries_ax(i,:) = [coeff x_bound];
-%     %text(round(x1),round(y1),num2str(i))
-% end
+%disp('Loading Autocross Track Coordinates')
+[data text] = xlsread('Autocross_Coordinates_2_SI.xlsx','Scaled');
+outside = data(:,2:3);
+inside = data(:,4:5);
+t = [1:length(outside)];
+pp_out = spline(t,outside');
+pp_in = spline(t,inside');
+
+%plot(outside(:,1),outside(:,2),'ok')
+%hold on
+%plot(inside(:,1),inside(:,2),'ok')
+clear path_boundaries
+for i = 1:1:length(outside)
+    gate_in = inside(i,:);
+    gate_out = outside(i,:);
+    %plot([gate_in(1) gate_out(1)],[gate_in(2) gate_out(2)],'-k')
+    x1 = gate_in(1);
+    x2 = gate_out(1);
+    y1 = gate_in(2);
+    y2 = gate_out(2);
+    coeff = polyfit([x1, x2], [y1, y2], 1);
+    gate_width = sqrt((x2-x1)^2+(y2-y1)^2);
+    path_width = gate_width-tw;
+    x_fs = tw/(2*gate_width);
+    x_bound = [min(x1,x2)+x_fs*abs(x2-x1),max(x1,x2)-x_fs*abs(x2-x1)];
+    path_boundaries_ax(i,:) = [coeff x_bound];
+    %text(round(x1),round(y1),num2str(i))
+end
 
 
-%save('path_boundaries.mat','path_boundaries');
-% %% Section 13: Load Autocross Racing Line
-% %disp('Loading Autocross Racing Line')
-% xx = load('autocross_racing_line.mat');
-% xx = xx.autocross_racing_line;
-% %% Section 14: Optimize Autocross Racing Line
-% % Same applies here, optimizing the line is optional but if you want,
-% % simply un-comment the lines of code below:
+% save('path_boundaries.mat','path_boundaries');
+%% Section 13: Load Autocross Racing Line
+%disp('Loading Autocross Racing Line')
+xx = load('autocross_racing_line.mat');
+xx = xx.autocross_racing_line;
+%% Section 14: Optimize Autocross Racing Line
+% Same applies here, optimizing the line is optional but if you want,
+% simply un-comment the lines of code below:
+
+
+% disp('Optimizing Racing Line')
+% A = eye(length(xx));
+% b = ones(length(xx),1);
+% lb = zeros(1,length(xx));
+% ub = ones(1,length(xx));
+% options = optimoptions('fmincon',...
+%     'Algorithm','sqp','Display','iter','ConstraintTolerance',1e-12);
+% options = optimoptions(options,'MaxIter', 10000, 'MaxFunEvals', 1000000,'ConstraintTolerance',1e-12,'DiffMaxChange',.1);
 % 
-% 
-% % disp('Optimizing Racing Line')
-% % A = eye(length(xx));
-% % b = ones(length(xx),1);
-% % lb = zeros(1,length(xx));
-% % ub = ones(1,length(xx));
-% % options = optimoptions('fmincon',...
-% %     'Algorithm','sqp','Display','iter','ConstraintTolerance',1e-12);
-% % options = optimoptions(options,'MaxIter', 10000, 'MaxFunEvals', 1000000,'ConstraintTolerance',1e-12,'DiffMaxChange',.1);
-% % 
-% % x = fmincon(@lap_time_sprint,xx,[],[],[],[],lb,ub,@track_curvature_sprint,options);
-% % xx_auto = x;
-% % % x(end+1) = x(1);
-% % % x(end+1) = x(2);
-% %% Section 15: Generate Final Autocross Trajectory
-% xx_auto = xx;
-% x = xx_auto;
-% %Plot finished line
-% 
-% for i = 1:1:length(x)
-%     coeff = path_boundaries_ax(i,1:2);
-%     x2 = max(path_boundaries_ax(i,3:4));
-%     x1 = min(path_boundaries_ax(i,3:4));
-%     position = x(i);
-%     x3 = x1+position*(x2-x1);
-%     y3 = polyval(coeff,x3);
-%     %plot(x3,y3,'og')
-%     path_points_ax(i,:) = [x3 y3];
-% end
-% x = linspace(1,t(end),1000);
-% ppv = pchip(t,path_points_ax');
-% vehicle_path = ppval(ppv,x);
-% vehicle_path_AX = vehicle_path;
-% Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
-% %% Section 16: Simulate Autocross Lap
-% %disp('Plotting Vehicle Trajectory')
-% [laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax] = lap_information_sprint(xx_auto);
+% x = fmincon(@lap_time_sprint,xx,[],[],[],[],lb,ub,@track_curvature_sprint,options);
+% xx_auto = x;
+% % x(end+1) = x(1);
+% % x(end+1) = x(2);
+%% Section 15: Generate Final Autocross Trajectory
+xx_auto = xx;
+x = xx_auto;
+%Plot finished line
+
+for i = 1:1:length(x)
+    coeff = path_boundaries_ax(i,1:2);
+    x2 = max(path_boundaries_ax(i,3:4));
+    x1 = min(path_boundaries_ax(i,3:4));
+    position = x(i);
+    x3 = x1+position*(x2-x1);
+    y3 = polyval(coeff,x3);
+    %plot(x3,y3,'og')
+    path_points_ax(i,:) = [x3 y3];
+end
+x = linspace(1,t(end),1000);
+ppv = pchip(t,path_points_ax');
+vehicle_path = ppval(ppv,x);
+vehicle_path_AX = vehicle_path;
+Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
+%% Section 16: Simulate Autocross Lap
+%disp('Plotting Vehicle Trajectory')
+[laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax] = lap_information_sprint(xx_auto);
 %% Section 17: Calculate Dynamic Event Points
 %disp('Calculating Points at Competition')
 % calculate endurance score
@@ -603,7 +611,7 @@ Endurance_Score =250*((Tmax/(laptime+13))-1)/(Tmax/Tmin-1)+25;
 % define skidpad turn radius (m)
 path_radius = 7.62+tw/2+.1524;
 % determine speed possible to take:
-speed = fnval(cornering,path_radius);
+speed = polyval(cornering,path_radius);
 % calculate skidpad time
 skidpad_time = path_radius*2*pi/speed;
 % calculate score based on 2019 times
@@ -696,7 +704,6 @@ for i = 1:1:length(segment)
     t_accel_elapsed = t_accel_elapsed+dt_f(count);
     t_accel(i) = t_accel_elapsed;
 end
-plot(1:length(dt_f),dt_f)
 accel_time = sum(dt_f(2:end))+.1;
 % calculate accel score:
 Tmin_accel = 4.109;
@@ -729,7 +736,7 @@ rearF = zeros(3,3);
 % frontF(1,:) = [0 -(WF/2 -WF*AX_min*cg/L/2)*AX_min 0];
 % rearF(1,:) = [W*AX_max/2 -(WR/2 +WR*AX_min*cg/L/2)*AX_min 0];
 
-output = struct('laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocity,'acceleration',acceleration,'lateral_accel' ...
+output = struct('Autocross_laptime',laptime_ax,'laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocity,'acceleration',acceleration,'lateral_accel' ...
     ,lateral_accel,'gear_counter',gear_counter,'path_length',path_length,'weights',weights,'distance',distance, 'accel_time' ...
     ,accel_time, 'Endurance_Score',Endurance_Score, 'Accel_Score', Accel_Score, 'Skidpad_Score',Skidpad_Score);
 % output = [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax accel_time Endurance_Score Autocross_Score Accel_Score Skidpad_Score];

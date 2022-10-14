@@ -2,7 +2,7 @@ clear variables
 close all
 clc
 
-track = readtable('circle_tracktestpoints.xlsx');
+track = readtable('17_lincoln_endurance.xlsx');
 t = 1:height(track);
 path_points = [track.X, track.Y]';
 
@@ -12,4 +12,6 @@ vehicle_path = ppval(ppv,x);
 vehicle_path_EN = vehicle_path;
 Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
 
-plot(vehicle_path(1),vehicle_path(2))
+plot(vehicle_path(1,:),vehicle_path(2,:))
+hold on
+scatter(track.X,track.Y)

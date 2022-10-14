@@ -1,4 +1,4 @@
-function [t] = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,distance, plot_data)
+function [t] = Torque_Curve_Optimizer(engine_acc_vel,acc_max, engine_gear_ratio,final_drive_ratio,distance, plot_data)
 
     % combined_engine_acc_vel = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,75);
     engine_acc_vel = Gear_Acc_Vel_Curves(engine_acc_vel, engine_gear_ratio, final_drive_ratio, plot_data);
@@ -52,6 +52,13 @@ function [t] = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_dri
         end
     end 
     
+     % flattens curve to take into account tractive limits 
+    for i = 1:length(combined_engine_acc_vel(:,2))
+        if combined_engine_acc_vel(i,2) > acc_max
+            combined_engine_acc_vel(i,2) = acc_max;
+        end 
+    end 
+
     if plot_data
         figure();
             plot(combined_engine_acc_vel(:,1), combined_engine_acc_vel(:,2))
@@ -99,8 +106,13 @@ function [t] = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_dri
             xlabel("Distance (m)")
             ylabel("Time (s)")
     end 
-    % Distance time search 
-    [~, minI] = min(abs(time_distance_curve(:,1)-distance));
-    t = time_distance_curve(minI,2);
+
+    % Drag time calculation 
+    [min_val, minI] = min(abs(time_distance_curve(:,1)-distance));
+    if min_val > 1
+        t = time_distance_curve(minI,2) + (distance - min_val)/xq(minI);
+    else 
+        t = time_distance_curve(minI,2);
+    end 
     
 end 

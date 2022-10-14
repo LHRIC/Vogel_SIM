@@ -464,8 +464,8 @@ classdef Solver
                 end
                 
                 if any(isHighLoad)
-                    warning ('Solver:Limits:Exceeded',['Vertical load above ',...
-                        'the limit. Values have been saturated.']);
+%                     warning ('Solver:Limits:Exceeded',['Vertical load above ',...
+%                         'the limit. Values have been saturated.']);
                 end
                 
 %                 if any(isLowPressure)
