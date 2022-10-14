@@ -101,7 +101,8 @@ function [t] = AccelSim(engine_data, f_max, R_fun, effective_mass, engine_gear_r
     % Drag time calculation 
     [min_val, minI] = min(abs(time_distance_curve(:,1)-distance));
     if min_val > 1
-        t = time_distance_curve(minI,2) + (distance - min_val)/xq(minI);
+        disp("")
+        t = time_distance_curve(minI,2) + min_val/xq(minI);
     else 
         t = time_distance_curve(minI,2);
     end 
