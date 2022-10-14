@@ -47,6 +47,8 @@ time_calc = @(FDr) Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,FDr,7
 
 final_drive_ratio = fminsearch(time_calc,1/10);
 
-Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,75,true)
+disp("75m drag time:")
+disp(Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,75,true))
 
+disp("Final Drive Ratio:")
 disp(final_drive_ratio)
