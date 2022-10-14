@@ -2,7 +2,7 @@ clear variables
 close all
 clc
 
-track = readtable('17_lincoln_endurance.xlsx');
+track = readtable('Track Creation/17_lincoln_endurance.xlsx');
 t = 1:height(track);
 path_points = [track.X, track.Y]';
 
@@ -15,3 +15,4 @@ Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
 plot(vehicle_path(1,:),vehicle_path(2,:))
 hold on
 scatter(track.X,track.Y)
+axis equal
