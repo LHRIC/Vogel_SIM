@@ -27,7 +27,7 @@ figure();
     ylabel("Torque (Nm)")
 
 % Final Drive Ratio
-final_drive_ratio = 38/8;
+final_drive_ratio = 3.5;
 
 %% Accel Test 
 engine_gear_ratio = engine_gear_ratio .* engine_primary_reduction;
@@ -59,7 +59,7 @@ figure();
     ylabel("75m Drag Time")
 
 times = [];
-i_range = linspace(1,10,200);
+i_range = linspace(1,10,500);
 for i = i_range
     times = [times, time_calc(i)];
 end 
