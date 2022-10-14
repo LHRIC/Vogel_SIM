@@ -313,8 +313,8 @@ for i = 1:1:length(VD)
     t_elapsed = t_elapsed+dtime(i);
     time_elapsed(i) = t_elapsed;
 end
-AY_outlier = find(lateral_accel > polyval(lateral,116*.3048));
-lateral_accel(AY_outlier) = polyval(lateral,116*.3048);
+AY_outlier = find(lateral_accel > polyval(lateral,top_speed+1));
+lateral_accel(AY_outlier) = polyval(lateral,top_speed+1);
 throttle = 0;
 brake = 0;
 corner = 0;
@@ -345,7 +345,6 @@ for i = 1:1:length(track_points)-2
     V_plot(i) = mean(velocity(i*interval-interval+1:i*interval));
 end
 figure
-pointsize = 5;
 scatter(track_points(1,2:end-1),track_points(2,2:end-1),100,V_plot,'marker','.')
 title('2019 Michigan Endurance Simulation Track Summary')
 h = colorbar;

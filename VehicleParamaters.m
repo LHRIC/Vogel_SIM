@@ -8,7 +8,7 @@ disp('Loading Vehicle Characteristics')
 LLTD = .515; % Front lateral load transfer distribution (%)
 W = 650; % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
-cg = 10; % center of gravity height (in)
+cg = 12.5; % center of gravity height (in)
 L = 60.63/12; % wheelbase (ft)
 twf = 50.5/12; % front track width (ft)
 twr = 48.5/12; % rear track width (ft)
@@ -48,9 +48,9 @@ KPIr = 0; % rear kingpin inclination angle (deg)
 disp('Loading Aero Model')
 
 % Cl = linspace(.03,.6,2);
-Cl = .0418*47.8802589804; %279/418
+Cl = 1.77; %279/418
 % Cd = linspace(.01,.03,2);
-Cd = .0184*47.8802589804; % .024
+Cd = .8; % .024
 CoP = .48; % front downforce distribution (%% Run simulation
 
 LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...

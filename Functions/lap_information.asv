@@ -20,8 +20,8 @@ global path_boundaries r_min r_max cornering accel grip deccel lateral...
 %     path_points(i,:) = [x3 y3];             
 % end
 
-interval = 5;
-sections = 3000;
+interval = 1;
+sections = 6000;
 VMAX = top_speed;
 r_min = 4.5;
 
@@ -31,7 +31,7 @@ x = linspace(1,t(end-1),1000);
 ppv = spline(t,path_points);
 vehicle_path = ppval(ppv,x);
 figure
-plot(track.X/1000,track.Y/1000,'o')
+plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
 hold on
 fnplt(ppv)
 hold on
@@ -71,7 +71,6 @@ for i = 1:length(RT)
     dist(i) = sqrt((x1(i)-x2(i))^2+(y2(i)-y1(i))^2);
 end
 %% Initiate forward sim
-plot()
 count = 0;
     v = 20*.3048;
     vel = v;
@@ -342,11 +341,11 @@ weights = [t_t/summ t_b/summ t_c/summ];
 
 %% Plot Results
 %figure
+V_plot = zeros(1,length)
 for i = 1:1:length(track_points)-2
     V_plot(i) = mean(velocity(i*interval-interval+1:i*interval));
 end
 figure
-pointsize = 5;
 scatter(track_points(1,2:end-1),track_points(2,2:end-1),100,V_plot,'marker','.')
 title('2019 Michigan Endurance Simulation Track Summary')
 h = colorbar;
@@ -354,6 +353,13 @@ set(get(h,'title'),'string','Velocity (V) [m/s]');
 set(gca,'XTick',[], 'YTick', [])
 grid on 
 grid minor
+
+figure
+patch(track_points(1,2:end-1),track_points(2,2:end-1),V_plot,V_plot,'EdgeColor','interp','FaceColor','none')
+h = colorbar;
+set(get(h,'title'),'string','Velocity (V) [m/s]');
+set(gca,'XTick',[], 'YTick', [])
+
 
 %% Gear Counter
 for i = 1:1:length(velocity)

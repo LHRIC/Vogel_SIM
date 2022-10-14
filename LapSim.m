@@ -87,7 +87,7 @@ disp('Generating g-g-V Diagram')
 deltar = 0;
 deltaf = 0;
 velocity = 4.5:1.5:22.5; % range of velocities at which sim will evaluate (m/s)
-radii = 6.5:1.5:36; % range of turn radii at which sim will evaluate (m)
+radii = 3.5:1.5:36; % range of turn radii at which sim will evaluate (m)
 % First we will evaluate our Acceleration Capacity
 g = 1; % g is a gear indicator, and it will start at 1
 spcount = 1; % spcount is keeping track of how many gearshifts there are
@@ -390,36 +390,42 @@ top_speed = V;
 VMAX = top_speed;
 % make the rest of your functions for the GGV diagram
 % braking as a function of speed
-deccel = polyfit(velocity,A_X,3);
+deccel = polyfit(velocity,A_X,4);
 % lateral g's as a function of velocity
 lateral = polyfit(velocity_y,lateralg,4);
 radii = velocity_y.^2./lateralg/9.81;
 % max velocity as a function of instantaneous turn radius
-cornering = polyfit(radii,velocity_y,3);
+cornering = polyfit(radii,velocity_y,4);
 
 
 figure
-tiledlayout(2,3)
+t = tiledlayout(2,3);
+title(t, "CG Height: " + cg + "m ("+ cg*39.37 +" inches)")
 nexttile
 range = linspace(4.5,30);
 plot(velocity,A_xr,'o',range,polyval(grip,range))
+title('Tire limited and Grip limited Acceleration vs Velocity')
 grid on
 grid minor
 hold on
 fnplt(accel)
+legend('Tire Limited','Grip Limited')
 nexttile
 plot(velocity,A_X,'o',range,polyval(deccel,range))
+title('Braking Acceleration vs Velocity')
 grid on
 grid minor
 nexttile
 range = linspace(4.5,velocity_y(end));
 plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
+title('Lateral Acceleration vs Velocity')
 hold on
 grid on
 grid minor
 nexttile
-range = linspace(3.5,radii(end));
+range = linspace(radii(1),radii(end));
 plot(radii,velocity_y,'o',range,polyval(cornering,range))
+title('Velocity vs Radius')
 grid on
 grid minor
 
