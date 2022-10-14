@@ -18,6 +18,9 @@ engine_gear_ratio = sort([33/12, 32/16, 30/18, 26/18, 30/23, 29/24]); %
 % Plots Engine Data
 figure();
     plot(engine_torque_data(:,1), engine_torque_data(:,2))
+    title("Engine Torque Curve")
+    xlabel("RPM")
+    ylabel("Torque (Nm)")
 
 % Effictive Mass Calculation
  effective_mass = 294.835;

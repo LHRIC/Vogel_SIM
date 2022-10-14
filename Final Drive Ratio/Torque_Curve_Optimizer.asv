@@ -96,8 +96,6 @@ function [t] = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_dri
         xlabel("Distance (m)")
         ylabel("Time (s)")
 
-    % Distance time search 
-    [~, minI] = min(abs(time_distance_curve(:,1)-distance));
-    t = time_distance_curve(minI,2);
+        
     
 end 
