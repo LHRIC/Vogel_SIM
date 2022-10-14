@@ -86,8 +86,8 @@ IA_gainr = IA_roll_inducedr*IA_compensationr;
 disp('Generating g-g-V Diagram')
 deltar = 0;
 deltaf = 0;
-velocity = 4.572:1.524:30.48; % range of velocities at which sim will evaluate (m/s)
-radii = 3.048:1.524:36.576; % range of turn radii at which sim will evaluate (m)
+velocity = 4.5:1.5:22.5; % range of velocities at which sim will evaluate (m/s)
+radii = 6.5:1.5:36; % range of turn radii at which sim will evaluate (m)
 % First we will evaluate our Acceleration Capacity
 g = 1; % g is a gear indicator, and it will start at 1
 spcount = 1; % spcount is keeping track of how many gearshifts there are
@@ -116,7 +116,7 @@ for  i = 1:1:length(velocity) % for each velocity
 %         wr = wr+Ax*cg*WS/L/24; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         wr = wr+Ax*cg*W/L/2; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         IA_r = L*sin(pitch)/2*IA_gainr + IA_0r;% - KPIr*(1-cos(deltar)) + casterf*sin(deltar);
-        sl = 0:.01:.2;
+        sl = 0:.01:1;
         fxr = zeros(1,length(sl));
         for k = 1:length(sl)
               fxr(k) = MF52_Fx_fcn(lCoeff,[-wr -IA_r],sl(k))*sf_x;
@@ -150,145 +150,149 @@ A_Xr(A_Xr < 0) = 0;
 % accel is the maximum acceleration capacity as a function of velocity
 % (power limited) and grip is the same but (tire limited)
 accel = csaps(velocity,A_Xr);
-grip = csaps(velocity,A_xr);
+gripspline = csaps(velocity,A_xr);
+grip = polyfit(velocity,A_xr,3)
 
 
-hold off
-figure
-hold on
-hold on
-fnplt(grip)
-grid on
-grid minor
-hold on
-fnplt(accel)
-grid on
-grid minor
-figure
-plot(1:1:18,A_xr)
+
+% range = linspace(4.5,30);
+% hold off
+% figure
+% hold on
+% plot(velocity,A_xr,'o',velocity,A_Xr,'o',range,polyval(grip,range))
+% hold on
+% % fnplt(gripspline)
+% grid on
+% grid minor
+% hold on
+% fnplt(accel)
+% grid on
+% grid minor
 
 AYP = .5;
 disp('Lateral Acceleration Envelope')
 
-% lateralg = zeros(1,length(radii));
-% for turn = 1:1:length(radii)
-%     % first define your vehicle characteristics:
-%         a = L*(1-WDF);
-%         b = L*WDF;
-%         R = radii(turn); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%         % update speed and downforce
-%         V = sqrt(R*9.81*AYP);
-%         LF = Cl*V^2; 
-%         % from downforce, update suspension travel (m):
-%         dxf = LF*CoP/2/WRF; 
-%         dxr = LF*(1-CoP)/2/WRR; 
-%         % from suspension heave, update static camber (rad):
-%         IA_0f = IA_staticf - dxf*IA_gainf; 
-%         IA_0r = IA_staticr - dxr*IA_gainr; 
-%         % update load on each wheel (N)
-%         wf = (WF+LF*CoP)/2;
-%         wr = (WR+LF*(1-CoP))/2;
-%         % guess ackermann steer angle as starting steer angle
-%         delta = L/R;
-%         % assume vehicle sideslip starts at 0 (rad)
-%         beta = 0;
-%         % Minimizing the objective function of M_z a_f-12degrees and a_y-AY 
-%         x0 = [delta, beta, AYP];  % initial values
-%         fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
-%             rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r);
-%         fun(x0);
-%         % minimizing function
-%         lb = [0 -.2 .5];
-%         ub = [.5 .2 2];
-%         opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-16,Display="none");
-%         x = lsqnonlin(fun, x0,lb,ub,opts);
-%         % output from minimizing
-%         delta = x(1);
-%         beta = x(2);
-%         AYP = x(3);
-%         deltaTest(turn) = rad2deg(delta);
-%         betaTest(turn) = rad2deg(beta);
-%         AYPTest(turn) = AYP;
-%         % recalculate values with optimized delta, beta, and AYP
-%         % update speed and downforce
-%         V = sqrt(R*9.81*AYP);
-%         LF = Cl*V^2; 
-%         % from downforce, update suspension travel (m):
-%         dxf = LF*CoP/2/WRF; 
-%         dxr = LF*(1-CoP)/2/WRR; 
-%         % from suspension heave, update static camber (rad):
-%         IA_0f = IA_staticf - dxf*IA_gainf; 
-%         IA_0r = IA_staticr - dxr*IA_gainr; 
-%         % update load on each axle (N)
-%         wf = (WF+LF*CoP)/2;
-%         wr = (WR+LF*(1-CoP))/2;
-%         % assume vehicle sideslip starts at 0 (rad)
-%         A_y = V^2/R/9.81; % (g's)
-%         % calculate lateral load transfer (lbs)
-%         WT = A_y*cg*W/mean([twf twr]);
-%         % split f/r using LLTD
-%         WTF = WT*LLTD;
-%         WTR = WT*(1-LLTD);
-%         % calculate f/r roll (rad)
-%         phif = A_y*rg_f;
-%         phir = A_y*rg_r;
-%         % update individual wheel loads 
-%         wfin = wf-WTF;
-%         wfout = wf+WTF;
-%         wrin = wr-WTR;
-%         wrout = wr+WTR;
-%         wfin1(turn) = wf-WTF;
-%         wfout1(turn) = wf+WTF;
-%         wrin1(turn) = wr-WTR;
-%         wrout1(turn) = wr+WTR;
-%         % update individual wheel camber (from roll, then from steer
-%         % effects)
-%         IA_f_in = -twf*sin(phif)/2*IA_gainf - IA_0f - KPIf*(1-cos(delta)) - casterf*sin(delta) +phif;
-%         IA_f_out = -twf*sin(phif)/2*IA_gainf + IA_0f + KPIf*(1-cos(delta)) - casterf*sin(delta) + phif;
-%         IA_r_in = -twr*sin(phir)/2*IA_gainr - IA_0r - KPIr*(1-cos(deltar)) - casterf*sin(deltar) +phir;
-%         IA_r_out = -twr*sin(phir)/2*IA_gainr + IA_0r + KPIr*(1-cos(deltar)) - casterf*sin(deltar) + phir;
-%         % calculate yaw rate
-%         r = A_y*9.81/V;
-%         % from yaw, sideslip and steer you can get slip angles
-%         a_f = beta+a*r/V-delta;
-%         a_r = beta-b*r/V;
-%         % with slip angles, load and camber, calculate lateral force at
-%         % the front
-%         F_fin = -MF52_Fy_fcn([-a_f wfin -IA_f_in])*sf_y*cos(delta); % inputs = (rad Newtons rad)
-%         F_fout = MF52_Fy_fcn([a_f wfout -IA_f_out])*sf_y*cos(delta);
-%         % before you calculate the rears, you ned to see what the diff is
-%         % doing
-%         % calculate the drag from aero and the front tires
-%         F_xDrag = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta);
-%         f_xplt(turn) = (F_fin+F_fout)*sin(delta)/cos(delta)/400;
-%         % calculate the grip penalty assuming the rears must overcome that
-%         % drag
-%         rscale = 1-(F_xDrag/W/fnval(grip,V))^2; % Comes from traction circle
-%         % now calculate rear tire forces, with said penalty
-%         F_rin = -MF52_Fy_fcn([-a_r wrin -IA_r_in])*sf_y*rscale; 
-%         F_rout = MF52_Fy_fcn([a_r wrout -IA_r_out])*sf_y*rscale;
-%         F_fin1(turn) = F_fin;
-%         F_fout1(turn) = F_fout;
-%         F_rin1(turn) = F_rin;
-%         F_rout1(turn) = F_rout;
-%         % sum of forces and moments
-%         F_y = F_fin+F_fout+F_rin+F_rout;
-%         M_z_diff = F_xDrag*T_lock*twr/2;  
-%         % calculate resultant lateral acceleration
-%         lateralg(turn) = F_y/W;  
-% %         M_z = (F_fin+F_fout)*a-(F_rin+F_rout)*b-M_z_diff;       
-% %         B = rad2deg(beta);
-% %         af = rad2deg(a_f);
-% %         ar = rad2deg(a_r);
-%         steer = rad2deg(delta);
-%         steerTest(turn) = steer;
-% %         UG = rad2deg(delta-L/R)*9.81/AY;
-% %         Ugradient(1) = UG;
-% %         skid = 2*pi*R/V;
-% %         steering(turn) = steer;
-% %         speed(turn) = V;
-% 
-% end
+lateralg = zeros(1,length(radii));
+for turn = 1:1:length(radii)
+    % first define your vehicle characteristics:
+        a = L*(1-WDF);
+        b = L*WDF;
+        R = radii(turn); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % update speed and downforce
+        V = sqrt(R*9.81*AYP);
+        LF = Cl*V^2; 
+        % from downforce, update suspension travel (m):
+        dxf = LF*CoP/2/WRF; 
+        dxr = LF*(1-CoP)/2/WRR; 
+        % from suspension heave, update static camber (rad):
+        IA_0f = IA_staticf - dxf*IA_gainf; 
+        IA_0r = IA_staticr - dxr*IA_gainr; 
+        % update load on each wheel (N)
+        wf = (WF+LF*CoP)/2;
+        wr = (WR+LF*(1-CoP))/2;
+        % guess ackermann steer angle as starting steer angle
+        delta = L/R;
+        % assume vehicle sideslip starts at 0 (rad)
+        beta = 0;
+        % Minimizing the objective function of M_z a_f-12degrees and a_y-AY 
+        x0 = [delta, beta, AYP];  % initial values
+        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
+            rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r);
+        fun(x0);
+        % minimizing function
+        lb = [0 -.2 .5];
+        ub = [.5 .2 2];
+        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-16,Display="none");
+        x = lsqnonlin(fun, x0,lb,ub,opts);
+        % output from minimizing
+        delta = x(1);
+        beta = x(2);
+        AYP = x(3);
+        deltaTest(turn) = rad2deg(delta);
+        betaTest(turn) = rad2deg(beta);
+        AYPTest(turn) = AYP;
+        % recalculate values with optimized delta, beta, and AYP
+        % update speed and downforce
+        V = sqrt(R*9.81*AYP);
+        LF = Cl*V^2; 
+        % from downforce, update suspension travel (m):
+        dxf = LF*CoP/2/WRF; 
+        dxr = LF*(1-CoP)/2/WRR; 
+        % from suspension heave, update static camber (rad):
+        IA_0f = IA_staticf - dxf*IA_gainf; 
+        IA_0r = IA_staticr - dxr*IA_gainr; 
+        % update load on each axle (N)
+        wf = (WF+LF*CoP)/2;
+        wr = (WR+LF*(1-CoP))/2;
+        % assume vehicle sideslip starts at 0 (rad)
+        A_y = V^2/R/9.81; % (g's)
+        % calculate lateral load transfer (lbs)
+        WT = A_y*cg*W/mean([twf twr]);
+        % split f/r using LLTD
+        WTF = WT*LLTD;
+        WTR = WT*(1-LLTD);
+        % calculate f/r roll (rad)
+        phif = A_y*rg_f;
+        phir = A_y*rg_r;
+        % update individual wheel loads 
+        wfin = wf-WTF;
+        wfout = wf+WTF;
+        wrin = wr-WTR;
+        wrout = wr+WTR;
+        wfin1(turn) = wf-WTF;
+        wfout1(turn) = wf+WTF;
+        wrin1(turn) = wr-WTR;
+        wrout1(turn) = wr+WTR;
+        % update individual wheel camber (from roll, then from steer
+        % effects)
+        IA_f_in = -twf*sin(phif)/2*IA_gainf - IA_0f - KPIf*(1-cos(delta)) - casterf*sin(delta) +phif;
+        IA_f_out = -twf*sin(phif)/2*IA_gainf + IA_0f + KPIf*(1-cos(delta)) - casterf*sin(delta) + phif;
+        IA_r_in = -twr*sin(phir)/2*IA_gainr - IA_0r - KPIr*(1-cos(deltar)) - casterf*sin(deltar) +phir;
+        IA_r_out = -twr*sin(phir)/2*IA_gainr + IA_0r + KPIr*(1-cos(deltar)) - casterf*sin(deltar) + phir;
+        % calculate yaw rate
+        r = A_y*9.81/V;
+        % from yaw, sideslip and steer you can get slip angles
+        a_f = beta+a*r/V-delta;
+        a_r = beta-b*r/V;
+        % with slip angles, load and camber, calculate lateral force at
+        % the front
+        F_fin = -MF52_Fy_fcn([-a_f wfin -IA_f_in])*sf_y*cos(delta); % inputs = (rad Newtons rad)
+        F_fout = MF52_Fy_fcn([a_f wfout -IA_f_out])*sf_y*cos(delta);
+        % before you calculate the rears, you ned to see what the diff is
+        % doing
+        % calculate the drag from aero and the front tires
+        F_xDrag = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta);
+        f_xplt(turn) = (F_fin+F_fout)*sin(delta)/cos(delta)/400;
+        % calculate the grip penalty assuming the rears must overcome that
+        % drag
+        rscale = 1-(F_xDrag/W/polyval(grip,V))^2; % Comes from traction circle
+        % now calculate rear tire forces, with said penalty
+        F_rin = -MF52_Fy_fcn([-a_r wrin -IA_r_in])*sf_y*rscale; 
+        F_rout = MF52_Fy_fcn([a_r wrout -IA_r_out])*sf_y*rscale;
+        F_fin1(turn) = F_fin;
+        F_fout1(turn) = F_fout;
+        F_rin1(turn) = F_rin;
+        F_rout1(turn) = F_rout;
+        % sum of forces and moments
+        F_y = F_fin+F_fout+F_rin+F_rout;
+        M_z_diff = F_xDrag*T_lock*twr/2;  
+        % calculate resultant lateral acceleration
+        lateralg(turn) = F_y/W;  
+%         M_z = (F_fin+F_fout)*a-(F_rin+F_rout)*b-M_z_diff;       
+%         B = rad2deg(beta);
+%         af = rad2deg(a_f);
+%         ar = rad2deg(a_r);
+        steer = rad2deg(delta);
+        steerTest(turn) = steer;
+%         UG = rad2deg(delta-L/R)*9.81/AY;
+%         Ugradient(1) = UG;
+%         skid = 2*pi*R/V;
+%         steering(turn) = steer;
+%         speed(turn) = V;
+
+end
+
+
 % lateralg 
 % figure
 % plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
@@ -302,175 +306,257 @@ disp('Lateral Acceleration Envelope')
 % hold off
 % velocity_y = lateralg.*9.81.*radii;
 % velocity_y = sqrt(velocity_y);
+% range = linspace(4.5,velocity_y(end));
+% hold on
+% lateral = polyfit(velocity_y,lateralg,3);
 % figure
 % plot(velocity_y,f_xplt,'o')
 % hold on
-% plot(velocity_y,lateralg,'o')
-% hold on
-% lateral = csaps(velocity_y,lateralg);
-% fnplt(lateral)
+% plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
 % grid on 
 % grid minor
 % hold off
+
+
+% Braking Performance
+velocity = 4.572:1.524:30.48;
+disp('     Braking Envelope')
+% the braking sim works exactly the same as acceleration, except now all 4
+% tires are contributing to the total braking capacity
+A_X = zeros(1,length(velocity));
+for  i = 1:1:length(velocity)
+    V = velocity(i);
+    LF = Cl*V^2;
+    dxf = LF*CoP/2/WRF;
+    dxr = LF*(1-CoP)/2/WRR;
+    IA_0f = IA_staticf - dxf*IA_gainf;
+    IA_0r = IA_staticr - dxr*IA_gainr;
+    wf = (WF+LF*CoP)/2;
+    wr = (WR+LF*(1-CoP))/2;
+    Ax = 1;
+    pitch = Ax*pg;
+    wf = wf+Ax*cg*W/L/2;
+    wr = wr-Ax*cg*W/L/2;
+    IA_f = -L*12*sin(pitch)/2*IA_gainf + IA_0f;% - KPIf*(1-cos(deltaf)) + casterf*sin(deltaf);
+    IA_r = L*12*sin(pitch)/2*IA_gainr + IA_0r;% - KPIr*(1-cos(deltar)) + casterf*sin(deltar);
+    sl = -.23:.01:0;
+    for k = 1:length(sl)
+          fxf(k) = MF52_Fx_fcn(lCoeff,[-wf -IA_f],sl(k))*sf_x;
+          fxr(k) = MF52_Fx_fcn(lCoeff,[-wr -IA_r],sl(k))*sf_x;
+    end
+    FXF = min(fxf);
+    FXR = min(fxr);
+    FX = abs(2*FXF+2*FXR);
+    AX = FX/W;
+    AX_diff = AX-Ax;
+    while AX_diff>0
+        Ax = Ax+.01;
+        pitch = Ax*pg;
+        wf = (WF+LF*CoP)/2;
+        wr = (WR+LF*(1-CoP))/2;
+        wf = wf+Ax*cg*W/L/2;
+        wr = wr-Ax*cg*W/L/2;
+        IA_f = -L*sin(pitch)/2*IA_gainf + IA_0f;% - KPIf*(1-cos(deltaf)) + casterf*sin(deltaf);
+        IA_r = L*sin(pitch)/2*IA_gainr + IA_0r;% - KPIr*(1-cos(deltar)) + casterf*sin(deltar);
+        sl = -.2:.01:0;
+        for k = 1:length(sl)
+            fxf(k) = MF52_Fx_fcn(lCoeff,[-wf -IA_f],sl(k))*sf_x;
+            fxr(k) = MF52_Fx_fcn(lCoeff,[-wr -IA_r],sl(k))*sf_x;
+        end
+        FXF = min(fxf);
+        FXR = min(fxr);
+        FX = abs(2*FXF+2*FXR);
+        AX = FX/W;
+        AX_diff = AX-Ax;
+    end
+    A_X(i) = AX;
+    wr_test(i) = wr;
+    wf_test(i) = wf;
+end
+plot(velocity,wr_test,'r',velocity,wf_test,'b')
+legend('Wr','Wf')
+grid on
+grid minor
+
+velocity_y = lateralg.*9.81.*radii;
+velocity_y = sqrt(velocity_y);
+
+r_max = max(radii);
+spcount = spcount+1;
+shift_points(spcount) = V+1;
+top_speed = V;
+VMAX = top_speed;
+% make the rest of your functions for the GGV diagram
+% braking as a function of speed
+deccel = polyfit(velocity,A_X,3);
+fnplt(deccel)
+% lateral g's as a function of velocity
+lateral = polyfit(velocity_y,lateralg,3);
+radii = velocity_y.^2./lateralg/9.81;
+% max velocity as a function of instantaneous turn radius
+cornering = polyfit(radii,velocity_y,3);
+range = linspace(4.5,30);
+figure
+fnplt(lateral)
+hold on
+grid on
+grid minor
+figure
+tiledlayout(2,3)
+nexttile
+fnplt(grip)
+grid on
+grid minor
+nexttile
+plot(range,polyval(grip,range))
+grid on
+grid minor
+nexttile
+fnplt(lateral)
+grid on
+grid minor
+nexttile
+fnplt(cornering)
+grid on
+grid minor
+nexttile
+fnplt(deccel)
+grid on
+grid minor
+%% Section 7: Load Endurance Track Coordinates
+%disp('Loading Endurance Track Coordinates')
+[data text] = xlsread('Endurance_Coordinates_1_SI.xlsx','Scaled');
+
+% the coordinates are now contained within 'data'. This is a 5 column
+% matrix that contains a set of defined 'gates' that the car must mavigate
+% through
+% Column 1: Gate #
+% Column 2: Outside boundary, x coordinate
+% Column 3: Outside boundary, y coordinate
+% Column 4: Inside boundary, x coordinate
+% Column 5: Inside boundary, y coordinate
+
+% sort the data into "inside" and "outside" cones
+outside = data(:,2:3);
+inside = data(:,4:5);
+t = [1:length(outside)];
+% define the minimum turn radius of the car
+r_min = 4.5;
+r_min = r_min-tw/2;
+pp_out = spline(t,outside');
+pp_in = spline(t,inside');
+
+for i = 1:1:length(outside)
+    % isolate individual gates
+    gate_in = inside(i,:);
+    gate_out = outside(i,:);
+    % create the line that connects the two cones together
+    x1 = gate_in(1);
+    x2 = gate_out(1);
+    y1 = gate_in(2);
+    y2 = gate_out(2);
+    % polynomial expression for the line:
+    coeff = polyfit([x1, x2], [y1, y2], 1);
+    % adjust the width of the gate for the width of the car:
+    gate_width = sqrt((x2-x1)^2+(y2-y1)^2);
+    path_width = gate_width-tw;
+    x_fs = tw/(2*gate_width);
+    % update the gate boundaries based on said new width
+    x_bound = [min(x1,x2)+x_fs*abs(x2-x1),max(x1,x2)-x_fs*abs(x2-x1)];
+    path_boundaries(i,:) = [coeff x_bound];
+end
+%% Section 8: Load Endurance Racing Line
+disp('Loading Endurance Racing Line')
+xx = load('endurance_racing_line.mat');
+xx = xx.endurance_racing_line;
+% Section 9: Optimize Endurance Racing Line
+% The pre-loaded racing line should work for most applications; however,
+% if you have the need to re-evaluate or generate a new optimized racing
+% line, simply un-comment the code below:
+
 % 
+% disp('Optimizing Endurance Racing Line')
+% A = eye(length(xx));
+% b = ones(length(xx),1);
+% lb = zeros(1,length(xx));
+% ub = ones(1,length(xx));
+% options = optimoptions('fmincon',...
+%     'Algorithm','sqp','Display','iter','ConstraintTolerance',1e-12);
+% options = optimoptions(options,'MaxIter', 10000, 'MaxFunEvals', 1000000,'ConstraintTolerance',1e-12,'DiffMaxChange',.1);
 % 
-% % Braking Performance
-% velocity = 4.572:1.524:30.48;
-% disp('     Braking Envelope')
-% % the braking sim works exactly the same as acceleration, except now all 4
-% % tires are contributing to the total braking capacity
-% A_X = zeros(1,length(velocity));
-% for  i = 1:1:length(velocity)
-%     V = velocity(i);
-%     LF = Cl*V^2;
-%     dxf = LF*CoP/2/WRF;
-%     dxr = LF*(1-CoP)/2/WRR;
-%     IA_0f = IA_staticf - dxf*IA_gainf;
-%     IA_0r = IA_staticr - dxr*IA_gainr;
-%     wf = (WF+LF*CoP)/2;
-%     wr = (WR+LF*(1-CoP))/2;
-%     Ax = 1;
-%     pitch = Ax*pg;
-%     wf = wf+Ax*cg*W/L/2;
-%     wr = wr-Ax*cg*W/L/2;
-%     IA_f = -L*12*sin(pitch)/2*IA_gainf + IA_0f;% - KPIf*(1-cos(deltaf)) + casterf*sin(deltaf);
-%     IA_r = L*12*sin(pitch)/2*IA_gainr + IA_0r;% - KPIr*(1-cos(deltar)) + casterf*sin(deltar);
-%     sl = -.23:.01:0;
-%     for k = 1:length(sl)
-%           fxf(k) = MF52_Fx_fcn(lCoeff,[-wf -IA_f],sl(k))*sf_x;
-%           fxr(k) = MF52_Fx_fcn(lCoeff,[-wr -IA_r],sl(k))*sf_x;
-%     end
-%     FXF = min(fxf);
-%     FXR = min(fxr);
-%     FX = abs(2*FXF+2*FXR);
-%     AX = FX/W;
-%     AX_diff = AX-Ax;
-%     while AX_diff>0
-%         Ax = Ax+.01;
-%         pitch = Ax*pg;
-%         wf = (WF+LF*CoP)/2;
-%         wr = (WR+LF*(1-CoP))/2;
-%         wf = wf+Ax*cg*W/L/2;
-%         wr = wr-Ax*cg*W/L/2;
-%         IA_f = -L*sin(pitch)/2*IA_gainf + IA_0f;% - KPIf*(1-cos(deltaf)) + casterf*sin(deltaf);
-%         IA_r = L*sin(pitch)/2*IA_gainr + IA_0r;% - KPIr*(1-cos(deltar)) + casterf*sin(deltar);
-%         sl = -.2:.01:0;
-%         for k = 1:length(sl)
-%             fxf(k) = MF52_Fx_fcn(lCoeff,[-wf -IA_f],sl(k))*sf_x;
-%             fxr(k) = MF52_Fx_fcn(lCoeff,[-wr -IA_r],sl(k))*sf_x;
-%         end
-%         FXF = min(fxf);
-%         FXR = min(fxr);
-%         FX = abs(2*FXF+2*FXR);
-%         AX = FX/W;
-%         AX_diff = AX-Ax;
-%     end
-%     A_X(i) = AX;
-%     wr_test(i) = wr;
-%     wf_test(i) = wf;
-% end
-% plot(velocity,wr_test,'r',velocity,wf_test,'b')
-% legend('Wr','Wf')
-% grid on
-% grid minor
-% 
-% % velocity_y = lateralg.*9.81.*radii;
-% % velocity_y = sqrt(velocity_y);
-% 
-% r_max = max(radii);
-% spcount = spcount+1;
-% shift_points(spcount) = V+1;
-% top_speed = V;
-% VMAX = top_speed;
-% % make the rest of your functions for the GGV diagram
-% % braking as a function of speed
-% deccel = csaps(velocity,A_X);
-% fnplt(deccel)
-% % lateral g's as a function of velocity
-% lateral = csaps(velocity_y,lateralg);
-% radii = velocity_y.^2./lateralg/9.81;
-% % max velocity as a function of instantaneous turn radius
-% cornering = csaps(radii,velocity_y);
-% figure
-% fnplt(lateral)
-% hold on
-% grid on
-% grid minor
-% figure
-% tiledlayout(2,3)
-% nexttile
-% fnplt(grip)
-% grid on
-% grid minor
-% nexttile
-% fnplt(accel)
-% grid on
-% grid minor
-% nexttile
-% fnplt(lateral)
-% grid on
-% grid minor
-% nexttile
-% fnplt(cornering)
-% grid on
-% grid minor
-% nexttile
-% fnplt(deccel)
-% grid on
-% grid minor
-% %% Section 7: Load Endurance Track Coordinates
-% %disp('Loading Endurance Track Coordinates')
-% [data text] = xlsread('Endurance_Coordinates_1_SI.xlsx','Scaled');
-% 
-% % the coordinates are now contained within 'data'. This is a 5 column
-% % matrix that contains a set of defined 'gates' that the car must mavigate
-% % through
-% % Column 1: Gate #
-% % Column 2: Outside boundary, x coordinate
-% % Column 3: Outside boundary, y coordinate
-% % Column 4: Inside boundary, x coordinate
-% % Column 5: Inside boundary, y coordinate
-% 
-% % sort the data into "inside" and "outside" cones
+% x = fmincon(@lap_time,xx,[],[],[],[],lb,ub,@track_curvature,options);
+% xx = x;
+% x(end+1) = x(1);
+% x(end+1) = x(2);
+%% Section 10: Generate Final Endurance Trajectory
+x = xx;
+% Plot finished line
+x(end+1) = x(1);
+x(end+1) = x(2);
+for i = 1:1:length(x)
+    % for each gate, find the position defined between the cones
+    coeff = path_boundaries(i,1:2);
+    x2 = max(path_boundaries(i,3:4));
+    x1 = min(path_boundaries(i,3:4));
+    position = x(i);
+    % place the car within via linear interpolation
+    x3 = x1+position*(x2-x1);
+    y3 = polyval(coeff,x3);
+    %plot(x3,y3,'og')
+    % the actual car's trajectory defined in x-y coordinates:
+    path_points(i,:) = [x3 y3];
+end
+
+x = linspace(1,t(end-1),1000);
+ppv = pchip(t,path_points');
+vehicle_path = ppval(ppv,x);
+vehicle_path_EN = vehicle_path;
+Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
+%% Section 11: Simulate Endurance Lap
+%disp('Plotting Vehicle Trajectory')
+[laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(xx);
+% %% Section 12: Load Autocross Track Coordinates
+% %disp('Loading Autocross Track Coordinates')
+% [data text] = xlsread('Autocross_Coordinates_2_SI.xlsx','Scaled');
 % outside = data(:,2:3);
 % inside = data(:,4:5);
 % t = [1:length(outside)];
-% % define the minimum turn radius of the car
-% r_min = 4.5;
-% r_min = r_min-tw/2;
 % pp_out = spline(t,outside');
 % pp_in = spline(t,inside');
 % 
+% %plot(outside(:,1),outside(:,2),'ok')
+% %hold on
+% %plot(inside(:,1),inside(:,2),'ok')
+% clear path_boundaries
 % for i = 1:1:length(outside)
-%     % isolate individual gates
 %     gate_in = inside(i,:);
 %     gate_out = outside(i,:);
-%     % create the line that connects the two cones together
+%     %plot([gate_in(1) gate_out(1)],[gate_in(2) gate_out(2)],'-k')
 %     x1 = gate_in(1);
 %     x2 = gate_out(1);
 %     y1 = gate_in(2);
 %     y2 = gate_out(2);
-%     % polynomial expression for the line:
 %     coeff = polyfit([x1, x2], [y1, y2], 1);
-%     % adjust the width of the gate for the width of the car:
 %     gate_width = sqrt((x2-x1)^2+(y2-y1)^2);
 %     path_width = gate_width-tw;
 %     x_fs = tw/(2*gate_width);
-%     % update the gate boundaries based on said new width
 %     x_bound = [min(x1,x2)+x_fs*abs(x2-x1),max(x1,x2)-x_fs*abs(x2-x1)];
-%     path_boundaries(i,:) = [coeff x_bound];
+%     path_boundaries_ax(i,:) = [coeff x_bound];
+%     %text(round(x1),round(y1),num2str(i))
 % end
-% %% Section 8: Load Endurance Racing Line
-% disp('Loading Endurance Racing Line')
-% xx = load('endurance_racing_line.mat');
-% xx = xx.endurance_racing_line;
-% % Section 9: Optimize Endurance Racing Line
-% % The pre-loaded racing line should work for most applications; however,
-% % if you have the need to re-evaluate or generate a new optimized racing
-% % line, simply un-comment the code below:
+
+
+%save('path_boundaries.mat','path_boundaries');
+% %% Section 13: Load Autocross Racing Line
+% %disp('Loading Autocross Racing Line')
+% xx = load('autocross_racing_line.mat');
+% xx = xx.autocross_racing_line;
+% %% Section 14: Optimize Autocross Racing Line
+% % Same applies here, optimizing the line is optional but if you want,
+% % simply un-comment the lines of code below:
 % 
-% % 
-% % disp('Optimizing Endurance Racing Line')
+% 
+% % disp('Optimizing Racing Line')
 % % A = eye(length(xx));
 % % b = ones(length(xx),1);
 % % lb = zeros(1,length(xx));
@@ -479,137 +565,56 @@ disp('Lateral Acceleration Envelope')
 % %     'Algorithm','sqp','Display','iter','ConstraintTolerance',1e-12);
 % % options = optimoptions(options,'MaxIter', 10000, 'MaxFunEvals', 1000000,'ConstraintTolerance',1e-12,'DiffMaxChange',.1);
 % % 
-% % x = fmincon(@lap_time,xx,[],[],[],[],lb,ub,@track_curvature,options);
-% % xx = x;
-% % x(end+1) = x(1);
-% % x(end+1) = x(2);
-% %% Section 10: Generate Final Endurance Trajectory
-% x = xx;
-% % Plot finished line
-% x(end+1) = x(1);
-% x(end+1) = x(2);
+% % x = fmincon(@lap_time_sprint,xx,[],[],[],[],lb,ub,@track_curvature_sprint,options);
+% % xx_auto = x;
+% % % x(end+1) = x(1);
+% % % x(end+1) = x(2);
+% %% Section 15: Generate Final Autocross Trajectory
+% xx_auto = xx;
+% x = xx_auto;
+% %Plot finished line
+% 
 % for i = 1:1:length(x)
-%     % for each gate, find the position defined between the cones
-%     coeff = path_boundaries(i,1:2);
-%     x2 = max(path_boundaries(i,3:4));
-%     x1 = min(path_boundaries(i,3:4));
+%     coeff = path_boundaries_ax(i,1:2);
+%     x2 = max(path_boundaries_ax(i,3:4));
+%     x1 = min(path_boundaries_ax(i,3:4));
 %     position = x(i);
-%     % place the car within via linear interpolation
 %     x3 = x1+position*(x2-x1);
 %     y3 = polyval(coeff,x3);
 %     %plot(x3,y3,'og')
-%     % the actual car's trajectory defined in x-y coordinates:
-%     path_points(i,:) = [x3 y3];
+%     path_points_ax(i,:) = [x3 y3];
 % end
-% 
-% x = linspace(1,t(end-1),1000);
-% ppv = pchip(t,path_points');
+% x = linspace(1,t(end),1000);
+% ppv = pchip(t,path_points_ax');
 % vehicle_path = ppval(ppv,x);
-% vehicle_path_EN = vehicle_path;
+% vehicle_path_AX = vehicle_path;
 % Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
-% %% Section 11: Simulate Endurance Lap
+% %% Section 16: Simulate Autocross Lap
 % %disp('Plotting Vehicle Trajectory')
-% [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(xx);
-% % %% Section 12: Load Autocross Track Coordinates
-% % %disp('Loading Autocross Track Coordinates')
-% % [data text] = xlsread('Autocross_Coordinates_2_SI.xlsx','Scaled');
-% % outside = data(:,2:3);
-% % inside = data(:,4:5);
-% % t = [1:length(outside)];
-% % pp_out = spline(t,outside');
-% % pp_in = spline(t,inside');
-% % 
-% % %plot(outside(:,1),outside(:,2),'ok')
-% % %hold on
-% % %plot(inside(:,1),inside(:,2),'ok')
-% % clear path_boundaries
-% % for i = 1:1:length(outside)
-% %     gate_in = inside(i,:);
-% %     gate_out = outside(i,:);
-% %     %plot([gate_in(1) gate_out(1)],[gate_in(2) gate_out(2)],'-k')
-% %     x1 = gate_in(1);
-% %     x2 = gate_out(1);
-% %     y1 = gate_in(2);
-% %     y2 = gate_out(2);
-% %     coeff = polyfit([x1, x2], [y1, y2], 1);
-% %     gate_width = sqrt((x2-x1)^2+(y2-y1)^2);
-% %     path_width = gate_width-tw;
-% %     x_fs = tw/(2*gate_width);
-% %     x_bound = [min(x1,x2)+x_fs*abs(x2-x1),max(x1,x2)-x_fs*abs(x2-x1)];
-% %     path_boundaries_ax(i,:) = [coeff x_bound];
-% %     %text(round(x1),round(y1),num2str(i))
-% % end
-% 
-% 
-% %save('path_boundaries.mat','path_boundaries');
-% % %% Section 13: Load Autocross Racing Line
-% % %disp('Loading Autocross Racing Line')
-% % xx = load('autocross_racing_line.mat');
-% % xx = xx.autocross_racing_line;
-% % %% Section 14: Optimize Autocross Racing Line
-% % % Same applies here, optimizing the line is optional but if you want,
-% % % simply un-comment the lines of code below:
-% % 
-% % 
-% % % disp('Optimizing Racing Line')
-% % % A = eye(length(xx));
-% % % b = ones(length(xx),1);
-% % % lb = zeros(1,length(xx));
-% % % ub = ones(1,length(xx));
-% % % options = optimoptions('fmincon',...
-% % %     'Algorithm','sqp','Display','iter','ConstraintTolerance',1e-12);
-% % % options = optimoptions(options,'MaxIter', 10000, 'MaxFunEvals', 1000000,'ConstraintTolerance',1e-12,'DiffMaxChange',.1);
-% % % 
-% % % x = fmincon(@lap_time_sprint,xx,[],[],[],[],lb,ub,@track_curvature_sprint,options);
-% % % xx_auto = x;
-% % % % x(end+1) = x(1);
-% % % % x(end+1) = x(2);
-% % %% Section 15: Generate Final Autocross Trajectory
-% % xx_auto = xx;
-% % x = xx_auto;
-% % %Plot finished line
-% % 
-% % for i = 1:1:length(x)
-% %     coeff = path_boundaries_ax(i,1:2);
-% %     x2 = max(path_boundaries_ax(i,3:4));
-% %     x1 = min(path_boundaries_ax(i,3:4));
-% %     position = x(i);
-% %     x3 = x1+position*(x2-x1);
-% %     y3 = polyval(coeff,x3);
-% %     %plot(x3,y3,'og')
-% %     path_points_ax(i,:) = [x3 y3];
-% % end
-% % x = linspace(1,t(end),1000);
-% % ppv = pchip(t,path_points_ax');
-% % vehicle_path = ppval(ppv,x);
-% % vehicle_path_AX = vehicle_path;
-% % Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
-% % %% Section 16: Simulate Autocross Lap
-% % %disp('Plotting Vehicle Trajectory')
-% % [laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax] = lap_information_sprint(xx_auto);
-% %% Section 17: Calculate Dynamic Event Points
-% %disp('Calculating Points at Competition')
-% % calculate endurance score
-% Tmin = 115.249;
+% [laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax] = lap_information_sprint(xx_auto);
+%% Section 17: Calculate Dynamic Event Points
+%disp('Calculating Points at Competition')
+% calculate endurance score
+Tmin = 115.249;
+Tmax = Tmin*1.45;
+Endurance_Score =250*((Tmax/(laptime+13))-1)/(Tmax/Tmin-1)+25;
+
+% % Calculate autocross score
+% Tmin = 48.799;
 % Tmax = Tmin*1.45;
-% Endurance_Score =250*((Tmax/(laptime+13))-1)/(Tmax/Tmin-1)+25;
-% 
-% % % Calculate autocross score
-% % Tmin = 48.799;
-% % Tmax = Tmin*1.45;
-% % Autocross_Score =118.5*((Tmax/(laptime_ax))-1)/(Tmax/Tmin-1)+6.5;
-% 
-% % Skidpad Analysis
-% % define skidpad turn radius (m)
-% path_radius = 7.62+tw/2+.1524;
-% % determine speed possible to take:
-% speed = fnval(cornering,path_radius);
-% % calculate skidpad time
-% skidpad_time = path_radius*2*pi/speed;
-% % calculate score based on 2019 times
-% Tmin_skid = 4.865;
-% Tmax_skid = Tmin_skid*1.45;
-% Skidpad_Score = 71.5*((Tmax_skid/skidpad_time)^2-1)/((Tmax_skid/Tmin_skid)^2-1) + 3.5;
+% Autocross_Score =118.5*((Tmax/(laptime_ax))-1)/(Tmax/Tmin-1)+6.5;
+
+% Skidpad Analysis
+% define skidpad turn radius (m)
+path_radius = 7.62+tw/2+.1524;
+% determine speed possible to take:
+speed = fnval(cornering,path_radius);
+% calculate skidpad time
+skidpad_time = path_radius*2*pi/speed;
+% calculate score based on 2019 times
+Tmin_skid = 4.865;
+Tmax_skid = Tmin_skid*1.45;
+Skidpad_Score = 71.5*((Tmax_skid/skidpad_time)^2-1)/((Tmax_skid/Tmin_skid)^2-1) + 3.5;
 
 % Acceleration Analysis
 % start at speed 0, gear 1, etc
