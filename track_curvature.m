@@ -1,5 +1,5 @@
 function [c,ceq] = track_curvature(path_positions)
-global path_boundaries track_width
+global path_boundaries track_width r_min
 tw = track_width;
 r_min = 14.75*2/tw;
 path_positions(end+1) = path_positions(1);
