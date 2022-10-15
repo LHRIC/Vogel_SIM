@@ -396,27 +396,33 @@ cornering = polyfit(radii,velocity_y,3);
 
 
 figure
-tiledlayout(2,3)
+t = tiledlayout(2,3);
+title(t, "CG Height: " + cg + "m ("+ cg*39.37 +" inches)")
 nexttile
 range = linspace(4.5,30);
 plot(velocity,A_xr,'o',range,polyval(grip,range))
+title('Tire limited and Grip limited Acceleration vs Velocity')
 grid on
 grid minor
 hold on
 fnplt(accel)
+legend('Tire Limited','Grip Limited')
 nexttile
 plot(velocity,A_X,'o',range,polyval(deccel,range))
+title('Braking Acceleration vs Velocity')
 grid on
 grid minor
 nexttile
 range = linspace(4.5,velocity_y(end));
 plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
+title('Lateral Acceleration vs Velocity')
 hold on
 grid on
 grid minor
 nexttile
 range = linspace(3.5,radii(end));
 plot(radii,velocity_y,'o',range,polyval(cornering,range))
+title('Velocity vs Radius')
 grid on
 grid minor
 
@@ -513,82 +519,82 @@ Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
 %disp('Plotting Vehicle Trajectory')
 [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(xx);
 % %% Section 12: Load Autocross Track Coordinates
-% %disp('Loading Autocross Track Coordinates')
-% [data text] = xlsread('Autocross_Coordinates_2_SI.xlsx','Scaled');
-% outside = data(:,2:3);
-% inside = data(:,4:5);
-% t = [1:length(outside)];
-% pp_out = spline(t,outside');
-% pp_in = spline(t,inside');
-% 
-% %plot(outside(:,1),outside(:,2),'ok')
-% %hold on
-% %plot(inside(:,1),inside(:,2),'ok')
-% clear path_boundaries
-% for i = 1:1:length(outside)
-%     gate_in = inside(i,:);
-%     gate_out = outside(i,:);
-%     %plot([gate_in(1) gate_out(1)],[gate_in(2) gate_out(2)],'-k')
-%     x1 = gate_in(1);
-%     x2 = gate_out(1);
-%     y1 = gate_in(2);
-%     y2 = gate_out(2);
-%     coeff = polyfit([x1, x2], [y1, y2], 1);
-%     gate_width = sqrt((x2-x1)^2+(y2-y1)^2);
-%     path_width = gate_width-tw;
-%     x_fs = tw/(2*gate_width);
-%     x_bound = [min(x1,x2)+x_fs*abs(x2-x1),max(x1,x2)-x_fs*abs(x2-x1)];
-%     path_boundaries_ax(i,:) = [coeff x_bound];
-%     %text(round(x1),round(y1),num2str(i))
-% end
+%disp('Loading Autocross Track Coordinates')
+[data text] = xlsread('Autocross_Coordinates_2_SI.xlsx','Scaled');
+outside = data(:,2:3);
+inside = data(:,4:5);
+t = [1:length(outside)];
+pp_out = spline(t,outside');
+pp_in = spline(t,inside');
+
+%plot(outside(:,1),outside(:,2),'ok')
+%hold on
+%plot(inside(:,1),inside(:,2),'ok')
+clear path_boundaries
+for i = 1:1:length(outside)
+    gate_in = inside(i,:);
+    gate_out = outside(i,:);
+    %plot([gate_in(1) gate_out(1)],[gate_in(2) gate_out(2)],'-k')
+    x1 = gate_in(1);
+    x2 = gate_out(1);
+    y1 = gate_in(2);
+    y2 = gate_out(2);
+    coeff = polyfit([x1, x2], [y1, y2], 1);
+    gate_width = sqrt((x2-x1)^2+(y2-y1)^2);
+    path_width = gate_width-tw;
+    x_fs = tw/(2*gate_width);
+    x_bound = [min(x1,x2)+x_fs*abs(x2-x1),max(x1,x2)-x_fs*abs(x2-x1)];
+    path_boundaries_ax(i,:) = [coeff x_bound];
+    %text(round(x1),round(y1),num2str(i))
+end
 
 
-%save('path_boundaries.mat','path_boundaries');
-% %% Section 13: Load Autocross Racing Line
-% %disp('Loading Autocross Racing Line')
-% xx = load('autocross_racing_line.mat');
-% xx = xx.autocross_racing_line;
-% %% Section 14: Optimize Autocross Racing Line
-% % Same applies here, optimizing the line is optional but if you want,
-% % simply un-comment the lines of code below:
+% save('path_boundaries.mat','path_boundaries');
+%% Section 13: Load Autocross Racing Line
+%disp('Loading Autocross Racing Line')
+xx = load('autocross_racing_line.mat');
+xx = xx.autocross_racing_line;
+%% Section 14: Optimize Autocross Racing Line
+% Same applies here, optimizing the line is optional but if you want,
+% simply un-comment the lines of code below:
+
+
+% disp('Optimizing Racing Line')
+% A = eye(length(xx));
+% b = ones(length(xx),1);
+% lb = zeros(1,length(xx));
+% ub = ones(1,length(xx));
+% options = optimoptions('fmincon',...
+%     'Algorithm','sqp','Display','iter','ConstraintTolerance',1e-12);
+% options = optimoptions(options,'MaxIter', 10000, 'MaxFunEvals', 1000000,'ConstraintTolerance',1e-12,'DiffMaxChange',.1);
 % 
-% 
-% % disp('Optimizing Racing Line')
-% % A = eye(length(xx));
-% % b = ones(length(xx),1);
-% % lb = zeros(1,length(xx));
-% % ub = ones(1,length(xx));
-% % options = optimoptions('fmincon',...
-% %     'Algorithm','sqp','Display','iter','ConstraintTolerance',1e-12);
-% % options = optimoptions(options,'MaxIter', 10000, 'MaxFunEvals', 1000000,'ConstraintTolerance',1e-12,'DiffMaxChange',.1);
-% % 
-% % x = fmincon(@lap_time_sprint,xx,[],[],[],[],lb,ub,@track_curvature_sprint,options);
-% % xx_auto = x;
-% % % x(end+1) = x(1);
-% % % x(end+1) = x(2);
-% %% Section 15: Generate Final Autocross Trajectory
-% xx_auto = xx;
-% x = xx_auto;
-% %Plot finished line
-% 
-% for i = 1:1:length(x)
-%     coeff = path_boundaries_ax(i,1:2);
-%     x2 = max(path_boundaries_ax(i,3:4));
-%     x1 = min(path_boundaries_ax(i,3:4));
-%     position = x(i);
-%     x3 = x1+position*(x2-x1);
-%     y3 = polyval(coeff,x3);
-%     %plot(x3,y3,'og')
-%     path_points_ax(i,:) = [x3 y3];
-% end
-% x = linspace(1,t(end),1000);
-% ppv = pchip(t,path_points_ax');
-% vehicle_path = ppval(ppv,x);
-% vehicle_path_AX = vehicle_path;
-% Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
-% %% Section 16: Simulate Autocross Lap
-% %disp('Plotting Vehicle Trajectory')
-% [laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax] = lap_information_sprint(xx_auto);
+% x = fmincon(@lap_time_sprint,xx,[],[],[],[],lb,ub,@track_curvature_sprint,options);
+% xx_auto = x;
+% % x(end+1) = x(1);
+% % x(end+1) = x(2);
+%% Section 15: Generate Final Autocross Trajectory
+xx_auto = xx;
+x = xx_auto;
+%Plot finished line
+
+for i = 1:1:length(x)
+    coeff = path_boundaries_ax(i,1:2);
+    x2 = max(path_boundaries_ax(i,3:4));
+    x1 = min(path_boundaries_ax(i,3:4));
+    position = x(i);
+    x3 = x1+position*(x2-x1);
+    y3 = polyval(coeff,x3);
+    %plot(x3,y3,'og')
+    path_points_ax(i,:) = [x3 y3];
+end
+x = linspace(1,t(end),1000);
+ppv = pchip(t,path_points_ax');
+vehicle_path = ppval(ppv,x);
+vehicle_path_AX = vehicle_path;
+Length = arclength(vehicle_path(1,:),vehicle_path(2,:));
+%% Section 16: Simulate Autocross Lap
+%disp('Plotting Vehicle Trajectory')
+[laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax] = lap_information_sprint(xx_auto);
 %% Section 17: Calculate Dynamic Event Points
 %disp('Calculating Points at Competition')
 % calculate endurance score
@@ -730,7 +736,7 @@ rearF = zeros(3,3);
 % frontF(1,:) = [0 -(WF/2 -WF*AX_min*cg/L/2)*AX_min 0];
 % rearF(1,:) = [W*AX_max/2 -(WR/2 +WR*AX_min*cg/L/2)*AX_min 0];
 
-output = struct('laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocity,'acceleration',acceleration,'lateral_accel' ...
+output = struct('Autocross_laptime',laptime_ax,'laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocity,'acceleration',acceleration,'lateral_accel' ...
     ,lateral_accel,'gear_counter',gear_counter,'path_length',path_length,'weights',weights,'distance',distance, 'accel_time' ...
     ,accel_time, 'Endurance_Score',Endurance_Score, 'Accel_Score', Accel_Score, 'Skidpad_Score',Skidpad_Score);
 % output = [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax accel_time Endurance_Score Autocross_Score Accel_Score Skidpad_Score];
