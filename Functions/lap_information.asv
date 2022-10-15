@@ -313,8 +313,8 @@ for i = 1:1:length(VD)
     t_elapsed = t_elapsed+dtime(i);
     time_elapsed(i) = t_elapsed;
 end
-AY_outlier = find(lateral_accel > polyval(lateral,top_speed+1));
-lateral_accel(AY_outlier) = polyval(lateral,top_speed+1);
+AY_outlier = find(lateral_accel > polyval(lateral,116*.3048));
+lateral_accel(AY_outlier) = polyval(lateral,116*.3048);
 throttle = 0;
 brake = 0;
 corner = 0;
@@ -341,6 +341,7 @@ weights = [t_t/summ t_b/summ t_c/summ];
 
 %% Plot Results
 %figure
+V_plot = zeros(1,length)
 for i = 1:1:length(track_points)-2
     V_plot(i) = mean(velocity(i*interval-interval+1:i*interval));
 end
