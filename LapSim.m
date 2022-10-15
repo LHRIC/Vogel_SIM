@@ -1,4 +1,4 @@
-function [output]=LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, showPlots)
+function [output]=LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots)
 %% Section 0: Name all symbolic variables
 % Don't touch this. This is just naming a bunch of variables and making
 % them global so that all the other functions can access them
@@ -29,7 +29,7 @@ tire_radius = .2032; % (meters)
 % (y) friction. You can use these to tune the lap sim to correlate better 
 % to logged data 
 sf_x = .6;
-sf_y = .47;   
+sf_y = .6;   
 %% Section 2: Input Powertrain Model
 % change whatever you want here, this is the 2018 powertrain package iirc
 % just keep your units consistent please
@@ -39,7 +39,7 @@ disp('Loading Engine Model')
 engineSpeed = 6200:100:14100; % RPM
 
 % torque should be in N-m:
-engineTq = [41.57 42.98 44.43 45.65 46.44 47.09 47.52 48.58 49.57 50.41 51.43 51.48 51 49.311 48.94 48.66 49.62 49.60 47.89 47.91 48.09 48.57 49.07 49.31 49.58 49.56 49.84 50.10 50.00 50.00 50.75 51.25 52.01 52.44 52.59 52.73 53.34 53.72 52.11 52.25 51.66 50.5 50.34 50.50 50.50 50.55 50.63 50.17 50.80 49.73 49.35 49.11 48.65 48.28 48.28 47.99 47.68 47.43 47.07 46.67 45.49 45.37 44.67 43.8 43.0 42.3 42.00 41.96 41.70 40.43 39.83 38.60 38.46 37.56 36.34 35.35 33.75 33.54 32.63 31.63];
+engineTq = tqMod*[41.57 42.98 44.43 45.65 46.44 47.09 47.52 48.58 49.57 50.41 51.43 51.48 51 49.311 48.94 48.66 49.62 49.60 47.89 47.91 48.09 48.57 49.07 49.31 49.58 49.56 49.84 50.10 50.00 50.00 50.75 51.25 52.01 52.44 52.59 52.73 53.34 53.72 52.11 52.25 51.66 50.5 50.34 50.50 50.50 50.55 50.63 50.17 50.80 49.73 49.35 49.11 48.65 48.28 48.28 47.99 47.68 47.43 47.07 46.67 45.49 45.37 44.67 43.8 43.0 42.3 42.00 41.96 41.70 40.43 39.83 38.60 38.46 37.56 36.34 35.35 33.75 33.54 32.63 31.63];
 primaryReduction = 76/36; % Transmission primary reduction (applies to all gears)
 gear = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24]; % transmission gear ratios
 finalDrive = 37/11; % large sprocket/small sprocket
@@ -171,6 +171,13 @@ grip = polyfit(velocity,A_xr,3);
 AYP = .5;
 disp('Lateral Acceleration Envelope')
 
+
+% load('lateralg.mat')
+% disp("////////////////////////////////////WARNING////////////////////" + ...
+%     "LOADING PRECALCULATED LATERALG")
+
+
+
 lateralg = zeros(1,length(radii));
 for turn = 1:1:length(radii)
     % first define your vehicle characteristics:
@@ -201,7 +208,7 @@ for turn = 1:1:length(radii)
         % minimizing function
         lb = [0 -.2 .5];
         ub = [.5 .2 2];
-        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-16,Display="none");
+        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-8,Display="off");
         x = lsqnonlin(fun, x0,lb,ub,opts);
         % output from minimizing
         delta = x(1);
@@ -291,34 +298,34 @@ for turn = 1:1:length(radii)
 
 end
 
-% load('lateralg.mat')
-% disp("////////////////////////////////////WARNING////////////////////" + ...
-%     "LOADING PRECALCULATED LATERALG")
 
-% lateralg 
-% figure
-% plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
-% legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-% grid on
-% hold off
-% figure
-% plot(radii,wfin1,'m',radii,wfout1,'c',radii, wrin1,'b',radii,wrout1,'g')
-% legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-% grid on
-% hold off
-% velocity_y = lateralg.*9.81.*radii;
-% velocity_y = sqrt(velocity_y);
-% range = linspace(4.5,velocity_y(end));
-% hold on
-% lateral = polyfit(velocity_y,lateralg,3);
-% figure
-% plot(velocity_y,f_xplt,'o')
-% hold on
-% plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
-% grid on 
-% grid minor
-% hold off
 
+
+%{
+lateralg 
+figure
+plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
+legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+grid on
+hold off
+figure
+plot(radii,wfin1,'m',radii,wfout1,'c',radii, wrin1,'b',radii,wrout1,'g')
+legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+grid on
+hold off
+velocity_y = lateralg.*9.81.*radii;
+velocity_y = sqrt(velocity_y);
+range = linspace(4.5,velocity_y(end));
+hold on
+lateral = polyfit(velocity_y,lateralg,3);
+figure
+plot(velocity_y,f_xplt,'o')
+hold on
+plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
+grid on 
+grid minor
+hold off
+%}
 
 % Braking Performance
 velocity = 4.5:1.5:22.5; % range of velocities at which sim will evaluate (m/s)
@@ -534,7 +541,7 @@ track = readtable('Track Creation/17_lincoln_endurance_track.xls');
 
 %% Section 11: Simulate Endurance Lap
 %disp('Plotting Vehicle Trajectory')
-[laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance vehicle_path] = lap_information(track, showPlots);
+[laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(track, showPlots);
 
 %% Section 12: Load Autocross Track Coordinates
 % %disp('Loading Autocross Track Coordinates')

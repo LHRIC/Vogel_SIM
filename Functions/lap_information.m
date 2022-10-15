@@ -1,4 +1,4 @@
-function [lap_time time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance vehicle_path] = lap_information(track, showPlots)
+function [lap_time time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(track, showPlots)
 global path_boundaries r_min r_max cornering accel grip deccel lateral...
     shift_points top_speed shift_time
 %% Generate vehicle trajectory
@@ -20,37 +20,47 @@ global path_boundaries r_min r_max cornering accel grip deccel lateral...
 %     path_points(i,:) = [x3 y3];             
 % end
 
-interval = 1;
+interval = 1000;
 sections = 6000;
 VMAX = top_speed;
 r_min = 4.5;
 
 t = 1:height(track);
-path_points = [track.X, track.Y]'/1000;
-x = linspace(1,t(end-1),1000);
-ppv = spline(t,path_points);
-vehicle_path = ppval(ppv,x);
- if showPlots == true
-figure
-plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
-hold on
-fnplt(ppv)
-hold on
-end
-path_length = arclength(vehicle_path(1,:),vehicle_path(2,:));
+path_points = [track.X, track.Y]/1000;
+
+KT = LineCurvature2D(path_points);
+KT = KT(~isnan(KT));
+smallvalues = find(abs(KT)<.00001);
+KT(smallvalues) = 1/r_max;
+RT = abs(1./KT);
+RT(end-2:end) = [];
+% figure
+% patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
+% h = colorbar;
+% set(get(h,'title'),'string','Velocity (V) [m/s]');
+% set(gca,'XTick',[], 'YTick', [])
+
+% x = linspace(1,t(end-1),10000);
+% ppv = csaps(t,path_points,1);
+% vehicle_path = ppval(ppv,x);
+%  if showPlots == true
+% figure
+% plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
+% hold on
+% fnplt(ppv)
+% hold on
+% end
+
 % x = linspace(1,t(end-1),1000);
 % ppv = interp1([1:length(path_points)],path_points,x,'makima');
 % vehicle_path = ppv';
 
-[L,R,K] = curvature(vehicle_path');
 %% Traverse the track
-track_points = vehicle_path;
-track_points = [track_points(:,length(vehicle_path)-2) track_points(:,1:end-1)];
-[LT,RT,KT] = curvature(track_points');
-KT = KT(:,2);
-KT = KT(~isnan(RT));
-RT = RT(~isnan(RT));
-RT = RT(~isnan(RT));
+track_points = path_points';
+track_points = [track_points(:,length(track_points)-2) track_points(:,1:end-2)];
+% [LT,RT,KT] = curvature(track_points');
+path_length = arclength(track_points(1,:),track_points(2,:),'pchip');
+
 % for each point along the track, find the maximum theoretical speed
 % possible for that specific point, as well as the incremental distance
 % travelled
@@ -64,6 +74,10 @@ for i = 1:length(RT)
     r = max(r_min,RT(i));
     r = min(r,r_max);
     RT(i) = r;
+    r = RT(i); % radius of curvature of that segment
+    if (r < 8)
+    r = 8;
+    end
     Vmax(i) = min(VMAX,polyval(cornering,r));
     x1(i) = track_points(1,i+1);
     x2(i) = track_points(1,i+2);
@@ -357,6 +371,7 @@ grid minor
 
 figure
 patch(track_points(1,2:end-1),track_points(2,2:end-1),V_plot,V_plot,'EdgeColor','interp','FaceColor','none')
+colormap('cool')
 h = colorbar;
 set(get(h,'title'),'string','Velocity (V) [m/s]');
 set(gca,'XTick',[], 'YTick', [])
