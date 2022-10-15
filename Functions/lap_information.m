@@ -34,19 +34,19 @@ smallvalues = find(abs(KT)<.00001);
 KT(smallvalues) = 1/r_max;
 RT = abs(1./KT);
 RT(end-2:end) = [];
-figure
-patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
-h = colorbar;
-set(get(h,'title'),'string','Velocity (V) [m/s]');
-set(gca,'XTick',[], 'YTick', [])
+% figure
+% patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
+% h = colorbar;
+% set(get(h,'title'),'string','Velocity (V) [m/s]');
+% set(gca,'XTick',[], 'YTick', [])
 
 % x = linspace(1,t(end-1),10000);
 % ppv = csaps(t,path_points,1);
 % vehicle_path = ppval(ppv,x);
 %  if showPlots == true
-figure
-plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
-hold on
+% figure
+% plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
+% hold on
 % fnplt(ppv)
 % hold on
 % end
