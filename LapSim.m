@@ -4,7 +4,7 @@ function [output]=LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR,
 % them global so that all the other functions can access them
 global r_max accel grip deccel lateral cornering gear shift_points...
     top_speed r_min path_boundaries tire_radius shift_time...
-    powertrainpackage track_width path_boundaries_ax OptimParameterSet
+    powertrainpackage track_width path_boundaries_ax OptimParameterSet input
 %% Section 1: Input Tire Model
 % this section is required, everything should be pre-loaded so no need to
 % touch any of this, unless you want to change the tire being evaluated.
@@ -193,7 +193,8 @@ for turn = 1:1:length(radii)
         delta = L/R;
         % assume vehicle sideslip starts at 0 (rad)
         beta = 0;
-        % Minimizing the objective function of M_z a_f-12degrees and a_y-AY 
+        % Minimizing the objective function of M_z a_f-12degrees and a_y-AY  
+        input = 1;
         x0 = [delta, beta, AYP];  % initial values
         fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
             rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r);
@@ -207,87 +208,13 @@ for turn = 1:1:length(radii)
         delta = x(1);
         beta = x(2);
         AYP = x(3);
+        input = 0;
+        evalVogel = fun(x);
+        lateralg(turn) = evalVogel(1);
+        f_xplt(turn) = evalVogel(2);
         deltaTest(turn) = rad2deg(delta);
         betaTest(turn) = rad2deg(beta);
         AYPTest(turn) = AYP;
-        % recalculate values with optimized delta, beta, and AYP
-        % update speed and downforce
-        V = sqrt(R*9.81*AYP);
-        LF = Cl*V^2; 
-        % from downforce, update suspension travel (m):
-        dxf = LF*CoP/2/WRF; 
-        dxr = LF*(1-CoP)/2/WRR; 
-        % from suspension heave, update static camber (rad):
-        IA_0f = IA_staticf - dxf*IA_gainf; 
-        IA_0r = IA_staticr - dxr*IA_gainr; 
-        % update load on each axle (N)
-        wf = (WF+LF*CoP)/2;
-        wr = (WR+LF*(1-CoP))/2;
-        % assume vehicle sideslip starts at 0 (rad)
-        A_y = V^2/R/9.81; % (g's)
-        % calculate lateral load transfer (lbs)
-        WT = A_y*cg*W/mean([twf twr]);
-        % split f/r using LLTD
-        WTF = WT*LLTD;
-        WTR = WT*(1-LLTD);
-        % calculate f/r roll (rad)
-        phif = A_y*rg_f;
-        phir = A_y*rg_r;
-        % update individual wheel loads 
-        wfin = wf-WTF;
-        wfout = wf+WTF;
-        wrin = wr-WTR;
-        wrout = wr+WTR;
-        wfin1(turn) = wf-WTF;
-        wfout1(turn) = wf+WTF;
-        wrin1(turn) = wr-WTR;
-        wrout1(turn) = wr+WTR;
-        % update individual wheel camber (from roll, then from steer
-        % effects)
-        IA_f_in = -twf*sin(phif)/2*IA_gainf - IA_0f - KPIf*(1-cos(delta)) - casterf*sin(delta) +phif;
-        IA_f_out = -twf*sin(phif)/2*IA_gainf + IA_0f + KPIf*(1-cos(delta)) - casterf*sin(delta) + phif;
-        IA_r_in = -twr*sin(phir)/2*IA_gainr - IA_0r - KPIr*(1-cos(deltar)) - casterf*sin(deltar) +phir;
-        IA_r_out = -twr*sin(phir)/2*IA_gainr + IA_0r + KPIr*(1-cos(deltar)) - casterf*sin(deltar) + phir;
-        % calculate yaw rate
-        r = A_y*9.81/V;
-        % from yaw, sideslip and steer you can get slip angles
-        a_f = beta+a*r/V-delta;
-        a_r = beta-b*r/V;
-        % with slip angles, load and camber, calculate lateral force at
-        % the front
-        F_fin = -MF52_Fy_fcn([-a_f wfin -IA_f_in])*sf_y*cos(delta); % inputs = (rad Newtons rad)
-        F_fout = MF52_Fy_fcn([a_f wfout -IA_f_out])*sf_y*cos(delta);
-        % before you calculate the rears, you ned to see what the diff is
-        % doing
-        % calculate the drag from aero and the front tires
-        F_xDrag = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta);
-        f_xplt(turn) = (F_fin+F_fout)*sin(delta)/cos(delta)/400;
-        % calculate the grip penalty assuming the rears must overcome that
-        % drag
-        rscale = 1-(F_xDrag/W/polyval(grip,V))^2; % Comes from traction circle
-        % now calculate rear tire forces, with said penalty
-        F_rin = -MF52_Fy_fcn([-a_r wrin -IA_r_in])*sf_y*rscale; 
-        F_rout = MF52_Fy_fcn([a_r wrout -IA_r_out])*sf_y*rscale;
-        F_fin1(turn) = F_fin;
-        F_fout1(turn) = F_fout;
-        F_rin1(turn) = F_rin;
-        F_rout1(turn) = F_rout;
-        % sum of forces and moments
-        F_y = F_fin+F_fout+F_rin+F_rout;
-        M_z_diff = F_xDrag*T_lock*twr/2;  
-        % calculate resultant lateral acceleration
-        lateralg(turn) = F_y/W;  
-%         M_z = (F_fin+F_fout)*a-(F_rin+F_rout)*b-M_z_diff;       
-%         B = rad2deg(beta);
-%         af = rad2deg(a_f);
-%         ar = rad2deg(a_r);
-        steer = rad2deg(delta);
-        steerTest(turn) = steer;
-%         UG = rad2deg(delta-L/R)*9.81/AY;
-%         Ugradient(1) = UG;
-%         skid = 2*pi*R/V;
-%         steering(turn) = steer;
-%         speed(turn) = V;
 
 end
 
@@ -297,15 +224,15 @@ end
 
 lateralg 
 figure
-plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
-legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-grid on
-hold off
-figure
-plot(radii,wfin1,'m',radii,wfout1,'c',radii, wrin1,'b',radii,wrout1,'g')
-legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-grid on
-hold off
+% plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
+% legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+% grid on
+% hold off
+% figure
+% plot(radii,wfin1,'m',radii,wfout1,'c',radii, wrin1,'b',radii,wrout1,'g')
+% legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+% grid on
+% hold off
 velocity_y = lateralg.*9.81.*radii;
 velocity_y = sqrt(velocity_y);
 range = linspace(4.5,velocity_y(end));

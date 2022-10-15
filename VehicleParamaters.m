@@ -3,7 +3,7 @@ clear all
 % Vechicle Paramaters
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-showPlots = true;
+showPlots = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Section 1: Vehicle Architecture
@@ -12,7 +12,7 @@ disp('Loading Vehicle Characteristics')
 LLTD = .515; % Front lateral load transfer distribution (%)
 W = 650; % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
-cg = 12.5; % center of gravity height (in)
+cg = 10; % center of gravity height (in)
 L = 60.63/12; % wheelbase (ft)
 twf = 50.5/12; % front track width (ft)
 twr = 48.5/12; % rear track width (ft)
@@ -57,9 +57,22 @@ Cl = 1.77; %279/418
 Cd = .8; % .024
 CoP = .48; % front downforce distribution (%% Run simulation
 
-LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
-    IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-    casterr, KPIr, Cl, Cd, CoP, showPlots);
+% cg = [10:1:15];
+% for i=1:length(cg)
+%     cg = cg(i);
+%     LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+%         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
+%         casterr, KPIr, Cl, Cd, CoP, showPlots);
+% 
+%     Endurance_time(i) = LapSimOutput.laptime;
+% 
+% end
+
+    LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+        IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
+        casterr, KPIr, Cl, Cd, CoP, showPlots);
+
+plot(cg,Endurance_time)
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
