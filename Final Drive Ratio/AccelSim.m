@@ -106,6 +106,18 @@ function [t] = AccelSim(engine_data, engine_gear_ratio, vehicle_parameters, coef
             % title("Time/Distance Curve")
             xlabel("Distance (m)")
             ylabel("Time (s)")
+
+        figure();
+            % Subtracts resistive forces
+            resistive_force_plotdata = [];
+            for i = 1:length(xq)
+                resistive_force_plotdata = [resistive_force_plotdata, ResistiveForce(xq(i), [effective_mass], [C_down, C_drag, Cr0, Crp])]; 
+            end 
+            plot(xq, resistive_force_plotdata)
+            % title("Time/Distance Curve")
+            xlabel("Velocity (m/s)")
+            ylabel("Resistive Force (N)")
+
     end 
 
     % Drag time calculation 
