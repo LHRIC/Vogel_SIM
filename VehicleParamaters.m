@@ -3,14 +3,14 @@ clear all
 % Vechicle Paramaters
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-showPlots = true;
+showPlots = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Section 1: Vehicle Architecture
 disp('Loading Vehicle Characteristics')
 % These are the basic vehicle architecture primary inputs:
 LLTD = .515; % Front lateral load transfer distribution (%)
-W = 650; % vehicle + driver weight (lbs)
+W = linspace(625,675,8); % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
 cg = 12.5; % center of gravity height (in)
 L = 60.63/12; % wheelbase (ft)
@@ -57,9 +57,17 @@ Cl = 1.77; %279/418
 Cd = .8; % .024
 CoP = .48; % front downforce distribution (%% Run simulation
 
-LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
-    IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-    casterr, KPIr, Cl, Cd, CoP, showPlots);
+%% Powertrain Parameters
+
+tqMod = 1;
+
+%% Simulate
+
+for runs = 1:length(weights)
+    W = weights(runs);
+    LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+        IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
+        casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots);
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
@@ -81,6 +89,12 @@ ZZ = [' Accel score: ',num2str(Accel_score)];
 disp(ZZ)
 A = [' Skidpad score: ',num2str(Skidpad_score)];
 disp(A)
+
+filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
+
+save(filename, 'LapSimOutput')
+
+end
 %% Section 19: Plot Results
 % This is just to make some pretty pictures, feel free to comment this out
 if showPlots == true
