@@ -9,8 +9,10 @@ g = 9.81;
 
 % Vehicle Specs
 Rt = 0.2032; % wheel radius
+effective_mass = 294.835;
 redline = 12000; % desired maximum rpm
-acc_max = 100;
+f_max = 4000;
+drag_coeff = 1.2923; % N/(m/s)^2
 
 % Engine Data 
 engine_torque_data = readmatrix('Inline_Torque.csv');
@@ -24,11 +26,8 @@ figure();
     xlabel("RPM")
     ylabel("Torque (Nm)")
 
-% Effictive Mass Calculation
- effective_mass = 294.835;
-
 % Final Drive Ratio
-final_drive_ratio = 38/6;
+final_drive_ratio = 5;
 
 %% Accel Test 
 
@@ -39,27 +38,39 @@ redline_I = find(engine_torque_data(:,1)>redline);
 engine_torque_data = engine_torque_data(1:redline_I(1),:);
 
 % Data conversion factors
-rpm_mps = (2*pi()*Rt)/60; % rpm to m/s
-Nm_mps2 = 1/(Rt*effective_mass); % Nm to m/s2
+rpm_conv = (2*pi()*Rt)/60; % rpm to m/s
+Nm_conv = 1/(Rt); % Nm to N
 
 % Converts engine torque data to acceleration(m/s2) / velocity(m/s) 
-engine_acc_vel = [engine_torque_data(:,1)*rpm_mps, engine_torque_data(:,2)*Nm_mps2];
+engine_force_vel = [engine_torque_data(:,1)*rpm_conv, engine_torque_data(:,2)*Nm_conv];
 
-% Declare
-time_calc = @(FDr) Torque_Curve_Optimizer(engine_acc_vel, acc_max, engine_gear_ratio, FDr, 75, false);
+% Declare annonymous functions
+ResistiveForce_anon = @(v) ResistiveForce(v,drag_coeff);
+time_calc = @(FDr) AccelSim(engine_force_vel, f_max, @ResistiveForce_anon, effective_mass, engine_gear_ratio, FDr, 75, false);
 
-figure ();
+% DONT QUESTION THIS, I'm too dumb to debug why fminsearch is not working and this is my solution
 times = [];
-for i = 2:0.05:10
-    times = [times, fminsearch(time_calc,i)];
-
+i_range = linspace(1,10,50);
+for i = i_range
+    times = [times, time_calc(i)];
 end 
-
 figure();
-    plot(1:0.05:10, times)
+    plot(i_range, times)
+    xlabel("Final Drive Ratio")
+    ylabel("75m Drag Time")
+
+times = [];
+i_range = linspace(2,6,200);
+for i = i_range
+    times = [times, time_calc(i)];
+end 
+figure();
+    plot(i_range, times)
+    xlabel("Final Drive Ratio")
+    ylabel("75m Drag Time")
 
 disp("75m drag time:")
-disp(Torque_Curve_Optimizer(engine_acc_vel, acc_max, engine_gear_ratio, final_drive_ratio, 75, true))
+disp(AccelSim(engine_force_vel, f_max, @ResistiveForce, effective_mass, engine_gear_ratio, final_drive_ratio, 75, true))
 
 disp("Final Drive Ratio:")
 disp(final_drive_ratio)
