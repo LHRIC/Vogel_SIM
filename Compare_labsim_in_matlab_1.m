@@ -12,7 +12,9 @@ a scatter instead of a plot so 'XYVarScatterOrPlot' would be flipped to 1.
 Graphs the scatters and plots in tiles and with labels and a legend.
 %}
 
-clear all, close all, clc
+clear all;
+close all;
+clc
 
 %Variables
 numberOfGraphs = 1;
@@ -98,7 +100,7 @@ for d=1:numberOfGraphs
             XYVarScatterOrPlot(d,1) = 1;
         end
     
-    list = {'Time Elapsed','Distance','Velocity','Acceleration','Lateral Acceleration','Gear Counter','Time Elapsed AX','Distance AX','Velocity AX','Acceleration AX','Lateral Acceleration AX','Gear Counter AX','Path Length','Path Length AX','Weights AX','Accel Time','Endurance Scoore','Autocross Score','Accel Score','Skidpad Score','Weights','Lap Time','Lap Time AX'};
+    list = {'Time Elapsed','Distance','Velocity','Acceleration','Lateral Acceleration','Gear Counter','Time Elapsed AX','Distance AX','Velocity AX','Acceleration AX','Lateral Acceleration AX','Gear Counter AX','Path Length','Path Length AX','Weights AX','Accel Time','Endurance Scoore','Autocross Score','Accel Score','Skidpad Score','Weights','Lap Time','Lap Time AX','None'};
     [yValue,alwaysOne] = listdlg('PromptString',{'Select a Y variable', 'Graph' d},'SelectionMode','single','ListString',list);
         if yValue == 1
             XYVar(2,d) = 'time_elapsed'
@@ -154,9 +156,12 @@ for d=1:numberOfGraphs
         elseif yValue == 22
             XYVar(2,d) = 'laptime'
             XYVarScatterOrPlot(d,2) = 1;
-        else yValue == 23
+        elseif yValue == 23
             XYVar(2,d) = 'laptime_ax'
             XYVarScatterOrPlot(d,2) = 1;
+        else yValue == 24
+            XYVar(2,d) = 'NOVAR'
+            XYVarScatterOrPlot(d,2) =2;
         end
 
 end
@@ -168,6 +173,11 @@ elseif XYVarScatterOrPlot(d,1) == 0 && XYVarScatterOrPlot(d,2) == 1
     warndlg('You are making a SCATTER plot with like a million data points, this is because one of your variables has a bunch of values and the other does not, it might take a while... or not work at all... rethink your life decisions')
 end
 
+list = {'Continue','QUIT'};
+[quitterx,quittery]=listdlg('SelectionMode','single','ListString',list);
+if quitterx == 2
+    return
+end
 
 %Plot structs
 for d=1:numberOfGraphs
@@ -175,14 +185,23 @@ for d=1:numberOfGraphs
     nexttile
 
     if XYVarScatterOrPlot(d,1) == 0 && XYVarScatterOrPlot(d,2) == 0
-        fprintf('going to PLOT')
+        fprintf('PLOT')
         plot(storedData{1, 1}.(subName).(XYVar(1,d)), storedData{1, 1}.(subName).(XYVar(2,d)),'DisplayName',file{1, 1})
         hold on
         for a=2:length(file)
             plot(storedData{1, [a]}.(subName).(XYVar(1,d)), storedData{1, [a]}.(subName).(XYVar(2,d)),'DisplayName',file{1, [a]})
         end
         hold off
+    elseif XYVarScatterOrPlot(d,2) == 2
+        fprintf('CHART')
+        bar(storedData{1, 1}.(subName).(XYVar(1,d)),.75,'DisplayName',file{1, 1})
+        hold on
+        for a=2:length(file)
+            bar(storedData{1, [a]}.(subName).(XYVar(1,d)),(.75-(a*.125)),'DisplayName',file{1, [a]})
+        end
+        hold off
     else
+        fprintf('SCATTER')
         scatter(storedData{1, 1}.(subName).(XYVar(1,d)), storedData{1, 1}.(subName).(XYVar(2,d)),'DisplayName',file{1, 1})
         hold on
         for a=2:length(file)
