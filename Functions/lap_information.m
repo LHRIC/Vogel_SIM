@@ -20,7 +20,7 @@ global path_boundaries r_min r_max cornering accel grip deccel lateral...
 %     path_points(i,:) = [x3 y3];             
 % end
 
-interval = 1;
+interval = 1000;
 sections = 6000;
 VMAX = top_speed;
 r_min = 4.5;
@@ -30,7 +30,7 @@ path_points = [track.X, track.Y]/1000;
 
 KT = LineCurvature2D(path_points);
 KT = KT(~isnan(KT));
-smallvalues = find(abs(KT)<.00001)
+smallvalues = find(abs(KT)<.00001);
 KT(smallvalues) = 1/r_max;
 RT = abs(1./KT);
 RT(end-2:end) = [];
