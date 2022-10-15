@@ -1,9 +1,18 @@
-function [t] = AccelSim(engine_data, f_max, R_fun, effective_mass, engine_gear_ratio, final_drive_ratio, distance, plot_data)
+function [t] = AccelSim(engine_data, engine_gear_ratio, vehicle_parameters, coeff_inputs, distance, plot_data)
 
-    % combined_engine_acc_vel = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,75);
+    % Input unpacking
+    f_max = vehicle_parameters(1);
+    effective_mass = vehicle_parameters(2);
+    final_drive_ratio = vehicle_parameters(3);
+    C_down = coeff_inputs(1);
+    C_drag = coeff_inputs(2);
+    Cr0 = coeff_inputs(3);
+    Crp = coeff_inputs(4);
+   
+    % Combined_engine_acc_vel = Torque_Curve_Optimizer(engine_acc_vel,engine_gear_ratio,final_drive_ratio,75);
     engine_data = Gear_Curves(engine_data, engine_gear_ratio, final_drive_ratio, plot_data);
     
-    % lienarize and combine domains for every gear ratio
+    % Lienarize and combine domains for every gear ratio
     combined_engine_data = [];
     
     % Combines engine curves for each individual gear at motive force
@@ -28,9 +37,10 @@ function [t] = AccelSim(engine_data, f_max, R_fun, effective_mass, engine_gear_r
         end
     end 
     
-    % subtracts resistive forces
+    % Subtracts resistive forces
     for i = 1:length(combined_engine_data(:,2))
-        motive_force = combined_engine_data(i,2) - R_fun(combined_engine_data(i,1));
+        resistive_force = ResistiveForce(combined_engine_data(i,1), [effective_mass], [C_down, C_drag, Cr0, Crp]); 
+        motive_force = combined_engine_data(i,2) - resistive_force - 0.15*combined_engine_data(i,2);
         if motive_force < 0
             motive_force = 0;
         end
@@ -39,7 +49,7 @@ function [t] = AccelSim(engine_data, f_max, R_fun, effective_mass, engine_gear_r
 
     %
 
-    % flattens curve to take into account tractive limits 
+    % Flattens curve to take into account tractive limits 
     for i = 1:length(combined_engine_data(:,2))
         if combined_engine_data(i,2) > f_max
             combined_engine_data(i,2) = f_max;

@@ -1,0 +1,14 @@
+function [Resistance] = ResistiveForce(velocity, vehicle_parameters, coeff_inputs)
+
+    [mass] = vehicle_parameters; 
+    [C_down, C_drag] = coeff_inputs(1:2); 
+        
+    down_force = DownForce(velocity, mass, C_down);
+    F_rolling_resistance = RollingResistance(velocity, down_force, [])
+    drag_force = C_drag * velocity.^2;
+   
+    
+
+    Resistance = drag_force;
+    % Resistance = 0;
+end 

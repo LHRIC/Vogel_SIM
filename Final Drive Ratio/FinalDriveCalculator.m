@@ -7,12 +7,16 @@ g = 9.81;
 
 %% Car Specs
 
-% Vehicle Specs
+% Vehicle Parameters
 Rt = 0.2032; % wheel radius
 effective_mass = 294.835;
 redline = 12000; % desired maximum rpm
 f_max = 10000;
-drag_coeff = 1.2923; % N/(m/s)^2
+
+Cr0 = 0.0125; % Coefficient of rolling resistance for tire (velocity independent)
+Crp = 2.5*(10.^-4);  % Velocity dependent Coeff of rolling resistance modifier
+C_drag = 1.1; % Coefficient of drag 
+C_down = 2.9; % Coefficient of lift (downwards)
 
 % Engine Data 
 engine_torque_data = readmatrix('Inline_Torque.csv');
@@ -27,7 +31,11 @@ figure();
     ylabel("Torque (Nm)")
 
 % Final Drive Ratio
-final_drive_ratio = 3.5;
+final_drive_ratio = 37/11;
+
+% Variable Packaging
+vehicle_parameters = [f_max, effective_mass, final_drive_ratio]; 
+coeff_inputs = [C_down; C_drag; Cr0; Crp]; 
 
 %% Accel Test 
 engine_gear_ratio = engine_gear_ratio .* engine_primary_reduction;
@@ -43,13 +51,16 @@ Nm_conv = 1/(Rt); % Nm to N
 % Converts engine torque data to acceleration(m/s2) / velocity(m/s) 
 engine_force_vel = [engine_torque_data(:,1)*rpm_conv, engine_torque_data(:,2)*Nm_conv];
 
-% Declare annonymous functions
-ResistiveForce_anon = @(v) ResistiveForce(v,drag_coeff);
-time_calc = @(FDr) AccelSim(engine_force_vel, f_max, ResistiveForce_anon, effective_mass, engine_gear_ratio, FDr, 75, false);
+% Declare annonymous accel sim function
+vehicle_param = @(FDr) [vehicle_parameters(1), vehicle_parameters(2), FDr];
+time_calc = @(FDr) AccelSim(engine_force_vel, engine_gear_ratio, vehicle_param(FDr), coeff_inputs, 75, false);
 
-% DONT QUESTION THIS, I'm too dumb to debug why fminsearch is not working and this is my solution
+% Use annonymous function to find fastest final drive ratio
+min_final_drive = fminsearch(time_calc, 3.5);
+
+% Iterate through different final drive ratios and calculate drag times 
 times = [];
-i_range = linspace(1,10,50);
+i_range = linspace(1,10,100);
 for i = i_range
     times = [times, time_calc(i)];
 end 
@@ -58,18 +69,12 @@ figure();
     xlabel("Final Drive Ratio")
     ylabel("75m Drag Time")
 
-times = [];
-i_range = linspace(1,10,500);
-for i = i_range
-    times = [times, time_calc(i)];
-end 
-figure();
-    plot(i_range, times)
-    xlabel("Final Drive Ratio")
-    ylabel("75m Drag Time")
+% Result Readout
+disp("Optimum Final Drive")
+disp(min_final_drive)
 
 disp("75m drag time:")
-disp(AccelSim(engine_force_vel, f_max, ResistiveForce_anon, effective_mass, engine_gear_ratio, final_drive_ratio, 75, true))
+disp(AccelSim(engine_force_vel, engine_gear_ratio, vehicle_parameters, coeff_inputs, 75, true))
 
 disp("Final Drive Ratio:")
 disp(final_drive_ratio)
