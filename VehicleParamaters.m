@@ -2,19 +2,23 @@ clear all
 % clc
 % Vechicle Paramaters
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+showPlots = false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% Section 1: Vehicle Architecture
 disp('Loading Vehicle Characteristics')
 % These are the basic vehicle architecture primary inputs:
 LLTD = .515; % Front lateral load transfer distribution (%)
-W = 650; % vehicle + driver weight (lbs)
+W = linspace(625,675,8); % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
-cg = 5; % center of gravity height (in)
+cg = 10; % center of gravity height (in)
 L = 60.63/12; % wheelbase (ft)
 twf = 50.5/12; % front track width (ft)
 twr = 48.5/12; % rear track width (ft)
 
 W = W*4.4482216153; % convert to N
-cg = cg/39.37; % convert to m
+cg = cg/39.37; % conver to m
 L = L/3.280839895013123; % convert to m
 twf = twf/3.280839895013123; % convert to m
 twr = twr/3.280839895013123; % convert to m
@@ -48,38 +52,22 @@ KPIr = 0; % rear kingpin inclination angle (deg)
 disp('Loading Aero Model')
 
 % Cl = linspace(.03,.6,2);
-Cl = .0418*47.8802589804; %279/418
+Cl = 1.77; %279/418
 % Cd = linspace(.01,.03,2);
-Cd = .0184*47.8802589804; % .024
-CoP = .48; % front downforce distribution 
-%% Run simulation
+Cd = .8; % .024
+CoP = .48; % front downforce distribution (%% Run simulation
 
+%% Powertrain Parameters
 
-LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
-    IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-    casterr, KPIr, Cl, Cd, CoP);
+tqMod = 1;
 
+%% Simulate
 
-% 
-% CG = linspace(9,13.5,20)/39.37;
-% 
-% for i = 1:length(CG)
-% 
-%     cg = CG(i);
-% 
-% LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
-%     IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-%     casterr, KPIr, Cl, Cd, CoP);
-% 
-% Endurance_time(i) = LapSimOutput.laptime;
-% 
-% end
-% 
-% plot(CG*39.37,Endurance_time,'r')
-% title('CG sensitivity')
-% legend('CG height','Endurance laptime')
-% grid on
-% grid minor
+for runs = 1:length(weights)
+    W = weights(runs);
+    LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+        IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
+        casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots);
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
@@ -101,8 +89,15 @@ ZZ = [' Accel score: ',num2str(Accel_score)];
 disp(ZZ)
 A = [' Skidpad score: ',num2str(Skidpad_score)];
 disp(A)
+
+filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
+
+save(filename, 'LapSimOutput')
+
+end
 %% Section 19: Plot Results
 % This is just to make some pretty pictures, feel free to comment this out
+if showPlots == true
 figure
 t = tiledlayout(1, 2);
 
@@ -118,5 +113,6 @@ title('Endurance Simulation Acceleration Traces')
 xlabel('Distance Travelled (d) [ft]')
 ylabel('Acceleration [g]')
 legend('Longitudinal','Lateral')
+end
 
 

@@ -1,7 +1,7 @@
 function [output] =vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r,rg_f, ...
-    casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r)
+    casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r,input)
 
-global grip
+global grip input
         delta = x(1);
         beta = x(2);
         AYP = x(3);
@@ -45,6 +45,7 @@ global grip
         F_rout = MF52_Fy_fcn([a_r wrout -IA_r_out])*sf_y*rscale;
         % sum of forces and moments
         F_y = F_fin+F_fout+F_rin+F_rout;
+        f_xplt =(F_fin+F_fout)*sin(delta)/cos(delta)/400;
         M_z_diff = F_xDrag*T_lock*twr/2;       
         M_z = (F_fin+F_fout)*a-(F_rin+F_rout)*b-M_z_diff;
         % calculate resultant lateral acceleration
@@ -52,5 +53,10 @@ global grip
         %minimizing values
         slipAngle = a_f-deg2rad(-12);
         diff_AY =A_y-AY;
+        if input == 1
         output = [M_z slipAngle diff_AY];
+        else
+        output = [A_y f_xplt];
+        end
+
 end

@@ -1,44 +1,66 @@
-function [lap_time time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(path_positions)
+function [lap_time time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(track, showPlots)
 global path_boundaries r_min r_max cornering accel grip deccel lateral...
     shift_points top_speed shift_time
 %% Generate vehicle trajectory
 % this is done the same way as in the main lap sim code so I will not
 % replicate that explanation here
 
-interval = 5;
-sections = 3000;
-path_positions(end+1) = path_positions(1);
-path_positions(end+1) = path_positions(2);
-VMAX = top_speed;
-t = 1:1:length(path_positions);
-for i = 1:1:length(path_positions)
-    coeff = path_boundaries(i,1:2);
-    x2 = max(path_boundaries(i,3:4));
-    x1 = min(path_boundaries(i,3:4));
-    position = path_positions(i);
-    x3 = x1+position*(x2-x1);
-    y3 = polyval(coeff,x3);
-    path_points(i,:) = [x3 y3];             
-end
 
-x = linspace(1,t(end-1),sections);
-ppv = pchip(t,path_points');
-vehicle_path = ppval(ppv,x);
-path_length = arclength(vehicle_path(1,:),vehicle_path(2,:));
+% path_positions(end+1) = path_positions(1);
+% path_positions(end+1) = path_positions(2);
+
+% t = 1:1:length(path_positions);
+% for i = 1:1:length(path_positions)
+%     coeff = path_boundaries(i,1:2);
+%     x2 = max(path_boundaries(i,3:4));
+%     x1 = min(path_boundaries(i,3:4));
+%     position = path_positions(i);
+%     x3 = x1+position*(x2-x1);
+%     y3 = polyval(coeff,x3);
+%     path_points(i,:) = [x3 y3];             
+% end
+
+interval = 1000;
+sections = 6000;
+VMAX = top_speed;
+r_min = 4.5;
+
+t = 1:height(track);
+path_points = [track.X, track.Y]/1000;
+
+KT = LineCurvature2D(path_points);
+KT = KT(~isnan(KT));
+smallvalues = find(abs(KT)<.00001);
+KT(smallvalues) = 1/r_max;
+RT = abs(1./KT);
+RT(end-2:end) = [];
+% figure
+% patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
+% h = colorbar;
+% set(get(h,'title'),'string','Velocity (V) [m/s]');
+% set(gca,'XTick',[], 'YTick', [])
+
+% x = linspace(1,t(end-1),10000);
+% ppv = csaps(t,path_points,1);
+% vehicle_path = ppval(ppv,x);
+%  if showPlots == true
+% figure
+% plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
+% hold on
+% fnplt(ppv)
+% hold on
+% end
 
 % x = linspace(1,t(end-1),1000);
 % ppv = interp1([1:length(path_points)],path_points,x,'makima');
 % vehicle_path = ppv';
 
-[L,R,K] = curvature(vehicle_path');
 %% Traverse the track
-track_points = vehicle_path;
-track_points = [track_points(:,length(vehicle_path)-2) track_points(:,1:end-1)];
-[LT,RT,KT] = curvature(track_points');
-KT = KT(:,2);
-KT = KT(~isnan(RT));
-RT = RT(~isnan(RT));
-RT = RT(~isnan(RT));
+track_points = path_points';
+track_points = [track_points(:,length(track_points)-2) track_points(:,1:end-2)];
+% [LT,RT,KT] = curvature(track_points');
+path_length = arclength(track_points(1,:),track_points(2,:),'pchip');
+
 % for each point along the track, find the maximum theoretical speed
 % possible for that specific point, as well as the incremental distance
 % travelled
@@ -52,6 +74,10 @@ for i = 1:length(RT)
     r = max(r_min,RT(i));
     r = min(r,r_max);
     RT(i) = r;
+    r = RT(i); % radius of curvature of that segment
+    if (r < 8)
+    r = 8;
+    end
     Vmax(i) = min(VMAX,polyval(cornering,r));
     x1(i) = track_points(1,i+1);
     x2(i) = track_points(1,i+2);
@@ -60,7 +86,6 @@ for i = 1:length(RT)
     dist(i) = sqrt((x1(i)-x2(i))^2+(y2(i)-y1(i))^2);
 end
 %% Initiate forward sim
-
 count = 0;
     v = 20*.3048;
     vel = v;
@@ -303,8 +328,8 @@ for i = 1:1:length(VD)
     t_elapsed = t_elapsed+dtime(i);
     time_elapsed(i) = t_elapsed;
 end
-AY_outlier = find(lateral_accel > polyval(lateral,116*.3048));
-lateral_accel(AY_outlier) = polyval(lateral,116*.3048);
+AY_outlier = find(lateral_accel > polyval(lateral,top_speed+1));
+lateral_accel(AY_outlier) = polyval(lateral,top_speed+1);
 throttle = 0;
 brake = 0;
 corner = 0;
@@ -334,13 +359,23 @@ weights = [t_t/summ t_b/summ t_c/summ];
 for i = 1:1:length(track_points)-2
     V_plot(i) = mean(velocity(i*interval-interval+1:i*interval));
 end
+if showPlots == true
 figure
-pointsize = 5;
 scatter(track_points(1,2:end-1),track_points(2,2:end-1),100,V_plot,'marker','.')
 title('2019 Michigan Endurance Simulation Track Summary')
 h = colorbar;
-set(get(h,'title'),'string','Velocity (V) [ft/s]');
+set(get(h,'title'),'string','Velocity (V) [m/s]');
 set(gca,'XTick',[], 'YTick', [])
+grid on 
+grid minor
+
+figure
+patch(track_points(1,2:end-1),track_points(2,2:end-1),V_plot,V_plot,'EdgeColor','interp','FaceColor','none')
+colormap('cool')
+h = colorbar;
+set(get(h,'title'),'string','Velocity (V) [m/s]');
+set(gca,'XTick',[], 'YTick', [])
+end
 
 %% Gear Counter
 for i = 1:1:length(velocity)
