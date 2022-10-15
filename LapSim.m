@@ -201,7 +201,7 @@ for turn = 1:1:length(radii)
         % minimizing function
         lb = [0 -.2 .5];
         ub = [.5 .2 2];
-        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-16,Display="none");
+        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-8,Display="off");
         x = lsqnonlin(fun, x0,lb,ub,opts);
         % output from minimizing
         delta = x(1);
@@ -295,29 +295,29 @@ end
 % disp("////////////////////////////////////WARNING////////////////////" + ...
 %     "LOADING PRECALCULATED LATERALG")
 
-% lateralg 
-% figure
-% plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
-% legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-% grid on
-% hold off
-% figure
-% plot(radii,wfin1,'m',radii,wfout1,'c',radii, wrin1,'b',radii,wrout1,'g')
-% legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-% grid on
-% hold off
-% velocity_y = lateralg.*9.81.*radii;
-% velocity_y = sqrt(velocity_y);
-% range = linspace(4.5,velocity_y(end));
-% hold on
-% lateral = polyfit(velocity_y,lateralg,3);
-% figure
-% plot(velocity_y,f_xplt,'o')
-% hold on
-% plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
-% grid on 
-% grid minor
-% hold off
+lateralg 
+figure
+plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
+legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+grid on
+hold off
+figure
+plot(radii,wfin1,'m',radii,wfout1,'c',radii, wrin1,'b',radii,wrout1,'g')
+legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
+grid on
+hold off
+velocity_y = lateralg.*9.81.*radii;
+velocity_y = sqrt(velocity_y);
+range = linspace(4.5,velocity_y(end));
+hold on
+lateral = polyfit(velocity_y,lateralg,3);
+figure
+plot(velocity_y,f_xplt,'o')
+hold on
+plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
+grid on 
+grid minor
+hold off
 
 
 % Braking Performance
