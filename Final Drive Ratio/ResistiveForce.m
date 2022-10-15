@@ -11,7 +11,7 @@ function [Resistance] = ResistiveForce(velocity, vehicle_parameters, coeff_input
     C_drag = coeff_inputs(2);
     Cr0 = coeff_inputs(3);
     Crp = coeff_inputs(4);
-
+    
     % Coeff calculations
     Cr = Cr0*(1+Crp*(velocity.^2));
     
@@ -19,7 +19,7 @@ function [Resistance] = ResistiveForce(velocity, vehicle_parameters, coeff_input
     down_force = C_down * velocity.^2 * 0.5 * 1.225; 
     drag_force = C_drag * velocity.^2 * 0.5 * 1.225;
     F_rolling_resistance = Cr*(down_force + mass * 9.81);
-
+    
     Resistance = drag_force + F_rolling_resistance;
     % Resistance = 0;
 end 

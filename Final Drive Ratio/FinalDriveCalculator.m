@@ -11,8 +11,8 @@ g = 9.81;
 Rt = 0.2032; % wheel radius
 effective_mass = 294.835;
 redline = 12000; % desired maximum rpm
-f_max = 10000;
 
+% Select Vehicle Coefficients
 Cr0 = 0.0125; % Coefficient of rolling resistance for tire (velocity independent)
 Crp = 2.5*(10.^-4);  % Velocity dependent Coeff of rolling resistance modifier
 C_drag = 1.1; % Coefficient of drag 
@@ -20,7 +20,7 @@ C_down = 2.9; % Coefficient of lift (downwards)
 
 % Engine Data 
 engine_torque_data = readmatrix('Inline_Torque.csv');
-engine_primary_reduction = 2.11;
+engine_primary_reduction = 1;
 engine_gear_ratio = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24];
 
 % Plots Engine Data
@@ -31,10 +31,10 @@ figure();
     ylabel("Torque (Nm)")
 
 % Final Drive Ratio
-final_drive_ratio = 37/11;
+final_drive_ratio = 3.8688;
 
 % Variable Packaging
-vehicle_parameters = [f_max, effective_mass, final_drive_ratio]; 
+vehicle_parameters = [effective_mass, final_drive_ratio]; 
 coeff_inputs = [C_down; C_drag; Cr0; Crp]; 
 
 %% Accel Test 
@@ -52,15 +52,14 @@ Nm_conv = 1/(Rt); % Nm to N
 engine_force_vel = [engine_torque_data(:,1)*rpm_conv, engine_torque_data(:,2)*Nm_conv];
 
 % Declare annonymous accel sim function
-vehicle_param = @(FDr) [vehicle_parameters(1), vehicle_parameters(2), FDr];
-time_calc = @(FDr) AccelSim(engine_force_vel, engine_gear_ratio, vehicle_param(FDr), coeff_inputs, 75, false);
+time_calc = @(FDr) AccelSim(engine_force_vel, engine_gear_ratio, [vehicle_parameters(1), FDr], coeff_inputs, 75, false);
 
 % Use annonymous function to find fastest final drive ratio
 min_final_drive = fminsearch(time_calc, 3.5);
 
 % Iterate through different final drive ratios and calculate drag times 
 times = [];
-i_range = linspace(1,10,100);
+i_range = linspace(3,10,1000);
 for i = i_range
     times = [times, time_calc(i)];
 end 
@@ -68,6 +67,9 @@ figure();
     plot(i_range, times)
     xlabel("Final Drive Ratio")
     ylabel("75m Drag Time")
+
+[~, min_final_drive] = min(times);
+min_final_drive = i_range(min_final_drive);
 
 % Result Readout
 disp("Optimum Final Drive")

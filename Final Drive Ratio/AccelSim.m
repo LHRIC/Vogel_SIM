@@ -1,9 +1,8 @@
 function [t] = AccelSim(engine_data, engine_gear_ratio, vehicle_parameters, coeff_inputs, distance, plot_data)
 
     % Input unpacking
-    f_max = vehicle_parameters(1);
-    effective_mass = vehicle_parameters(2);
-    final_drive_ratio = vehicle_parameters(3);
+    effective_mass = vehicle_parameters(1);
+    final_drive_ratio = vehicle_parameters(2);
     C_down = coeff_inputs(1);
     C_drag = coeff_inputs(2);
     Cr0 = coeff_inputs(3);
@@ -51,6 +50,7 @@ function [t] = AccelSim(engine_data, engine_gear_ratio, vehicle_parameters, coef
 
     % Flattens curve to take into account tractive limits 
     for i = 1:length(combined_engine_data(:,2))
+        f_max = TractiveLimit(combined_engine_data(i,1));
         if combined_engine_data(i,2) > f_max
             combined_engine_data(i,2) = f_max;
         end 
