@@ -1,4 +1,4 @@
-function [output]=LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP)
+function [output]=LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, showPlots)
 %% Section 0: Name all symbolic variables
 % Don't touch this. This is just naming a bunch of variables and making
 % them global so that all the other functions can access them
@@ -397,7 +397,7 @@ radii = velocity_y.^2./lateralg/9.81;
 % max velocity as a function of instantaneous turn radius
 cornering = polyfit(radii,velocity_y,4);
 
-
+if showPlots == true
 figure
 t = tiledlayout(2,3);
 title(t, "CG Height: " + cg + "m ("+ cg*39.37 +" inches)")
@@ -428,6 +428,7 @@ plot(radii,velocity_y,'o',range,polyval(cornering,range))
 title('Velocity vs Radius')
 grid on
 grid minor
+end
 
 %% Section 7: Load Endurance Track Coordinates
 disp('Loading Endurance Track Coordinates')
@@ -533,7 +534,7 @@ track = readtable('Track Creation/17_lincoln_endurance_track.xls');
 
 %% Section 11: Simulate Endurance Lap
 %disp('Plotting Vehicle Trajectory')
-[laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance vehicle_path] = lap_information(track);
+[laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance vehicle_path] = lap_information(track, showPlots);
 
 %% Section 12: Load Autocross Track Coordinates
 % %disp('Loading Autocross Track Coordinates')

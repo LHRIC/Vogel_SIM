@@ -3,7 +3,7 @@ clear all
 % Vechicle Paramaters
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-showPlots = false;
+showPlots = true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Section 1: Vehicle Architecture
@@ -59,7 +59,7 @@ CoP = .48; % front downforce distribution (%% Run simulation
 
 LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
     IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-    casterr, KPIr, Cl, Cd, CoP, showPlots);
+    casterr, KPIr, Cl, Cd, CoP);
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
@@ -83,7 +83,6 @@ A = [' Skidpad score: ',num2str(Skidpad_score)];
 disp(A)
 %% Section 19: Plot Results
 % This is just to make some pretty pictures, feel free to comment this out
-if showPlots == true
 figure
 t = tiledlayout(1, 2);
 
@@ -99,6 +98,5 @@ title('Endurance Simulation Acceleration Traces')
 xlabel('Distance Travelled (d) [ft]')
 ylabel('Acceleration [g]')
 legend('Longitudinal','Lateral')
-end
 
 

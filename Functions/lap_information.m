@@ -1,4 +1,4 @@
-function [lap_time time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance vehicle_path] = lap_information(track)
+function [lap_time time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance vehicle_path] = lap_information(track, showPlots)
 global path_boundaries r_min r_max cornering accel grip deccel lateral...
     shift_points top_speed shift_time
 %% Generate vehicle trajectory
@@ -30,13 +30,14 @@ path_points = [track.X, track.Y]'/1000;
 x = linspace(1,t(end-1),1000);
 ppv = spline(t,path_points);
 vehicle_path = ppval(ppv,x);
+ if showPlots == true
 figure
 plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
 hold on
 fnplt(ppv)
 hold on
+end
 path_length = arclength(vehicle_path(1,:),vehicle_path(2,:));
-
 % x = linspace(1,t(end-1),1000);
 % ppv = interp1([1:length(path_points)],path_points,x,'makima');
 % vehicle_path = ppv';
@@ -344,6 +345,7 @@ weights = [t_t/summ t_b/summ t_c/summ];
 for i = 1:1:length(track_points)-2
     V_plot(i) = mean(velocity(i*interval-interval+1:i*interval));
 end
+if showPlots == true
 figure
 scatter(track_points(1,2:end-1),track_points(2,2:end-1),100,V_plot,'marker','.')
 title('2019 Michigan Endurance Simulation Track Summary')
@@ -358,7 +360,7 @@ patch(track_points(1,2:end-1),track_points(2,2:end-1),V_plot,V_plot,'EdgeColor',
 h = colorbar;
 set(get(h,'title'),'string','Velocity (V) [m/s]');
 set(gca,'XTick',[], 'YTick', [])
-
+end
 
 %% Gear Counter
 for i = 1:1:length(velocity)
