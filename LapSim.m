@@ -43,7 +43,7 @@ engineTq = tqMod*[41.57 42.98 44.43 45.65 46.44 47.09 47.52 48.58 49.57 50.41 51
 primaryReduction = 76/36; % Transmission primary reduction (applies to all gears)
 gear = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24]; % transmission gear ratios
 finalDrive = 37/11; % large sprocket/small sprocket
-shiftpoint = 14000; % optimal shiftpoint for most gears [RPM]
+shiftpoint = 12500; % optimal shiftpoint for most gears [RPM]
 drivetrainLosses = .85; % percent of torque that makes it to the rear wheels 
 shift_time = .25; % seconds
 T_lock = 0; % differential locking torque (0 =  open, 1 = locked)
@@ -86,7 +86,7 @@ IA_gainr = IA_roll_inducedr*IA_compensationr;
 disp('Generating g-g-V Diagram')
 deltar = 0;
 deltaf = 0;
-velocity = 4.5:1.5:22.5; % range of velocities at which sim will evaluate (m/s)
+velocity = 4:1:30; % range of velocities at which sim will evaluate (m/s)
 radii = 3.5:1.5:36; % range of turn radii at which sim will evaluate (m)
 % First we will evaluate our Acceleration Capacity
 g = 1; % g is a gear indicator, and it will start at 1
@@ -154,19 +154,19 @@ grip = polyfit(velocity,A_xr,3);
 
 
 
-% range = linspace(4.5,30);
-% hold off
-% figure
-% hold on
-% plot(velocity,A_xr,'o',velocity,A_Xr,'o',range,polyval(grip,range))
-% hold on
-% % fnplt(gripspline)
-% grid on
-% grid minor
-% hold on
-% fnplt(accel)
-% grid on
-% grid minor
+range = linspace(4.5,30);
+hold off
+figure
+hold on
+plot(velocity,A_xr,'o',velocity,A_Xr,'o',range,polyval(grip,range))
+hold on
+% fnplt(gripspline)
+grid on
+grid minor
+hold on
+fnplt(accel)
+grid on
+grid minor
 
 AYP = .5;
 disp('Lateral Acceleration Envelope')
@@ -255,7 +255,6 @@ hold off
 %}
 
 % Braking Performance
-velocity = 4.5:1.5:22.5; % range of velocities at which sim will evaluate (m/s)
 disp('     Braking Envelope')
 % the braking sim works exactly the same as acceleration, except now all 4
 % tires are contributing to the total braking capacity
@@ -320,8 +319,7 @@ velocity_y = sqrt(velocity_y);
 r_max = max(radii);
 spcount = spcount+1;
 shift_points(spcount) = V+1;
-top_speed = V;
-VMAX = top_speed;
+top_speed = VMAX;
 % make the rest of your functions for the GGV diagram
 % braking as a function of speed
 deccel = polyfit(velocity,A_X,4);
@@ -566,7 +564,7 @@ path_radius = 7.62+tw/2+.1524;
 speed = polyval(cornering,path_radius);
 % calculate skidpad time
 skidpad_time = path_radius*2*pi/speed;
-% calculate score based on 2019 times
+% calculate score based on 2019 times  
 Tmin_skid = 4.865;
 Tmax_skid = Tmin_skid*1.45;
 Skidpad_Score = 71.5*((Tmax_skid/skidpad_time)^2-1)/((Tmax_skid/Tmin_skid)^2-1) + 3.5;
