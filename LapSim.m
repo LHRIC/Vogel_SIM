@@ -455,7 +455,7 @@ disp('Loading Endurance Track Coordinates')
 
 
 %%%%%%custom track
-track = readtable('Track Creation/17_lincoln_endurance_track.xls');
+track = readtable('Track Creation/17_lincoln_endurance_track_highres.xls');
 
 % t = 1:height(track);
 % path_points = [track.X, track.Y]'/1000;
