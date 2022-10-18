@@ -30,10 +30,17 @@ path_points = [track.X, track.Y]/1000;
 
 KT = LineCurvature2D(path_points);
 KT = KT(~isnan(KT));
-smallvalues = find(abs(KT)<.00001);
-KT(smallvalues) = 1/r_max;
+% smallvalues = ;
+KT(find(abs(KT)<1/r_max)) = 1/r_max;
 RT = abs(1./KT);
 RT(end-2:end) = [];
+
+
+
+
+
+
+
 % figure
 % patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
 % h = colorbar;
@@ -140,7 +147,7 @@ for i = 1:1:length(segment) % for each track segment
             % find potential acceleration available:
             ax_f(count) = AX*(1-(min(AY,ay_f(count))/AY)^2);
             tt = roots([0.5*9.81*ax_f(count) vel -dd]);
-            % accelerate accoding to that capacity, update speed and
+            % accelerate according to that capacity, update speed and
             % position accordingly
             dt_f(count) = max(tt);
             dv = 9.81*ax_f(count)*dt_f(count);
