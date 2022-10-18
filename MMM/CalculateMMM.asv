@@ -1,10 +1,10 @@
-function [output]=LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, showPlots)
+function [output]=CalculateMMM(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, showPlots, vel, steered_angle_max, body_angle_max, stepsize)
 %% Section 0: Name all symbolic variables
 % Don't touch this. This is just naming a bunch of variables and making
 % them global so that all the other functions can access them
 global r_max accel grip deccel lateral cornering gear shift_points...
     top_speed r_min path_boundaries tire_radius shift_time...
-    powertrainpackage track_width path_boundaries_ax OptimParameterSet
+    powertrainpackage track_width path_boundaries_ax OptimParameterSet input
 %% Section 1: Input Tire Model
 % this section is required, everything should be pre-loaded so no need to
 % touch any of this, unless you want to change the tire being evaluated.
@@ -82,16 +82,19 @@ IA_gainr = IA_roll_inducedr*IA_compensationr;
 % this is where the m e a t of the lap sim takes place. The MMM diagram is
 % built by finding the lateral acceleration and yaw moment at a specified
 % velocity
-
-vel = 20; % [m/s] velocity to evaluate at
-deltamax = 6; % [degrees] maximum front steering slip angle
-betamax = 3;% [degrees] maximum body slip angle
-stepsize = 0.25;
-LF = Cl*vel^2;
+disp('Calculating MMM')
+% Legacy from vogel to make work
+deltar = 0;
+deltaf = 0;
+R = 0; % Unused
 IA = 0; % Set inclination angle to 0
+LF = Cl*vel^2;
 
-for delta = -deltamax:stepsize:deltamax
-    for beta = -betamax:stepsize:betamax
+%Initialize Data Storage
+MMMpoints = [];
+
+for beta = -body_angle_max:stepsize:body_angle_max
+    for delta = -steered_angle_max:stepsize:steered_angle_max
         % from downforce, update suspension travel (m):
         dxf = LF*CoP/2/WRF; 
         dxr = LF*(1-CoP)/2/WRR; 
@@ -101,32 +104,32 @@ for delta = -deltamax:stepsize:deltamax
         % update load on each wheel (N)
         wf = (WF+LF*CoP)/2;
         wr = (WR+LF*(1-CoP))/2;
-        % guess ackermann steer angle as starting steer angle
-        delta = L/R;
-        % assume vehicle sideslip starts at 0 (rad)
-        beta = 0;
+        % ADD ACkermann Steering hereish, for now use parallel steer
         % Minimizing the objective function of M_z a_f-12degrees and a_y-AY  
         input = 1;
-        x0 = [delta, beta, AYP];  % initial values
-        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
-            rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r);
+        AYP = 0; % Lateral acceleration guess
+        yaw_rate = 0; % Yaw rate guess
+        x0 = [AYP yaw_rate];  % initial values
+        fun = @(x)vogelMMM(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
+            rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r,vel,delta,beta);
         fun(x0);
         % minimizing function
-        lb = [0 -.2 .5];
-        ub = [.5 .2 2];
-        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-8,Display="off");
+        lb = [];
+        ub = [];
+        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=10000,MaxIterations=10000,FunctionTolerance=1e-8,Display="off");
         x = lsqnonlin(fun, x0,lb,ub,opts);
         % output from minimizing
-        delta = x(1);
-        beta = x(2);
-        AYP = x(3);
+        AYP = x(1);
+        yaw_rate = x(2)
         input = 0;
         evalVogel = fun(x);
-        lateralg(turn) = evalVogel(1);
-        f_xplt(turn) = evalVogel(2);
-        deltaTest(turn) = rad2deg(delta);
-        betaTest(turn) = rad2deg(beta);
-        AYPTest(turn) = AYP;
+        A_y = evalVogel(1);
+        M_z = evalVogel(2);
+        a_f = rad2deg(evalVogel(3));
+        a_r = rad2deg(evalVogel(4));
+        yaw_rate = rad2deg(evalVogel(5))
+        % Create Data Structure
+        MMMpoints(end+1,:) = [body_angle steered_angle A_y M_z a_r a_f M_z/W/L yaw_rate];
     end
 end
 
