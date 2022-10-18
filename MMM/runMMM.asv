@@ -59,9 +59,9 @@ CoP = .48; % front downforce distribution (%% Run simulation
 
 %% MMM Output
 
-vel = 20; % [m/s] velocity to evaluate at
-deltamax = 12; % [degrees] maximum front steering slip angle
-betamax = 6;% [degrees] maximum body slip angle
+vel = 0; % [m/s] velocity to evaluate at
+steered_angle_max = 15; % [degrees] maximum front steering slip angle
+betamax = 15;% [degrees] maximum body slip angle
 stepsize = 1;
 
 MMMOutput = CalculateMMM(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
@@ -71,6 +71,7 @@ MMMOutput = CalculateMMM(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR,
 
 %% Section 19: Plot Results
 % This is just to make some pretty pictures, feel free to comment this out
+disp('Plotting "MMM"')
 if showPlots == true
 end
 
@@ -80,11 +81,14 @@ hold
 for ii = -deltamax:stepsize:deltamax
     constSlipLine = [];
     for jj = 1:length(MMMOutput(:,1))
-        if MMMOutput(jj,6) == ii
-            constSlipLine(end+1,:) = MMMOutput(jj,:); 
+        if round(MMMOutput(jj,2)) == ii
+            constSlipLine(end+1,:) = MMMOutput(jj,:);
+        end
+        if ii == 1
+            a = constSlipLine;
         end
     end
-    plot(constSlipLine(:,3),constSlipLine(:,4),'b')
+    plot(constSlipLine(:,3),constSlipLine(:,7),'b')
 end
 
 %Plot body slip angles
@@ -95,8 +99,9 @@ for ii = -betamax:stepsize:betamax
             constSlipLine(end+1,:) = MMMOutput(jj,:); 
         end
     end
-    plot(constSlipLine(:,3),constSlipLine(:,4),'r')
+    plot(constSlipLine(:,3),constSlipLine(:,7),'r')
 end
-xlabel('Ay')
+xlabel('Lateral Accel A_y')
+ylabel('C_n (M_z/W/L)') % M_z/W/L
 
-
+% Find Control and Stability
