@@ -27,13 +27,13 @@ global grip input
         IA_r_in = -twr*sin(phir)/2*IA_gainr - IA_0r - KPIr*(1-cos(deltar)) - casterf*sin(deltar) +phir;
         IA_r_out = -twr*sin(phir)/2*IA_gainr + IA_0r + KPIr*(1-cos(deltar)) - casterf*sin(deltar) + phir; 
         %calculate yaw rate
-        r = A_y*9.81/V;
+        omega = V/R;
         %from yaw, sideslip and steer you can get slip angles (rad)
-        a_f = beta+a*r/V-delta;
-        a_r = beta-b*r/V;
+        a_f = beta+a*omega/V-delta;
+        a_r = beta-b*omega/V;
         % with slip angles, load and camber, calculate lateral force at
         % the front
-        F_fin = -MF52_Fy_fcn([-a_f wfin -IA_f_in])*sf_y*cos(delta); % inputs = (rad Newtons rad)
+        F_fin = -MF52_Fy_fcn([a_f wfin -IA_f_in])*sf_y*cos(delta); % inputs = (rad Newtons rad)
         F_fout = MF52_Fy_fcn([a_f wfout -IA_f_out])*sf_y*cos(delta);
         % calculate the drag from aero and the front tires (N)
         F_xDrag = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta); 
@@ -51,12 +51,13 @@ global grip input
         % calculate resultant lateral acceleration
         AY = F_y/(W);
         %minimizing values
-        slipAngle = a_f-deg2rad(-12);
+%         slipAngle = a_f-deg2rad(-12);
         diff_AY =A_y-AY;
         if input == 1
-        output = [M_z slipAngle diff_AY];
+%         output = [M_z slipAngle diff_AY];
+        output = [M_z diff_AY];
         else
-        output = [A_y f_xplt];
+        output = [A_y f_xplt a_f a_r];
         end
 
 end

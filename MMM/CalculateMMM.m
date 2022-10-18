@@ -115,8 +115,9 @@ for beta = -betamax:stepsize:betamax
         % minimizing function
         lb = [];
         ub = [];
-        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=10000,MaxIterations=10000,FunctionTolerance=1e-8,Display="off");
-        x = lsqnonlin(fun, x0,lb,ub,opts);
+%         opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=10000,MaxIterations=10000,FunctionTolerance=1e-8,Display="off");
+%         x = lsqnonlin(fun, x0,lb,ub,opts);
+        x = fsolve(fun,x0);
         % output from minimizing
         AYP = x(1);
         input = 0;
