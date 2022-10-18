@@ -49,16 +49,19 @@ global grip input
 
         % with slip angles, load and camber, calculate lateral force at
         % the front
-        F_fin = -MF52_Fy_fcn([-a_f_in wfin -IA_f_in])*sf_y*cos(steered_angle); % inputs = (rad Newtons rad)
-        F_fout = MF52_Fy_fcn([a_f_out wfout -IA_f_out])*sf_y*cos(steered_angle);
+        F_fin = -MF52_Fy_fcn([-a_f_in wfin -IA_f_in])*sf_y*cos(a_f); % inputs = (rad Newtons rad)
+        F_fout = MF52_Fy_fcn([a_f_out wfout -IA_f_out])*sf_y*cos(a_f);
         % calculate the drag from aero and the front tires (N)
         %F_xDrag = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta); % Currently Unused
         % calculate the grip penalty assuming the rears must overcome that
         % drag
         rscale = 1; % (set to 1 to consider no conteracting acccel for MMM) 1-(F_xDrag/W/(polyval(grip,V)))^2; % Comes from traction circle
         % now calculate rear tire forces, with said penalty
-        F_rin = -MF52_Fy_fcn([-a_r_in wrin -IA_r_in])*sf_y*rscale; 
-        F_rout = MF52_Fy_fcn([a_r_out wrout -IA_r_out])*sf_y*rscale;
+        F_rin = -MF52_Fy_fcn([-a_r_in wrin -IA_r_in])*sf_y*rscale*cos(a_r); 
+        F_rout = MF52_Fy_fcn([a_r_out wrout -IA_r_out])*sf_y*rscale*cos(a_r);
+        % Calculate long accel from all tires and aero force (N)
+        F_x = -Cd*vel^2 - (F_fin+F_fout)*sin(a_f) - (F_rin+F_rout)*sin(a_r);
+        AX = F_x/W;
         % sum of forces and moments
         F_y = F_fin+F_fout+F_rin+F_rout;
         M_z_diff = 0; % F_xDrag*T_lock*twr/2; (Ignoring Diff Effects)       
@@ -75,7 +78,7 @@ global grip input
         if input == 1
         output = [diff_AY diff_yaw_rate];
         else
-        output = [A_y M_z a_f a_r yaw_rate yaw_rate];
+        output = [A_y M_z a_f a_r yaw_rate yaw_rate AX];
         end
 
 end

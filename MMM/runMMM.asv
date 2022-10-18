@@ -59,14 +59,14 @@ CoP = .48; % front downforce distribution (%% Run simulation
 
 %% MMM Output
 
-vel = 0; % [m/s] velocity to evaluate at
-steered_angle_max = 15; % [degrees] maximum front steering slip angle
-betamax = 15;% [degrees] maximum body slip angle
+vel = 20; % [m/s] velocity to evaluate at (V_long) in velocity frame
+steered_angle_max = 10; % [degrees] maximum front steering angle (body frame)
+body_angle_max = 10;% [degrees] maximum body angle (velocity frame)
 stepsize = 1;
 
 MMMOutput = CalculateMMM(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
     IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-    casterr, KPIr, Cl, Cd, CoP, showPlots, vel, deltamax, betamax, stepsize);
+    casterr, KPIr, Cl, Cd, CoP, showPlots, vel, steered_angle_max, body_angle_max, stepsize);
 
 
 %% Section 19: Plot Results
@@ -78,30 +78,61 @@ end
 figure
 hold
 % Plot slip angles
-for ii = -deltamax:stepsize:deltamax
+for ii = -steered_angle_max:stepsize:steered_angle_max
     constSlipLine = [];
     for jj = 1:length(MMMOutput(:,1))
-        if round(MMMOutput(jj,2)) == ii
+        if MMMOutput(jj,2) == ii
             constSlipLine(end+1,:) = MMMOutput(jj,:);
         end
         if ii == 1
             a = constSlipLine;
         end
     end
-    plot(constSlipLine(:,3),constSlipLine(:,7),'b')
+    plot3(constSlipLine(:,3),constSlipLine(:,7),constSlipLine(:,9),'b')
 end
 
 %Plot body slip angles
-for ii = -betamax:stepsize:betamax
+for ii = -body_angle_max:stepsize:body_angle_max
     constSlipLine = [];
     for jj = 1:length(MMMOutput(:,1))
         if MMMOutput(jj,1) == ii
             constSlipLine(end+1,:) = MMMOutput(jj,:); 
         end
     end
-    plot(constSlipLine(:,3),constSlipLine(:,7),'r')
+    plot3(constSlipLine(:,3),constSlipLine(:,7),constSlipLine(:,9),'r')
 end
+% ****** Longitudinal
+figure
+hold
+% Plot slip angles
+for ii = -steered_angle_max:stepsize:steered_angle_max
+    constSlipLine = [];
+    for jj = 1:length(MMMOutput(:,1))
+        if MMMOutput(jj,2) == ii
+            constSlipLine(end+1,:) = MMMOutput(jj,:);
+        end
+        if ii == 1
+            a = constSlipLine;
+        end
+    end
+    plot3(constSlipLine(:,3),constSlipLine(:,7),constSlipLine(:,9),'b')
+end
+
+%Plot body slip angles
+for ii = -body_angle_max:stepsize:body_angle_max
+    constSlipLine = [];
+    for jj = 1:length(MMMOutput(:,1))
+        if MMMOutput(jj,1) == ii
+            constSlipLine(end+1,:) = MMMOutput(jj,:); 
+        end
+    end
+    plot3(constSlipLine(:,3),constSlipLine(:,7),constSlipLine(:,9),'r')
+end
+
+title("Yaw Moment Diagram at " + vel + " m/s")
 xlabel('Lateral Accel A_y')
 ylabel('C_n (M_z/W/L)') % M_z/W/L
+zlabel('Longitudinal accel A_x')
+view(3)
 
 % Find Control and Stability

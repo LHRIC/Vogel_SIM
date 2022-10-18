@@ -130,8 +130,9 @@ for body_angle = -body_angle_max:stepsize:body_angle_max
         a_r = rad2deg(evalVogel(4));
         yaw_rate = rad2deg(evalVogel(5));
         yaw_rate = evalVogel(6)
+        A_x = evalVogel(7);
         % Create Data Structure
-        MMMpoints(end+1,:) = [body_angle steered_angle A_y M_z a_r a_f M_z/W/L yaw_rate];
+        MMMpoints(end+1,:) = [body_angle steered_angle A_y M_z a_r a_f M_z/W/L yaw_rate A_x];
     end
 end
 
