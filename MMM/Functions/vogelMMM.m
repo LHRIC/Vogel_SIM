@@ -16,15 +16,15 @@ global grip input
         % [fin fout rin rout]
         % [fr  fl   rr  rl  ]
         % Calculate Weight Transfer
-        LatWT = AY_IMF*cg*W/mean([twf twr]); % calculate lateral load transfer (N)
+        LatWT  = AY_IMF*cg*W/mean([twf twr]); % calculate lateral load transfer (N)
         LongWT = AX_IMF*W*cg/(a+b);
         % split f/r using LLTD (N)
         LatWTF = LatWT*LLTD;
         LatWTR = LatWT*(1-LLTD);
         % update individual wheel loads 
-        wfin = wf-LatWTF-LongWT;
+        wfin  = wf-LatWTF-LongWT;
         wfout = wf+LatWTF-LongWT;
-        wrin = wr-LatWTR+LongWT;
+        wrin  = wr-LatWTR+LongWT;
         wrout = wr+LatWTR+LongWT;
 
         % Calculate suspension kinematics changes *** Unused here ***
@@ -45,8 +45,8 @@ global grip input
         a_r = body_angle;
         a_f = steered_angle+body_angle;
         % Find yaw rate slip angle contribution (Left outside) (NTB Frame)
-        B_f_in  = atan((vel*sin(-body_angle)-yaw_rate*a)/   (vel*cos(-body_angle)+yaw_rate*(twf/2)));
-        B_f_out = atan((vel*sin(-body_angle)-yaw_rate*a)/   (vel*cos(-body_angle)+yaw_rate*(-(twf/2))));
+        B_f_in  = atan((vel*sin(-body_angle)-yaw_rate*a)   /(vel*cos(-body_angle)+yaw_rate*(twf/2)));
+        B_f_out = atan((vel*sin(-body_angle)-yaw_rate*a)   /(vel*cos(-body_angle)+yaw_rate*(-(twf/2))));
         B_r_in  = atan((vel*sin(-body_angle)-yaw_rate*(-b))/(vel*cos(-body_angle)+yaw_rate*(twr/2)));
         B_r_out = atan((vel*sin(-body_angle)-yaw_rate*(-b))/(vel*cos(-body_angle)+yaw_rate*(-(twr/2))));
         % Find slip angle with yaw rate correction (NTB to Tire Frame) 
@@ -59,7 +59,7 @@ global grip input
         % CALCULATE TIRE FORCES
         % with slip angles, load and camber, calculate lateral force at
         % the front (IMF FRAME)
-        F_fin = -MF52_Fy_fcn([-a_f_in wfin -IA_f_in])*sf_y*cos(steered_angle); % inputs = (rad Newtons rad)
+        F_fin  =-MF52_Fy_fcn([-a_f_in wfin -IA_f_in])*sf_y*cos(steered_angle); % inputs = (rad Newtons rad)
         F_fout = MF52_Fy_fcn([a_f_out wfout -IA_f_out])*sf_y*cos(steered_angle);
         % calculate the drag from aero and the front tires (N)
         % calculate the grip penalty assuming the rears must overcome that
@@ -80,16 +80,10 @@ global grip input
         % Calculate Accelerations in (NTB Frame)
         AY_NTB_Guess = AY_IMF_Guess*cos(body_angle) - AX_IMF_Guess*sin(body_angle);
         AX_NTB_Guess = AX_IMF_Guess*cos(body_angle) + AY_IMF_Guess*sin(body_angle);
-        %AY_NTB_Guess = AY_IMF_Guess/cos(body_angle) - AX_IMF_Guess/sin(body_angle);
-        %AX_NTB_Guess = AX_IMF_Guess/cos(body_angle) + AY_IMF_Guess/sin(body_angle);
         % calculate yaw rate
-        if abs(AY_NTB_Guess) < 1*10^-16 % Check for zero AY condition to not divide by 0
-            yaw_rate_guess = 0;
-            radius = inf;
-        else
-            radius = vel^2/AY_NTB_Guess; % first calculate turn radius
-            yaw_rate_guess = vel/radius;% then calculate yaw rate
-        end
+        radius = vel^2/AY_NTB_Guess; % first calculate turn radius
+        yaw_rate_guess = vel/radius;% then calculate yaw rate
+
         % Differentals for paratmers to be optimized
         diff_AY = AY_NTB-AY_NTB_Guess;
         diff_yaw_rate = yaw_rate-yaw_rate_guess;

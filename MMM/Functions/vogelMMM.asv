@@ -78,18 +78,12 @@ global grip input
         AY_IMF_Guess = F_y_IMF/W;
         AX_IMF_Guess = F_x_IMF/W;
         % Calculate Accelerations in (NTB Frame)
-        AY_NTB_Guess = AY_IMF_Guess/cos(body_angle) - AX_IMF_Guess/sin(body_angle);
-        AX_NTB_Guess = AX_IMF_Guess/cos(body_angle) + AY_IMF_Guess/sin(body_angle);
-        %AY_NTB_Guess = AY_IMF_Guess/cos(body_angle) - AX_IMF_Guess/sin(body_angle);
-        %AX_NTB_Guess = AX_IMF_Guess/cos(body_angle) + AY_IMF_Guess/sin(body_angle);
+        AY_NTB_Guess = AY_IMF_Guess*cos(body_angle) - AX_IMF_Guess*sin(body_angle);
+        AX_NTB_Guess = AX_IMF_Guess*cos(body_angle) + AY_IMF_Guess*sin(body_angle);
         % calculate yaw rate
-        if abs(AY_NTB_Guess) < 1*10^-16 % Check for zero AY condition to not divide by 0
-            yaw_rate_guess = 0;
-            radius = inf;
-        else
-            radius = vel^2/AY_NTB_Guess; % first calculate turn radius
-            yaw_rate_guess = vel/radius;% then calculate yaw rate
-        end
+        radius = vel^2/AY_NTB_Guess; % first calculate turn radius
+        yaw_rate_guess = vel/radius;% then calculate yaw rate
+
         % Differentals for paratmers to be optimized
         diff_AY = AY_NTB-AY_NTB_Guess;
         diff_yaw_rate = yaw_rate-yaw_rate_guess;
