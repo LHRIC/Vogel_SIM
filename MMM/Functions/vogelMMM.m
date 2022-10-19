@@ -66,10 +66,10 @@ global grip input
         % drag
         rscale = 1; % (set to 1 to consider no conteracting acccel for MMM) 1-(F_xDrag/W/(polyval(grip,V)))^2; % Comes from traction circle
         % now calculate rear tire forces (Tire Frame *For Rear this is also IMF*)
-        F_rin = -MF52_Fy_fcn([-a_r_in wrin -IA_r_in])*sf_y*rscale; 
+        F_rin  =-MF52_Fy_fcn([-a_r_in wrin -IA_r_in])*sf_y*rscale; 
         F_rout = MF52_Fy_fcn([a_r_out wrout -IA_r_out])*sf_y*rscale;
         % Calculate long accel from all tires and aero force (N) (IMF Frame) *For Later calculate aero force in relation to velocity components*
-        F_x_IMF = -Cd*vel^2 - (F_fin+F_fout)*tan(steered_angle);
+        F_x_IMF = -Cd*vel^2 + (F_fin+F_fout)*tan(steered_angle);
         % sum of forces and moments
         F_y_IMF = F_fin+F_fout+F_rin+F_rout; % IMF Frame
         M_z_diff = 0; % F_xDrag*T_lock*twr/2; (Ignoring Diff Effects)       
