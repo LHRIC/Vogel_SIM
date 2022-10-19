@@ -96,6 +96,7 @@ MMMpoints = [];
 
 for body_angle = -body_angle_max:stepsize:body_angle_max
     for steered_angle = -steered_angle_max:stepsize:steered_angle_max
+        spit = [body_angle steered_angle]
         % from downforce, update suspension travel (m):
         dxf = LF*CoP/2/WRF; 
         dxr = LF*(1-CoP)/2/WRR; 
@@ -108,9 +109,10 @@ for body_angle = -body_angle_max:stepsize:body_angle_max
         % ADD ACkermann Steering hereish, for now use parallel steer
         % Minimizing the objective function of M_z a_f-12degrees and a_y-AY  
         input = 1;
-        AYP = 0; % Lateral acceleration guess
+        AY_NTB = 0; % Lateral acceleration guess
         yaw_rate = 0; % Yaw rate guess
-        x0 = [AYP yaw_rate];  % initial values
+        AX_NTB = 0; % Longitudinal acceleration guess
+        x0 = [AY_NTB yaw_rate AX_NTB];  % initial values
         fun = @(x)vogelMMM(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
             rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r,vel,steered_angle,body_angle);
         fun(x0);
@@ -120,19 +122,18 @@ for body_angle = -body_angle_max:stepsize:body_angle_max
         opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=10000,MaxIterations=10000,FunctionTolerance=1e-16,Display="off");
         x = lsqnonlin(fun, x0,lb,ub,opts);
         % output from minimizing
-        AYP = x(1);
+        AY_NTB = x(1);
         yaw_rate = x(2);
         input = 0;
         evalVogel = fun(x);
-        A_y = evalVogel(1);
+        A_y_NTB = evalVogel(1);
         M_z = evalVogel(2);
         a_f = rad2deg(evalVogel(3));
         a_r = rad2deg(evalVogel(4));
-        yaw_rate = rad2deg(evalVogel(5));
-        yaw_rate = evalVogel(6)
-        A_x = evalVogel(7);
+        yaw_rate = evalVogel(5)
+        A_x_NTB = evalVogel(6);
         % Create Data Structure
-        MMMpoints(end+1,:) = [body_angle steered_angle A_y M_z a_r a_f M_z/W/L yaw_rate A_x];
+        MMMpoints(end+1,:) = [body_angle steered_angle A_y_NTB M_z a_r a_f M_z/W/L yaw_rate A_x_NTB];
     end
 end
 

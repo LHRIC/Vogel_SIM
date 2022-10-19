@@ -31,6 +31,7 @@ tire_radius = .2032; % (meters)
 sf_x = .6;
 sf_y = .6; 
 %% Section 2: Input Powertrain Model
+% *** UNUSED *** I don't yet know of a case with a powertrain model
 % change whatever you want here, this is the 2018 powertrain package iirc
 % just keep your units consistent please
 
@@ -93,8 +94,8 @@ LF = Cl*vel^2;
 %Initialize Data Storage
 MMMpoints = [];
 
-for beta = -body_angle_max:stepsize:body_angle_max
-    for delta = -steered_angle_max:stepsize:steered_angle_max
+for body_angle = -body_angle_max:stepsize:body_angle_max
+    for steered_angle = -steered_angle_max:stepsize:steered_angle_max
         % from downforce, update suspension travel (m):
         dxf = LF*CoP/2/WRF; 
         dxr = LF*(1-CoP)/2/WRR; 
@@ -107,108 +108,33 @@ for beta = -body_angle_max:stepsize:body_angle_max
         % ADD ACkermann Steering hereish, for now use parallel steer
         % Minimizing the objective function of M_z a_f-12degrees and a_y-AY  
         input = 1;
-        AYP = 0; % Lateral acceleration guess
+        AY_NTB = 0; % Lateral acceleration guess
         yaw_rate = 0; % Yaw rate guess
-        x0 = [AYP yaw_rate];  % initial values
+        AX_NTB = 0; % Longitudinal acceleration guess
+        x0 = [AY_NTB yaw_rate AX_NTB];  % initial values
         fun = @(x)vogelMMM(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
-            rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r,vel,delta,beta);
+            rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r,vel,steered_angle,body_angle);
         fun(x0);
         % minimizing function
         lb = [];
         ub = [];
-        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=10000,MaxIterations=10000,FunctionTolerance=1e-8,Display="off");
+        opts = optimoptions("",MaxFunctionEvaluations=10000,MaxIterations=10000,FunctionTolerance=1e-16,Display="off");
         x = lsqnonlin(fun, x0,lb,ub,opts);
         % output from minimizing
-        AYP = x(1);
-        yaw_rate = x(2)
+        AY_NTB = x(1);
+        yaw_rate = x(2);
         input = 0;
         evalVogel = fun(x);
-        A_y = evalVogel(1);
+        A_y_NTB = evalVogel(1);
         M_z = evalVogel(2);
         a_f = rad2deg(evalVogel(3));
         a_r = rad2deg(evalVogel(4));
-        yaw_rate = rad2deg(evalVogel(5))
+        yaw_rate = evalVogel(5)
+        A_x_NTB = evalVogel(6);
         % Create Data Structure
-        MMMpoints(end+1,:) = [body_angle steered_angle A_y M_z a_r a_f M_z/W/L yaw_rate];
+        MMMpoints(end+1,:) = [body_angle steered_angle A_y_NTB M_z a_r a_f M_z/W/L yaw_rate A_x_NTB];
     end
 end
 
-
-% *************************************************************
-% QUARENTINE
-
-% g = 9.81; % [m/s^2] gravity
-% vel = 20; % [m/s] velocity to evaluate at
-% deltamax = 6; % [degrees] maximum front steering slip angle
-% betamax = 3;% [degrees] maximum body slip angle
-% stepsize = 0.25;
-% LF = Cl*vel^2;
-% IA = 0; % Set inclination angle to 0
-% 
-% WF = W*WDF;% Calculate static axle loads
-% WR = W*(1-WDF); 
-% wf = (WF+LF*CoP)/2;% Calculate static wheel loads
-% wr = (WF+LF*(1-CoP))/2;
-% 
-% loops = 1;
-% 
-% for beta = -betamax:stepsize:betamax
-%     for delta = -deltamax:stepsize:deltamax
-%         % Initial Ay Guess
-%         Ay0 = 0;
-%         AY_diff = 1;
-%         while abs(AY_diff)>0.005
-%             % (Re)Calculate weight transfer
-%             WT = Ay0*cg*W/mean([twf twr]);
-% 
-%             % (Re)Calculate Wheel loads
-%             w1 = wf - (WT*LLTD); % Front Left % 1 FL, 2FR, 3RL, 4RR
-%             w2 = wf + (WT*LLTD); % Front Right
-%             w3 = wr - (WT*LLTD); % Rear Left
-%             w4 = wr + (WT*LLTD); % Rear Right
-%             
-%             % Calculate Slip Angles
-%             SA1 = delta + beta;
-%             SA2 = delta + beta;
-%             SA3 = beta;
-%             SA4 = beta;
-% 
-%             % (Re)Calculate tire forces from tire model
-%             FyT1 = MF52_Fy_fcn([deg2rad(SA1) w1 IA]); % THis code wont work
-%             FyT2 = MF52_Fy_fcn([deg2rad(SA2) w2 IA]);
-%             FyT3 = MF52_Fy_fcn([deg2rad(SA3) w3 IA]);
-%             FyT4 = MF52_Fy_fcn([deg2rad(SA4) w4 IA]);
-% 
-%             % Fx Calculation (Currently Unused)
-%             FxV1 = -FyT1*sind(SA1);
-%             FxV1 = -FyT1*sind(SA1);
-%             FxV1 = -FyT1*sind(SA1);
-%             FxV1 = -FyT1*sind(SA1);
-% 
-%             % Fy Calculation
-%             FyV1 = -FyT1*cosd(SA1);
-%             FyV2 = -FyT2*cosd(SA2);
-%             FyV3 = -FyT3*cosd(SA3);
-%             FyV4 = -FyT4*cosd(SA4);
-% 
-%             % Ay Calc (F=ma)
-%             FyV = FyV1 + FyV2 + FyV3 + FyV4;
-%             Ay1 = FyV/(m);
-% 
-%             % Ay Diff
-%             AY_diff = Ay1-Ay0; % If difference is low enough should break here
-% 
-%             Ay0 = Ay1
-% 
-%         end
-%         % Calculate Yaw Moment
-%         YawMom = (FyV1+FyV2)*a-(FyV3+FyV4)*b;
-% 
-%         % Save
-%         MMMpoints(loops,:) = [beta,delta,Ay1,YawMom];
-%         loops = loops+1
-%     end
-% end
-% ************************************************************
 %% Output
 output = MMMpoints;

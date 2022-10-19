@@ -139,4 +139,35 @@ title("Longitudinal Accel Vs Lateral Accel at " + vel + " m/s")
 xlabel('Longitudinal Accel A_x')
 ylabel('Lateral Accel A_y')
 
+
+% ****** Lateral Accel VS C_n ******
+figure
+hold
+% Plot slip angles
+for ii = -steered_angle_max:stepsize:steered_angle_max
+    constSlipLine = [];
+    for jj = 1:length(MMMOutput(:,1))
+        if MMMOutput(jj,2) == ii
+            constSlipLine(end+1,:) = MMMOutput(jj,:);
+        end
+        if ii == 1
+            a = constSlipLine;
+        end
+    end
+    plot(constSlipLine(:,3),constSlipLine(:,7),'b')
+end
+
+%Plot body slip angles
+for ii = -body_angle_max:stepsize:body_angle_max
+    constSlipLine = [];
+    for jj = 1:length(MMMOutput(:,1))
+        if MMMOutput(jj,1) == ii
+            constSlipLine(end+1,:) = MMMOutput(jj,:); 
+        end
+    end
+    plot(constSlipLine(:,3),constSlipLine(:,7),'r')
+end
+title("Yaw Moment Diagram at " + vel + " m/s")
+xlabel('Lateral Accel A_y')
+ylabel('C_n (M_z/W/L)') % M_z/W/L
 % Find Control and Stability
