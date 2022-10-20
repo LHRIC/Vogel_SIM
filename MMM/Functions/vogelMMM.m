@@ -46,9 +46,9 @@ global grip input
         a_f = steered_angle+body_angle;
         % Find yaw rate slip angle contribution (Left outside) (NTB Frame)
         B_f_in  = atan((vel*sin(-body_angle)-yaw_rate*a)   /(vel*cos(-body_angle)+yaw_rate*(twf/2)));
-        B_f_out = atan((vel*sin(-body_angle)-yaw_rate*a)   /(vel*cos(-body_angle)+yaw_rate*(-(twf/2))));
+        B_f_out = atan((vel*sin(-body_angle)-yaw_rate*a)   /(vel*cos(-body_angle)+yaw_rate*((-twf/2))));
         B_r_in  = atan((vel*sin(-body_angle)-yaw_rate*(-b))/(vel*cos(-body_angle)+yaw_rate*(twr/2)));
-        B_r_out = atan((vel*sin(-body_angle)-yaw_rate*(-b))/(vel*cos(-body_angle)+yaw_rate*(-(twr/2))));
+        B_r_out = atan((vel*sin(-body_angle)-yaw_rate*(-b))/(vel*cos(-body_angle)+yaw_rate*((-twr/2))));
         % Find slip angle with yaw rate correction (NTB to Tire Frame) 
         % (SA = diff between direction of travel tire heading)
         a_f_in  = a_f-B_f_in;
@@ -66,13 +66,13 @@ global grip input
         % drag
         rscale = 1; % (set to 1 to consider no conteracting acccel for MMM) 1-(F_xDrag/W/(polyval(grip,V)))^2; % Comes from traction circle
         % now calculate rear tire forces (Tire Frame *For Rear this is also IMF*)
-        F_rin  =-MF52_Fy_fcn([-a_r_in wrin -IA_r_in])*sf_y*rscale; 
+        F_rin  =-MF52_Fy_fcn([-a_r_in wrin -IA_r_in])*sf_y*rscale;
         F_rout = MF52_Fy_fcn([a_r_out wrout -IA_r_out])*sf_y*rscale;
         % Calculate long accel from all tires and aero force (N) (IMF Frame) *For Later calculate aero force in relation to velocity components*
         F_x_IMF = -Cd*vel^2 + (F_fin+F_fout)*tan(steered_angle);
         % sum of forces and moments
         F_y_IMF = F_fin+F_fout+F_rin+F_rout; % IMF Frame
-        M_z_diff = 0; % F_xDrag*T_lock*twr/2; (Ignoring Diff Effects)       
+        M_z_diff = 0; % F_xDrag*T_lock*twr/2; (Ignoring Diff Effects) (Should look into this later)     
         M_z = F_fout*tan(steered_angle)*twf/2 - F_fin*tan(steered_angle)*twf/2 + (F_fin+F_fout)*a - (F_rin+F_rout)*b - M_z_diff; % IMF (NEED TO VERIFY THIS. LONG COMPONENT OF M_z May be lost in Fy to IMF conversion. I dont keep both X and Y components)
         % calculate resultant accelerations (IMF Frame)
         AY_IMF_Guess = F_y_IMF/W;

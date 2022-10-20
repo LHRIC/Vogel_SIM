@@ -73,7 +73,7 @@ MMMOutput = CalculateMMM(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR,
 % This is just to make some pretty pictures, feel free to comment this out
 disp('Plotting "MMM"')
 if showPlots == true
-
+end
 % ****** Longitudinal Accel VS C_n Vs Lateral Accel ******
 figure
 hold
@@ -143,17 +143,9 @@ for ii = -steered_angle_max:stepsize:steered_angle_max
     for jj = 1:length(MMMOutput(:,1))
         if MMMOutput(jj,2) == ii
             constSlipLine(end+1,:) = MMMOutput(jj,:);
-            if MMMOutput(jj,1) == 0
-                xCord = MMMOutput(jj,3);
-                yCord = MMMOutput(jj,7);
-            end
         end
     end
-    if ii == 1
-        a = constSlipLine;
-    end
     plot(constSlipLine(:,3),constSlipLine(:,7),'b')
-    text(xCord,yCord,""+ii)
 end
 
 %Plot body slip angles
@@ -162,18 +154,14 @@ for ii = -body_angle_max:stepsize:body_angle_max
     for jj = 1:length(MMMOutput(:,1))
         if MMMOutput(jj,1) == ii
             constSlipLine(end+1,:) = MMMOutput(jj,:); 
-            if MMMOutput(jj,2) == 0
-                xCord = MMMOutput(jj,3);
-                yCord = MMMOutput(jj,7);
-            end
+            if MMMOutput(jj,2)
         end
     end
-    plot(constSlipLine(:,3),constSlipLine(:,7),'r')
-    text(xCord,yCord,""+ii)
+
+    plot(constSlipLine(:,3),constSlipLine(:,7))
 end
+legend
 title("Yaw Moment Diagram at " + vel + " m/s")
 xlabel('Lateral Accel A_y')
 ylabel('C_n (M_z/W/L)') % M_z/W/L
 % Find Control and Stability
-
-end
