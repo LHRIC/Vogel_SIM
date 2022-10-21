@@ -30,30 +30,23 @@ path_points = [track.X, track.Y]/1000;
 
 KT = LineCurvature2D(path_points);
 KT = KT(~isnan(KT));
-% smallvalues = ;
-KT(find(abs(KT)<1/r_max)) = 1/r_max;
+smallvalues = find(abs(KT)<.00001);
+KT(smallvalues) = 1/r_max;
 RT = abs(1./KT);
 RT(end-2:end) = [];
-
-
-
-
-
-
-
-% figure
-% patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
-% h = colorbar;
-% set(get(h,'title'),'string','Curvature');
-% set(gca,'XTick',[], 'YTick', [])
+figure
+patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
+h = colorbar;
+set(get(h,'title'),'string','Velocity (V) [m/s]');
+set(gca,'XTick',[], 'YTick', [])
 
 % x = linspace(1,t(end-1),10000);
 % ppv = csaps(t,path_points,1);
 % vehicle_path = ppval(ppv,x);
 %  if showPlots == true
-% figure
-% plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
-% hold on
+figure
+plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
+hold on
 % fnplt(ppv)
 % hold on
 % end
@@ -147,7 +140,7 @@ for i = 1:1:length(segment) % for each track segment
             % find potential acceleration available:
             ax_f(count) = AX*(1-(min(AY,ay_f(count))/AY)^2);
             tt = roots([0.5*9.81*ax_f(count) vel -dd]);
-            % accelerate according to that capacity, update speed and
+            % accelerate accoding to that capacity, update speed and
             % position accordingly
             dt_f(count) = max(tt);
             dv = 9.81*ax_f(count)*dt_f(count);

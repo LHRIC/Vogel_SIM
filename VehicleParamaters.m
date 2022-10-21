@@ -6,7 +6,7 @@ set(groot,'defaultLegendInterpreter','latex');
 % Vechicle Paramaters
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-showPlots = false;
+showPlots = true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Section 1: Vehicle Architecture
