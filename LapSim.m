@@ -86,7 +86,7 @@ IA_gainr = IA_roll_inducedr*IA_compensationr;
 disp('Generating g-g-V Diagram')
 deltar = 0;
 deltaf = 0;
-velocity = 4:1:30; % range of velocities at which sim will evaluate (m/s)
+velocity = 4:1:floor(VMAX); % range of velocities at which sim will evaluate (m/s)
 radii = 3.5:1.5:36; % range of turn radii at which sim will evaluate (m)
 % First we will evaluate our Acceleration Capacity
 g = 1; % g is a gear indicator, and it will start at 1
@@ -128,6 +128,7 @@ for  i = 1:1:length(velocity) % for each velocity
         AX = FX/W; % THIS IS IN G'S, SEE ABOVE
         AX_diff = AX-Ax;
     end
+    wr_count(i) = wr;
     A_xr(i) = AX; % little x defines the grip limited maximum accleration
     output = Powertrainlapsim(max(7.5,V)); % 7.5 reg, 10 launch
     FX = output(1); % Newtons
@@ -143,6 +144,7 @@ for  i = 1:1:length(velocity) % for each velocity
     end
     A_Xr(i) = AX(i); % big X defines the power limited maximum acceleration
 end
+wr_count
 A_Xr(A_Xr < 0) = 0;
 
 % from these results, you can create the first part of the GGV diagram
@@ -154,105 +156,125 @@ grip = polyfit(velocity,A_xr,3);
 
 
 
-range = linspace(4.5,30);
-hold off
-figure
-hold on
-plot(velocity,A_xr,'o',velocity,A_Xr,'o',range,polyval(grip,range))
-hold on
-% fnplt(gripspline)
-grid on
-grid minor
-hold on
-fnplt(accel)
-grid on
-grid minor
+% color1=[0 0 1];
+% color2=1/255*[0 173 107];
+% 
+% 
+% range = linspace(4.5,30);
+% Evaluated = fnval(accel,range(1,1:75));
+% [M,I] = max(Evaluated);
+% plot(velocity,A_xr,'o','Color',color2)
+% hold on
+% plot(velocity,A_Xr,'o','Color',color1)
+% hold on
+% plot(range,polyval(grip,range),'--','Color',color2)
+% hold on
+% plot(range(I),M,'m*','MarkerSize',18)
+% hold on
+% title('Longitudinal Acceleration Capacity vs Velocity','FontWeight','bold','FontSize',24)
+% xlabel('Velocity','FontSize',18)
+% ylabel('Longitudinal Acceleration','FontSize',18)
+% txt = ['        \leftarrow Max Acceleration (',num2str(M),')'];
+% text(range(I),M,txt,'Interpreter','tex','FontSize',12)
+% hold on
+% grid on
+% grid minor
+% hold on
+% fnplt(accel,'b')
+% grid on
+% grid minor
+% lgd = legend('','','Grip Limited','Maximum Acceleration','Acceleration Capacity');
+% lgd.FontSize = 14;
+
+
 
 AYP = .5;
 disp('Lateral Acceleration Envelope')
 
+load('lateralg.mat')
+disp("////////////////////////////////////WARNING////////////////////" + ...
+    "LOADING PRECALCULATED LATERALG")
 
-% load('lateralg.mat')
-% disp("////////////////////////////////////WARNING////////////////////" + ...
-%     "LOADING PRECALCULATED LATERALG")
+% lateralg = zeros(1,length(radii));
+% for turn = 1:1:length(radii)
+%     % first define your vehicle characteristics:
+%         a = L*(1-WDF);
+%         b = L*WDF;
+%         R = radii(turn); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%         % update speed and downforce
+%         V = sqrt(R*9.81*AYP);
+%         LF = Cl*V^2; 
+%         % from downforce, update suspension travel (m):
+%         dxf = LF*CoP/2/WRF; 
+%         dxr = LF*(1-CoP)/2/WRR; 
+%         % from suspension heave, update static camber (rad):
+%         IA_0f = IA_staticf - dxf*IA_gainf; 
+%         IA_0r = IA_staticr - dxr*IA_gainr; 
+%         % update load on each wheel (N)
+%         wf = (WF+LF*CoP)/2;
+%         wr = (WR+LF*(1-CoP))/2;
+%         % guess ackermann steer angle as starting steer angle
+%         delta = L/R;
+%         % assume vehicle sideslip starts at 0 (rad)
+%         beta = 0;
+%         % Minimizing the objective function of M_z a_f-12degrees and a_y-AY  
+%         input = 1;
+%         x0 = [delta, beta, AYP];  % initial values
+%         fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
+%             rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r);
+%         fun(x0);
+%         % minimizing function
+%         lb = [0.01 -.3 .5];
+%         ub = [1 .3 2];
+%         opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000, ...
+%             MaxIterations=1000000,FunctionTolerance=1e-8,Display="final-detailed");
+%         x = lsqnonlin(fun, x0,lb,ub,opts);
+%         % output from minimizing
+%         delta = x(1)
+%         beta = x(2)
+%         AYP = x(3)
+%         input = 0;
+%         evalVogel = fun(x);
+%         lateralg(turn) = evalVogel(1);
+%         f_xplt(turn) = evalVogel(2);
+%         deltaTest(turn) = rad2deg(delta);
+%         betaTest(turn) = rad2deg(beta);
+%         AYPTest(turn) = AYP;
+% 
+% end
 
-
-
-lateralg = zeros(1,length(radii));
-for turn = 1:1:length(radii)
-    % first define your vehicle characteristics:
-        a = L*(1-WDF);
-        b = L*WDF;
-        R = radii(turn); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % update speed and downforce
-        V = sqrt(R*9.81*AYP);
-        LF = Cl*V^2; 
-        % from downforce, update suspension travel (m):
-        dxf = LF*CoP/2/WRF; 
-        dxr = LF*(1-CoP)/2/WRR; 
-        % from suspension heave, update static camber (rad):
-        IA_0f = IA_staticf - dxf*IA_gainf; 
-        IA_0r = IA_staticr - dxr*IA_gainr; 
-        % update load on each wheel (N)
-        wf = (WF+LF*CoP)/2;
-        wr = (WR+LF*(1-CoP))/2;
-        % guess ackermann steer angle as starting steer angle
-        delta = L/R;
-        % assume vehicle sideslip starts at 0 (rad)
-        beta = 0;
-        % Minimizing the objective function of M_z a_f-12degrees and a_y-AY  
-        input = 1;
-        x0 = [delta, beta, AYP];  % initial values
-        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
-            rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r);
-        fun(x0);
-        % minimizing function
-        lb = [0 -.2 .5];
-        ub = [.5 .2 2];
-        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-8,Display="off");
-        x = lsqnonlin(fun, x0,lb,ub,opts);
-        % output from minimizing
-        delta = x(1);
-        beta = x(2);
-        AYP = x(3);
-        input = 0;
-        evalVogel = fun(x);
-        lateralg(turn) = evalVogel(1);
-        f_xplt(turn) = evalVogel(2);
-        deltaTest(turn) = rad2deg(delta);
-        betaTest(turn) = rad2deg(beta);
-        AYPTest(turn) = AYP;
-
-end
-
-
-
-
-%{
-lateralg 
-figure
-% plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
-% legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-% grid on
-% hold off
-% figure
-% plot(radii,wfin1,'m',radii,wfout1,'c',radii, wrin1,'b',radii,wrout1,'g')
-% legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-% grid on
-% hold off
 velocity_y = lateralg.*9.81.*radii;
 velocity_y = sqrt(velocity_y);
 range = linspace(4.5,velocity_y(end));
-hold on
 lateral = polyfit(velocity_y,lateralg,3);
-figure
-plot(velocity_y,f_xplt,'o')
-hold on
-plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
-grid on 
-grid minor
-hold off
-%}
+% figure
+% plot(velocity_y,f_xplt,'o')
+% hold on
+% plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
+% grid on 
+% grid minor
+% hold off
+% 
+% figure
+% Evaluated = polyval(lateral,range);
+% [M,I] = max(Evaluated);
+% plot(velocity_y,lateralg,'o','Color',color2)
+% hold on
+% plot(range,Evaluated,'Color',color2)
+% hold on
+% plot(range(I),M,'m*')
+% title('Maximum Lateral Acceleration Capacity vs Velocity','FontWeight','bold','FontSize',24)
+% xlabel('Velocity','FontSize',18)
+% ylabel('Lateral Acceleration','FontSize',18)
+% txt = ['        \leftarrow Max Acceleration (',num2str(M),')'];
+% text(range(I),M,txt,'Interpreter','tex','FontSize',12)
+% grid on
+% grid minor
+% lgd = legend('','Fitted Curve');
+% lgd.FontSize = 14;
+
+
+
 
 % Braking Performance
 disp('     Braking Envelope')
@@ -319,7 +341,8 @@ velocity_y = sqrt(velocity_y);
 r_max = max(radii);
 spcount = spcount+1;
 shift_points(spcount) = V+1;
-top_speed = VMAX;
+top_speed = V;
+% VMAX = top_speed; %%%%
 % make the rest of your functions for the GGV diagram
 % braking as a function of speed
 deccel = polyfit(velocity,A_X,4);
@@ -455,7 +478,7 @@ disp('Loading Endurance Track Coordinates')
 
 
 %%%%%%custom track
-track = readtable('Track Creation/17_lincoln_endurance_track.xls');
+track = readtable('17_lincoln_endurance_track_highres.xls');
 
 % t = 1:height(track);
 % path_points = [track.X, track.Y]'/1000;
@@ -599,7 +622,7 @@ for i = 1:1:length(segment)
         shifting = 0;
     end
 
-    vmax = VMAX;
+    vmax = VMAX-1;
     % determine instantaneous acceleration capacity
     AX = fnval(accel,vel);
     dd = d/interval;

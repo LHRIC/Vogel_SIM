@@ -37,7 +37,7 @@ RT(end-2:end) = [];
 % figure
 % patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
 % h = colorbar;
-% set(get(h,'title'),'string','Velocity (V) [m/s]');
+% set(get(h,'title'),'string','Curvature');
 % set(gca,'XTick',[], 'YTick', [])
 
 % x = linspace(1,t(end-1),10000);
