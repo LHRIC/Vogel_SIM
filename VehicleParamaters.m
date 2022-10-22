@@ -7,6 +7,7 @@ set(groot,'defaultLegendInterpreter','latex');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 showPlots = false;
+runBatch = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Section 1: Vehicle Architecture
@@ -65,83 +66,81 @@ CoP = .48; % front downforce distribution (%% Run simulation
 tqMod = 1;
 
 %% Simulate
-% 
-
-% 
-%     LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
-%         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-%         casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots);
-% 
-% distance = LapSimOutput.distance;
-% velocity = LapSimOutput.velocity;
-% acceleration = LapSimOutput.acceleration;
-% lateral_accel = LapSimOutput.lateral_accel;
-% Endurance_time = LapSimOutput.laptime;
-% Accel_time = LapSimOutput.accel_time;
-% Endurance_score = LapSimOutput.Endurance_Score;
-% Accel_score = LapSimOutput.Accel_Score;
-% Skidpad_score = LapSimOutput.Skidpad_Score;
-% 
-% X = [' Endurance time: ',num2str(Endurance_time)];
-% disp(X)
-% Z = [' Accel time: ',num2str(Accel_time)];
-% disp(Z)
-% XX = [' Endurance score: ',num2str(Endurance_score)];
-% disp(XX)
-% ZZ = [' Accel score: ',num2str(Accel_score)];
-% disp(ZZ)
-% A = [' Skidpad score: ',num2str(Skidpad_score)];
-% disp(A)
-Weight = (525:20:725)*4.4482216153;
-for runs = 1:length(Weight)
-    W = Weight(runs);
+if runBatch == true
+    Weight = (525:20:725)*4.4482216153;
+    for runs = 1:length(Weight)
+        W = Weight(runs);
+        LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+            IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
+            casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots);
+    
+        distance = LapSimOutput.distance;
+        velocity = LapSimOutput.velocity;
+        acceleration = LapSimOutput.acceleration;
+        lateral_accel= LapSimOutput.lateral_accel;
+        Endurance_time(runs) = LapSimOutput.laptime;
+        Accel_time(runs) = LapSimOutput.accel_time;
+        Endurance_score(runs) = LapSimOutput.Endurance_Score;
+        Accel_score(runs) = LapSimOutput.Accel_Score;
+        Skidpad_score(runs) = LapSimOutput.Skidpad_Score;
+        
+        X = [' Endurance time: ',num2str(Endurance_time)];
+        disp(X)
+        Z = [' Accel time: ',num2str(Accel_time)];
+        disp(Z)
+        XX = [' Endurance score: ',num2str(Endurance_score)];
+        disp(XX)
+        ZZ = [' Accel score: ',num2str(Accel_score)];
+        disp(ZZ)
+        A = [' Skidpad score: ',num2str(Skidpad_score)];
+        disp(A);
+        
+        filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
+        
+        % save(filename, 'LapSimOutput')
+        figure
+        plot(Weight./4.4482216153,Endurance_time,'o',Weight./4.4482216153,Endurance_time)
+        title('Endurance time sensitivity to Weight increase','FontWeight','bold','FontSize',24)
+        xlabel('Weight (lbs.)','FontSize',18)
+        ylabel('Endurance Time (s)','FontSize',18)
+        grid on 
+        grid minor
+        hold off
+        
+        figure
+        plot(Weight./4.4482216153,Accel_time,'o',Weight./4.4482216153,Accel_time)
+        title('Accel Time sensitivty to Weight increase ','FontWeight','bold','FontSize',24)
+        xlabel('Weight (lbs.)','FontSize',18)
+        ylabel('Accel Time (s)','FontSize',18)
+        grid on 
+        grid minor
+    end
+else
     LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
         casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots);
-
-distance = LapSimOutput.distance;
-velocity = LapSimOutput.velocity;
-acceleration = LapSimOutput.acceleration;
-lateral_accel= LapSimOutput.lateral_accel;
-Endurance_time(runs) = LapSimOutput.laptime;
-Accel_time(runs) = LapSimOutput.accel_time;
-Endurance_score(runs) = LapSimOutput.Endurance_Score;
-Accel_score(runs) = LapSimOutput.Accel_Score;
-Skidpad_score(runs) = LapSimOutput.Skidpad_Score;
-
-X = [' Endurance time: ',num2str(Endurance_time)];
-disp(X)
-Z = [' Accel time: ',num2str(Accel_time)];
-disp(Z)
-XX = [' Endurance score: ',num2str(Endurance_score)];
-disp(XX)
-ZZ = [' Accel score: ',num2str(Accel_score)];
-disp(ZZ)
-A = [' Skidpad score: ',num2str(Skidpad_score)];
-disp(A)
-
-filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
-
-% save(filename, 'LapSimOutput')
-
+    
+    distance = LapSimOutput.distance;
+    velocity = LapSimOutput.velocity;
+    acceleration = LapSimOutput.acceleration;
+    lateral_accel = LapSimOutput.lateral_accel;
+    Endurance_time = LapSimOutput.laptime;
+    Accel_time = LapSimOutput.accel_time;
+    Endurance_score = LapSimOutput.Endurance_Score;
+    Accel_score = LapSimOutput.Accel_Score;
+    Skidpad_score = LapSimOutput.Skidpad_Score;
+    
+    X = [' Endurance time: ',num2str(Endurance_time)];
+    disp(X)
+    Z = [' Accel time: ',num2str(Accel_time)];
+    disp(Z)
+    XX = [' Endurance score: ',num2str(Endurance_score)];
+    disp(XX)
+    ZZ = [' Accel score: ',num2str(Accel_score)];
+    disp(ZZ)
+    A = [' Skidpad score: ',num2str(Skidpad_score)];
+    disp(A)
 end
-
-figure
-plot(Weight./4.4482216153,Endurance_time,'o',Weight./4.4482216153,Endurance_time)
-title('Endurance time sensitivity to Weight increase','FontWeight','bold','FontSize',24)
-xlabel('Weight (lbs.)','FontSize',18)
-ylabel('Endurance Time (s)','FontSize',18)
-grid on 
-grid minor
-hold off
-
-figure
-plot(Weight./4.4482216153,Accel_time,'o',Weight./4.4482216153,Accel_time)
-title('Accel Time sensitivty to Weight increase ','FontWeight','bold','FontSize',24)
-xlabel('Weight (lbs.)','FontSize',18)
-ylabel('Accel Time (s)','FontSize',18)
-grid on 
-grid minor
 %% Section 19: Plot Results
 % This is just to make some pretty pictures, feel free to comment this out
 if showPlots == true
