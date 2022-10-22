@@ -144,7 +144,6 @@ for  i = 1:1:length(velocity) % for each velocity
     end
     A_Xr(i) = AX(i); % big X defines the power limited maximum acceleration
 end
-wr_count
 A_Xr(A_Xr < 0) = 0;
 
 % from these results, you can create the first part of the GGV diagram
@@ -172,8 +171,8 @@ grip = polyfit(velocity,A_xr,3);
 % plot(range(I),M,'m*','MarkerSize',18)
 % hold on
 % title('Longitudinal Acceleration Capacity vs Velocity','FontWeight','bold','FontSize',24)
-% xlabel('Velocity','FontSize',18)
-% ylabel('Longitudinal Acceleration','FontSize',18)
+% xlabel('Velocity (m/s)','FontSize',18)
+% ylabel('Longitudinal Acceleration (g)','FontSize',18)
 % txt = ['        \leftarrow Max Acceleration (',num2str(M),')'];
 % text(range(I),M,txt,'Interpreter','tex','FontSize',12)
 % hold on
@@ -264,8 +263,8 @@ lateral = polyfit(velocity_y,lateralg,3);
 % hold on
 % plot(range(I),M,'m*')
 % title('Maximum Lateral Acceleration Capacity vs Velocity','FontWeight','bold','FontSize',24)
-% xlabel('Velocity','FontSize',18)
-% ylabel('Lateral Acceleration','FontSize',18)
+% xlabel('Velocity (m/s','FontSize',18)
+% ylabel('Lateral Acceleration (g)','FontSize',18)
 % txt = ['        \leftarrow Max Acceleration (',num2str(M),')'];
 % text(range(I),M,txt,'Interpreter','tex','FontSize',12)
 % grid on

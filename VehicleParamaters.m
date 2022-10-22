@@ -6,7 +6,7 @@ set(groot,'defaultLegendInterpreter','latex');
 % Vechicle Paramaters
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-showPlots = true;
+showPlots = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Section 1: Vehicle Architecture
@@ -92,7 +92,7 @@ tqMod = 1;
 % disp(ZZ)
 % A = [' Skidpad score: ',num2str(Skidpad_score)];
 % disp(A)
-Weight = (525:5:725)*4.4482216153;
+Weight = (525:20:725)*4.4482216153;
 for runs = 1:length(Weight)
     W = Weight(runs);
     LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
@@ -127,14 +127,17 @@ filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat"
 end
 
 figure
-plot(Weight,Endurance_time,'o',Weight,Endurance_time)
-title('Endurance time sensitivity to Weight increase')
-xlabel('Weight')
-ylabel('Endurance Time')
+plot(Weight./4.4482216153,Endurance_time,'o',Weight./4.4482216153,Endurance_time)
+title('Endurance time sensitivity to Weight increase','FontWeight','bold','FontSize',24)
+xlabel('Weight (N)','FontSize',18)
+ylabel('Endurance Time (s)','FontSize',18)
 hold off
 
 figure
-plot(Weight,Accel_time,'o',Weight,Accel_time)
+plot(Weight./4.4482216153,Accel_time,'o',Weight,Accel_time)
+title('Accel Time sensitivty to Weight increase ','FontWeight','bold','FontSize',24)
+xlabel('Weight','FontSize',18)
+ylabel('Accel Time','FontSize',18)
 
 %% Section 19: Plot Results
 % This is just to make some pretty pictures, feel free to comment this out
