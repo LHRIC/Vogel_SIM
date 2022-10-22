@@ -7,22 +7,22 @@ set(groot,'defaultLegendInterpreter','latex');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 showPlots = false;
-singlerunOptions = [0 0 0 0 0 0 0];  % (1) = single run (2) = Mass Sweep (3) = Cg height Sweep 
+singlerunOptions = [0 0 0 0 0 0 1];  % (1) = single run (2) = Mass Sweep (3) = Cg height Sweep 
 % (4) = Weight Distribution Sweep (with CoP) (5) = Track width sweep (6) = Friction Scaling Sweep
 % (7) = Lateral Load Transfer Distribution Sweep
 
-combinedrunOptions = [0 1]; % (1) = LLTD and Weight distribution (2) = CoP and Cgx
+combinedrunOptions = [0 0]; % (1) = LLTD and Weight distribution (2) = CoP and Cgx
 
 % Paramater Sweep Values
-Weight = (525:20:725)*4.4482216153;
+Weight = (525:10:725)*4.4482216153;
 Cg = (10:.1:13.5)./39.37;
 weightDistribution = (.4:.01/5:.5);
-tw = (48:1:50)./39.37;
-longitudinalFriction = (.4:.5:.9);
-lateralFriction = (.4:.5:.9);
-LLTDistribution = (.30:.05/5:.80);
-centerofPressure = (.4:.1:.6);
-
+tw = (48:.2:50)./39.37;
+longitudinalFriction = (.4:.05:.9);
+lateralFriction = (.4:.05:.9);
+LLTDistribution = (.30:.05:.80);
+centerofPressure = (.4:.1/5:.6);
+parforvalue = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -89,9 +89,9 @@ tqMod = 1;
 if singlerunOptions(1) == 1
  
 
-    LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+        LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y);
+        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue);
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
@@ -136,37 +136,15 @@ end
 
 if singlerunOptions(2) == 1
 
-for runs = 1:length(Weight)
+parfor runs = 1:length(Weight)
     W = Weight(runs);
     
-    LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y);
+        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue);
 
-distance = LapSimOutput.distance;
-velocity = LapSimOutput.velocity;
-acceleration = LapSimOutput.acceleration;
-lateral_accel= LapSimOutput.lateral_accel;
-Endurance_time(runs) = LapSimOutput.laptime;
-Accel_time(runs) = LapSimOutput.accel_time;
-Endurance_score(runs) = LapSimOutput.Endurance_Score;
-Accel_score(runs) = LapSimOutput.Accel_Score;
-Skidpad_score(runs) = LapSimOutput.Skidpad_Score;
-
-X = [' Endurance time: ',num2str(Endurance_time)];
-disp(X)
-Z = [' Accel time: ',num2str(Accel_time)];
-disp(Z)
-XX = [' Endurance score: ',num2str(Endurance_score)];
-disp(XX)
-ZZ = [' Accel score: ',num2str(Accel_score)];
-disp(ZZ)
-A = [' Skidpad score: ',num2str(Skidpad_score)];
-disp(A)
-
-filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
-
-% save(filename, 'LapSimOutput')
+Endurance_time(runs) = LapSimOutput(1)
+Accel_time(runs) = LapSimOutput(2)
 
 end
 
@@ -191,37 +169,15 @@ end
 if singlerunOptions(3) == 1 
 
 
-for runs = 1:length(Cg)
+parfor runs = 1:length(Cg)
     cg = Cg(runs);
 
-        LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y);
+        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue);
 
-distance = LapSimOutput.distance;
-velocity = LapSimOutput.velocity;
-acceleration = LapSimOutput.acceleration;
-lateral_accel= LapSimOutput.lateral_accel;
-Endurance_time(runs) = LapSimOutput.laptime;
-Accel_time(runs) = LapSimOutput.accel_time;
-Endurance_score(runs) = LapSimOutput.Endurance_Score;
-Accel_score(runs) = LapSimOutput.Accel_Score;
-Skidpad_score(runs) = LapSimOutput.Skidpad_Score;
-
-X = [' Endurance time: ',num2str(Endurance_time)];
-disp(X)
-Z = [' Accel time: ',num2str(Accel_time)];
-disp(Z)
-XX = [' Endurance score: ',num2str(Endurance_score)];
-disp(XX)
-ZZ = [' Accel score: ',num2str(Accel_score)];
-disp(ZZ)
-A = [' Skidpad score: ',num2str(Skidpad_score)];
-disp(A)
-
-filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
-
-% save(filename, 'LapSimOutput')
+Endurance_time(runs) = LapSimOutput(1)
+Accel_time(runs) = LapSimOutput(2)
 
 end
 
@@ -247,39 +203,16 @@ end
 if singlerunOptions(4) == 1 
 
 
-for runs = 1:length(weightDistribution)
+parfor runs = 1:length(weightDistribution)
     WDF = weightDistribution(runs);
     Cop = weightDistribution(runs);
 
-    LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y);
+        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue);
 
-distance = LapSimOutput.distance;
-velocity = LapSimOutput.velocity;
-acceleration = LapSimOutput.acceleration;
-lateral_accel= LapSimOutput.lateral_accel;
-Endurance_time(runs) = LapSimOutput.laptime;
-Accel_time(runs) = LapSimOutput.accel_time;
-Endurance_score(runs) = LapSimOutput.Endurance_Score;
-Accel_score(runs) = LapSimOutput.Accel_Score;
-Skidpad_score(runs) = LapSimOutput.Skidpad_Score;
-
-X = [' Endurance time: ',num2str(Endurance_time)];
-disp(X)
-Z = [' Accel time: ',num2str(Accel_time)];
-disp(Z)
-XX = [' Endurance score: ',num2str(Endurance_score)];
-disp(XX)
-ZZ = [' Accel score: ',num2str(Accel_score)];
-disp(ZZ)
-A = [' Skidpad score: ',num2str(Skidpad_score)];
-disp(A)
-
-filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
-
-% save(filename, 'LapSimOutput')
-
+Endurance_time(runs) = LapSimOutput(1)
+Accel_time(runs) = LapSimOutput(2)
 end
 
 figure
@@ -305,38 +238,16 @@ end
 if singlerunOptions(5) == 1 
 
 
-for runs = 1:length(tw)
+parfor runs = 1:length(tw)
     twf = tw(runs);
     twr = tw(runs);
 
-    LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y);
+        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue);
 
-distance = LapSimOutput.distance;
-velocity = LapSimOutput.velocity;
-acceleration = LapSimOutput.acceleration;
-lateral_accel= LapSimOutput.lateral_accel;
-Endurance_time(runs) = LapSimOutput.laptime;
-Accel_time(runs) = LapSimOutput.accel_time;
-Endurance_score(runs) = LapSimOutput.Endurance_Score;
-Accel_score(runs) = LapSimOutput.Accel_Score;
-Skidpad_score(runs) = LapSimOutput.Skidpad_Score;
-
-X = [' Endurance time: ',num2str(Endurance_time)];
-disp(X)
-Z = [' Accel time: ',num2str(Accel_time)];
-disp(Z)
-XX = [' Endurance score: ',num2str(Endurance_score)];
-disp(XX)
-ZZ = [' Accel score: ',num2str(Accel_score)];
-disp(ZZ)
-A = [' Skidpad score: ',num2str(Skidpad_score)];
-disp(A)
-
-filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
-
-% save(filename, 'LapSimOutput')
+Endurance_time(runs) = LapSimOutput(1)
+Accel_time(runs) = LapSimOutput(2)
 
 end
 
@@ -362,40 +273,19 @@ end
 if singlerunOptions(6) == 1 
 
 
-for runs = 1:length(longitudinalFriction)
+parfor runs = 1:length(longitudinalFriction)
     sf_x = longitudinalFriction(runs);
 
-    LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y);
+        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue);
 
-distance = LapSimOutput.distance;
-velocity = LapSimOutput.velocity;
-acceleration = LapSimOutput.acceleration;
-lateral_accel= LapSimOutput.lateral_accel;
-Endurance_time(runs) = LapSimOutput.laptime;
-Accel_time(runs) = LapSimOutput.accel_time;
-Endurance_score(runs) = LapSimOutput.Endurance_Score;
-Accel_score(runs) = LapSimOutput.Accel_Score;
-Skidpad_score(runs) = LapSimOutput.Skidpad_Score;
+Endurance_time(runs) = LapSimOutput(1)
+Accel_time(runs) = LapSimOutput(2)
 
-X = [' Endurance time: ',num2str(Endurance_time)];
-disp(X)
-Z = [' Accel time: ',num2str(Accel_time)];
-disp(Z)
-XX = [' Endurance score: ',num2str(Endurance_score)];
-disp(XX)
-ZZ = [' Accel score: ',num2str(Accel_score)];
-disp(ZZ)
-A = [' Skidpad score: ',num2str(Skidpad_score)];
-disp(A)
-
-filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
-
-% save(filename, 'LapSimOutput')
 
 end
-
+save('LongitduinalFriction',"Endurance_time", "Accel_time")
 figure
 plot(longitudinalFriction,Endurance_time,'o',longitudinalFriction,Endurance_time)
 title('Endurance time sensitivity to Longitudinal Friction Scaling','FontWeight','bold','FontSize',24)
@@ -413,37 +303,15 @@ ylabel('Accel Time (s)','FontSize',18)
 grid on 
 grid minor
 
-for runs = 1:length(lateralFriction)
+parfor runs = 1:length(lateralFriction)
     sf_y = lateralFriction(runs);
 
-    LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y);
+        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue);
 
-distance = LapSimOutput.distance;
-velocity = LapSimOutput.velocity;
-acceleration = LapSimOutput.acceleration;
-lateral_accel= LapSimOutput.lateral_accel;
-Endurance_time(runs) = LapSimOutput.laptime;
-Accel_time(runs) = LapSimOutput.accel_time;
-Endurance_score(runs) = LapSimOutput.Endurance_Score;
-Accel_score(runs) = LapSimOutput.Accel_Score;
-Skidpad_score(runs) = LapSimOutput.Skidpad_Score;
-
-X = [' Endurance time: ',num2str(Endurance_time)];
-disp(X)
-Z = [' Accel time: ',num2str(Accel_time)];
-disp(Z)
-XX = [' Endurance score: ',num2str(Endurance_score)];
-disp(XX)
-ZZ = [' Accel score: ',num2str(Accel_score)];
-disp(ZZ)
-A = [' Skidpad score: ',num2str(Skidpad_score)];
-disp(A)
-
-filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
-
-% save(filename, 'LapSimOutput')
+Endurance_time(runs) = LapSimOutput(1)
+Accel_time(runs) = LapSimOutput(2)
 
 end
 
@@ -468,38 +336,15 @@ end
 if singlerunOptions(7) == 1 
 
 
-for runs = 1:length(LLTDistribution)
+parfor runs = 1:length(LLTDistribution)
     LLTD = LLTDistribution(runs);
 
-    LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y);
+        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue);
 
-distance = LapSimOutput.distance;
-velocity = LapSimOutput.velocity;
-acceleration = LapSimOutput.acceleration;
-lateral_accel= LapSimOutput.lateral_accel;
-Endurance_time(runs) = LapSimOutput.laptime;
-Accel_time(runs) = LapSimOutput.accel_time;
-Endurance_score(runs) = LapSimOutput.Endurance_Score;
-Accel_score(runs) = LapSimOutput.Accel_Score;
-Skidpad_score(runs) = LapSimOutput.Skidpad_Score;
-
-X = [' Endurance time: ',num2str(Endurance_time)];
-disp(X)
-Z = [' Accel time: ',num2str(Accel_time)];
-disp(Z)
-XX = [' Endurance score: ',num2str(Endurance_score)];
-disp(XX)
-ZZ = [' Accel score: ',num2str(Accel_score)];
-disp(ZZ)
-A = [' Skidpad score: ',num2str(Skidpad_score)];
-disp(A)
-
-filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
-
-% save(filename, 'LapSimOutput')
-
+Endurance_time(runs) = LapSimOutput(1)
+Accel_time(runs) = LapSimOutput(2)
 end
 
 figure
@@ -527,7 +372,8 @@ parforvalue = 0;
 
 figure(1)
 Endurance_time = nan(size(LLTDistribution));
-c = surf(weightDistribution, LLTDistribution, Endurance_time);
+c = mesh(weightDistribution, LLTDistribution, Endurance_time);
+colorbar
 title('Endurance time sensitivity to LLTD and Weight Distribution','FontWeight','bold','FontSize',24)
 xlabel('Weight Distribution','FontSize',18)
 ylabel('LLTD','FontSize',18)
@@ -538,7 +384,8 @@ D.afterEach(@(x) updateSurfaceEndurance(c, x));
 
 figure(2)
 Accel_Time = nan(size(LLTDistribution));
-d = surf(weightDistribution, LLTDistribution, Accel_Time);
+d = mesh(weightDistribution, LLTDistribution, Accel_Time);
+colorbar
 title('Accel time sensitivty to LLTD and Weight Distribution','FontWeight','bold','FontSize',24)
 xlabel('Weight Distribution','FontSize',18)
 ylabel('LLTD','FontSize',18)
@@ -563,7 +410,8 @@ parforvalue = 0;
 
 figure(1)
 Endurance_time = nan(size(centerofPressure));
-c = surf(weightDistribution, centerofPressure, Endurance_time);
+c = mesh(weightDistribution, centerofPressure, Endurance_time,FaceColor="flat");
+colorbar
 title('Endurance time sensitivity to COP and Weight Distribution','FontWeight','bold','FontSize',24)
 xlabel('Weight Distribution','FontSize',18)
 ylabel('COP','FontSize',18)
@@ -574,7 +422,8 @@ D.afterEach(@(x) updateSurfaceEndurance(c, x));
 
 figure(2)
 Accel_Time = nan(size(centerofPressure));
-d = surf(weightDistribution, centerofPressure, Accel_Time);
+d = mesh(weightDistribution, centerofPressure, Accel_Time,FaceColor="flat");
+colorbar
 title('Accel time sensitivty to COP and Weight Distribution','FontWeight','bold','FontSize',24)
 xlabel('Weight Distribution','FontSize',18)
 ylabel('COP','FontSize',18)
