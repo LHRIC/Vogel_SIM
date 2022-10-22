@@ -33,7 +33,7 @@ global grip input
         a_r = beta-b*omega/V;
         % with slip angles, load and camber, calculate lateral force at
         % the front
-        F_fin = -MF52_Fy_fcn([a_f wfin -IA_f_in])*sf_y*cos(delta); % inputs = (rad Newtons rad)
+        F_fin = MF52_Fy_fcn([a_f wfin -IA_f_in])*sf_y*cos(delta); % inputs = (rad Newtons rad)
         F_fout = MF52_Fy_fcn([a_f wfout -IA_f_out])*sf_y*cos(delta);
         % calculate the drag from aero and the front tires (N)
         F_xDrag = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta); 
@@ -41,7 +41,7 @@ global grip input
         % drag
         rscale = 1-(F_xDrag/W/(polyval(grip,V)))^2; % Comes from traction circle
         % now calculate rear tire forces, with said penalty
-        F_rin = -MF52_Fy_fcn([-a_r wrin -IA_r_in])*sf_y*rscale; 
+        F_rin = MF52_Fy_fcn([a_r wrin -IA_r_in])*sf_y*rscale; 
         F_rout = MF52_Fy_fcn([a_r wrout -IA_r_out])*sf_y*rscale;
         % sum of forces and moments
         F_y = F_fin+F_fout+F_rin+F_rout;
@@ -51,11 +51,10 @@ global grip input
         % calculate resultant lateral acceleration
         AY = F_y/(W);
         %minimizing values
-%         slipAngle = a_f-deg2rad(-12);
+        slipAngle = a_f-deg2rad(-12);
         diff_AY =A_y-AY;
         if input == 1
-%         output = [M_z slipAngle diff_AY];
-        output = [M_z diff_AY];
+        output = [M_z slipAngle diff_AY];
         else
         output = [A_y f_xplt a_f a_r];
         end
