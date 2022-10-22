@@ -21,7 +21,7 @@ twf = 50.5/12; % front track width (ft)
 twr = 48.5/12; % rear track width (ft)
 
 W = W*4.4482216153; % convert to N
-cg = cg/39.37; % conver to m
+cg = cg/39.37; % convert to m
 L = L/3.280839895013123; % convert to m
 twf = twf/3.280839895013123; % convert to m
 twr = twr/3.280839895013123; % convert to m
@@ -131,14 +131,17 @@ plot(Weight./4.4482216153,Endurance_time,'o',Weight./4.4482216153,Endurance_time
 title('Endurance time sensitivity to Weight increase','FontWeight','bold','FontSize',24)
 xlabel('Weight (lbs.)','FontSize',18)
 ylabel('Endurance Time (s)','FontSize',18)
+grid on 
+grid minor
 hold off
 
 figure
 plot(Weight./4.4482216153,Accel_time,'o',Weight./4.4482216153,Accel_time)
 title('Accel Time sensitivty to Weight increase ','FontWeight','bold','FontSize',24)
 xlabel('Weight (lbs.)','FontSize',18)
-ylabel('Accel Time','FontSize',18)
-
+ylabel('Accel Time (s)','FontSize',18)
+grid on 
+grid minor
 %% Section 19: Plot Results
 % This is just to make some pretty pictures, feel free to comment this out
 if showPlots == true

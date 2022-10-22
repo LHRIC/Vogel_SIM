@@ -20,8 +20,12 @@ global path_boundaries r_min r_max cornering accel grip deccel lateral...
 %     path_points(i,:) = [x3 y3];             
 % end
 
-interval = 1000;
-sections = 6000;
+
+disp('INTERVAL IS CHANGED')
+interval = 10;
+% interval = 1000;
+sections = 10;
+% sections = 6000;
 VMAX = top_speed;
 r_min = 4.5;
 

@@ -242,10 +242,10 @@ disp("////////////////////////////////////WARNING////////////////////" + ...
 % 
 % end
 
-velocity_y = lateralg.*9.81.*radii;
-velocity_y = sqrt(velocity_y);
-range = linspace(4.5,velocity_y(end));
-lateral = polyfit(velocity_y,lateralg,3);
+% velocity_y = lateralg.*9.81.*radii;
+% velocity_y = sqrt(velocity_y);
+% range = linspace(4.5,velocity_y(end));
+% lateral = polyfit(velocity_y,lateralg,3);
 % figure
 % plot(velocity_y,f_xplt,'o')
 % hold on
@@ -253,7 +253,7 @@ lateral = polyfit(velocity_y,lateralg,3);
 % grid on 
 % grid minor
 % hold off
-% 
+
 % figure
 % Evaluated = polyval(lateral,range);
 % [M,I] = max(Evaluated);
