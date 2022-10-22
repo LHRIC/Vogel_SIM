@@ -22,7 +22,9 @@ function [t] = AccelSim(engine_data, tractive_data, engine_gear_ratio, vehicle_p
         if i == 1
             % Re-fits acc/vel data for gear i to the closest integer domain with a constant step size
             x = engine_data(:, 2*i-1); y = engine_data(:,2*i); % pulls data for gear i
-            xq = ceil(x(1)):0.1:floor(x(end)); % new domain with step 1
+            di = 0.1; % Domain step size
+            N = -log10(di);
+            xq = round(x(1),N):0.1:round(x(end),N); % new domain with step 0.1
             p = pchip(x, y, xq); % interpolates data for gear i over new domain
             
             % transposes two data sets 
@@ -115,7 +117,6 @@ function [t] = AccelSim(engine_data, tractive_data, engine_gear_ratio, vehicle_p
             % title("Time/Distance Curve")
             xlabel("Velocity (m/s)")
             ylabel("Resistive Force (N)")
-
     end 
 
     % Drag time calculation 

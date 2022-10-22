@@ -17,13 +17,13 @@ tractive_data = Ax_vs_V;
 % Select Vehicle Coefficients
 Cr0 = 0.0125; % Coefficient of rolling resistance for tire (velocity independent)
 Crp = 2.5*(10.^-4);  % Velocity dependent Coeff of rolling resistance modifier
-C_drag = 1.1; % Coefficient of drag 
+C_drag = 1.1; % Coefficient of drag
 C_down = 2.9; % Coefficient of lift (downwards)
 
 % Engine Data 
 engine_torque_data = readmatrix('Inline_Torque.csv');
 engine_primary_reduction = 2.11;
-engine_gear_ratio = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24];
+% engine_gear_ratio = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24];
 engine_gear_ratio = [32/16, 30/18, 26/18, 30/23, 29/24];
 
 % Plots Engine Data
@@ -34,7 +34,7 @@ figure();
     ylabel("Torque (Nm)")
 
 % Final Drive Ratio
-final_drive_ratio = 3;
+final_drive_ratio = 2.978;
 
 % Variable Packaging
 vehicle_parameters = [effective_mass, final_drive_ratio]; 
