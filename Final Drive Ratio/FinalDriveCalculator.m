@@ -11,6 +11,8 @@ g = 9.81;
 Rt = 0.2032; % wheel radius
 effective_mass = 294.835;
 redline = 12000; % desired maximum rpm
+load('Ax_vs_V.mat');
+tractive_data = Ax_vs_V;
 
 % Select Vehicle Coefficients
 Cr0 = 0.0125; % Coefficient of rolling resistance for tire (velocity independent)
@@ -20,8 +22,9 @@ C_down = 2.9; % Coefficient of lift (downwards)
 
 % Engine Data 
 engine_torque_data = readmatrix('Inline_Torque.csv');
-engine_primary_reduction = 1;
+engine_primary_reduction = 2.11;
 engine_gear_ratio = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24];
+engine_gear_ratio = [32/16, 30/18, 26/18, 30/23, 29/24];
 
 % Plots Engine Data
 figure();
@@ -31,7 +34,7 @@ figure();
     ylabel("Torque (Nm)")
 
 % Final Drive Ratio
-final_drive_ratio = 3.8688;
+final_drive_ratio = 3;
 
 % Variable Packaging
 vehicle_parameters = [effective_mass, final_drive_ratio]; 
@@ -52,14 +55,14 @@ Nm_conv = 1/(Rt); % Nm to N
 engine_force_vel = [engine_torque_data(:,1)*rpm_conv, engine_torque_data(:,2)*Nm_conv];
 
 % Declare annonymous accel sim function
-time_calc = @(FDr) AccelSim(engine_force_vel, engine_gear_ratio, [vehicle_parameters(1), FDr], coeff_inputs, 75, false);
+time_calc = @(FDr) AccelSim(engine_force_vel, tractive_data, engine_gear_ratio, [vehicle_parameters(1), FDr], coeff_inputs, 75, false);
 
 % Use annonymous function to find fastest final drive ratio
 min_final_drive = fminsearch(time_calc, 3.5);
 
 % Iterate through different final drive ratios and calculate drag times 
 times = [];
-i_range = linspace(3,10,1000);
+i_range = linspace(1,5,1000);
 for i = i_range
     times = [times, time_calc(i)];
 end 
@@ -76,7 +79,7 @@ disp("Optimum Final Drive")
 disp(min_final_drive)
 
 disp("75m drag time:")
-disp(AccelSim(engine_force_vel, engine_gear_ratio, vehicle_parameters, coeff_inputs, 75, true))
+disp(AccelSim(engine_force_vel, tractive_data, engine_gear_ratio, vehicle_parameters, coeff_inputs, 75, true))
 
 disp("Final Drive Ratio:")
 disp(final_drive_ratio)

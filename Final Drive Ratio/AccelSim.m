@@ -1,4 +1,4 @@
-function [t] = AccelSim(engine_data, engine_gear_ratio, vehicle_parameters, coeff_inputs, distance, plot_data)
+function [t] = AccelSim(engine_data, tractive_data, engine_gear_ratio, vehicle_parameters, coeff_inputs, distance, plot_data)
 
     % Input unpacking
     effective_mass = vehicle_parameters(1);
@@ -46,11 +46,9 @@ function [t] = AccelSim(engine_data, engine_gear_ratio, vehicle_parameters, coef
         combined_engine_data(i,2) = motive_force;
     end 
 
-    %
-
     % Flattens curve to take into account tractive limits 
     for i = 1:length(combined_engine_data(:,2))
-        f_max = TractiveLimit(combined_engine_data(i,1));
+        f_max = TractiveLimit(combined_engine_data(i,1), effective_mass, tractive_data);
         if combined_engine_data(i,2) > f_max
             combined_engine_data(i,2) = f_max;
         end 
