@@ -129,14 +129,14 @@ end
 figure
 plot(Weight./4.4482216153,Endurance_time,'o',Weight./4.4482216153,Endurance_time)
 title('Endurance time sensitivity to Weight increase','FontWeight','bold','FontSize',24)
-xlabel('Weight (N)','FontSize',18)
+xlabel('Weight (lbs.)','FontSize',18)
 ylabel('Endurance Time (s)','FontSize',18)
 hold off
 
 figure
-plot(Weight./4.4482216153,Accel_time,'o',Weight,Accel_time)
+plot(Weight./4.4482216153,Accel_time,'o',Weight./4.4482216153,Accel_time)
 title('Accel Time sensitivty to Weight increase ','FontWeight','bold','FontSize',24)
-xlabel('Weight','FontSize',18)
+xlabel('Weight (lbs.)','FontSize',18)
 ylabel('Accel Time','FontSize',18)
 
 %% Section 19: Plot Results
