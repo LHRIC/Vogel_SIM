@@ -2,6 +2,7 @@ function [engine_gear_curve] = Gear_Curves(engine_data, gear_ratio, final_drive,
 
     engine_gear_curve = [];
 
+    % Plot data
     if plot_data
         figure(); hold on;
             title("Engine Force Curve ")
@@ -9,6 +10,7 @@ function [engine_gear_curve] = Gear_Curves(engine_data, gear_ratio, final_drive,
             ylabel("Motive Force (N)")
     end 
 
+    % Generates engine torque curve for every gear
     for i = 1:length(gear_ratio)
         R = gear_ratio(i)*final_drive;
         engine_gear_curve = [engine_gear_curve, [engine_data(:,1)./R, engine_data(:,2).*R]];
@@ -17,6 +19,7 @@ function [engine_gear_curve] = Gear_Curves(engine_data, gear_ratio, final_drive,
         end 
     end 
 
+    % Plot data
     if plot_data
         ldg = legend(string(1:length(gear_ratio)));
         title(ldg,"Gear")

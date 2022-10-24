@@ -1,10 +1,12 @@
-function [output]=LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots)
+function [output]=LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, ...
+    IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, ...
+    tqMod, showPlots,sf_x,sf_y,parforvalue)
 %% Section 0: Name all symbolic variables
 % Don't touch this. This is just naming a bunch of variables and making
 % them global so that all the other functions can access them
 global r_max accel grip deccel lateral cornering gear shift_points...
     top_speed r_min path_boundaries tire_radius shift_time...
-    powertrainpackage track_width path_boundaries_ax OptimParameterSet
+    powertrainpackage track_width path_boundaries_ax OptimParameterSet input
 %% Section 1: Input Tire Model
 % this section is required, everything should be pre-loaded so no need to
 % touch any of this, unless you want to change the tire being evaluated.
@@ -21,15 +23,14 @@ load("Tire Modeling/Lateral_Tire-Model_Optim_Params.mat")
    
 % Next you load in the longitudinal tire model
 % find your pathname and filename for the tire you want to load in
-load("Tire Modeling/12.mat") 
+load("Tire Modeling/Blakes_Longitdudinal_Coeff.mat") 
 tire_radius = .2032; % (meters)
 
 
 % finally, we have some scaling factors for longitudinal (x) and lateral
 % (y) friction. You can use these to tune the lap sim to correlate better 
 % to logged data 
-sf_x = .6;
-sf_y = .6;   
+ 
 %% Section 2: Input Powertrain Model
 % change whatever you want here, this is the 2018 powertrain package iirc
 % just keep your units consistent please
@@ -43,7 +44,7 @@ engineTq = tqMod*[41.57 42.98 44.43 45.65 46.44 47.09 47.52 48.58 49.57 50.41 51
 primaryReduction = 76/36; % Transmission primary reduction (applies to all gears)
 gear = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24]; % transmission gear ratios
 finalDrive = 37/11; % large sprocket/small sprocket
-shiftpoint = 14000; % optimal shiftpoint for most gears [RPM]
+shiftpoint = 12500; % optimal shiftpoint for most gears [RPM]
 drivetrainLosses = .85; % percent of torque that makes it to the rear wheels 
 shift_time = .25; % seconds
 T_lock = 0; % differential locking torque (0 =  open, 1 = locked)
@@ -86,7 +87,7 @@ IA_gainr = IA_roll_inducedr*IA_compensationr;
 disp('Generating g-g-V Diagram')
 deltar = 0;
 deltaf = 0;
-velocity = 4.5:1.5:22.5; % range of velocities at which sim will evaluate (m/s)
+velocity = 4:1:floor(VMAX); % range of velocities at which sim will evaluate (m/s)
 radii = 3.5:1.5:36; % range of turn radii at which sim will evaluate (m)
 % First we will evaluate our Acceleration Capacity
 g = 1; % g is a gear indicator, and it will start at 1
@@ -128,6 +129,7 @@ for  i = 1:1:length(velocity) % for each velocity
         AX = FX/W; % THIS IS IN G'S, SEE ABOVE
         AX_diff = AX-Ax;
     end
+    wr_count(i) = wr;
     A_xr(i) = AX; % little x defines the grip limited maximum accleration
     output = Powertrainlapsim(max(7.5,V)); % 7.5 reg, 10 launch
     FX = output(1); % Newtons
@@ -154,29 +156,44 @@ grip = polyfit(velocity,A_xr,3);
 
 
 
+% color1=[0 0 1];
+% color2=1/255*[0 173 107];
+% 
+% 
 % range = linspace(4.5,30);
-% hold off
-% figure
+% Evaluated = fnval(accel,range(1,1:75));
+% [M,I] = max(Evaluated);
+% plot(velocity,A_xr,'o','Color',color2)
 % hold on
-% plot(velocity,A_xr,'o',velocity,A_Xr,'o',range,polyval(grip,range))
+% plot(velocity,A_Xr,'o','Color',color1)
 % hold on
-% % fnplt(gripspline)
+% plot(range,polyval(grip,range),'--','Color',color2)
+% hold on
+% plot(range(I),M,'m*','MarkerSize',18)
+% hold on
+% title('Longitudinal Acceleration Capacity vs Velocity','FontWeight','bold','FontSize',24)
+% xlabel('Velocity (m/s)','FontSize',18)
+% ylabel('Longitudinal Acceleration (g)','FontSize',18)
+% txt = ['        \leftarrow Max Acceleration (',num2str(M),')'];
+% text(range(I),M,txt,'Interpreter','tex','FontSize',12)
+% hold on
 % grid on
 % grid minor
 % hold on
-% fnplt(accel)
+% fnplt(accel,'b')
 % grid on
 % grid minor
+% lgd = legend('','','Grip Limited','Maximum Acceleration','Acceleration Capacity');
+% lgd.FontSize = 14;
+
+
 
 AYP = .5;
 disp('Lateral Acceleration Envelope')
-
-
+% 
 % load('lateralg.mat')
 % disp("////////////////////////////////////WARNING////////////////////" + ...
 %     "LOADING PRECALCULATED LATERALG")
-
-
 
 lateralg = zeros(1,length(radii));
 for turn = 1:1:length(radii)
@@ -200,135 +217,59 @@ for turn = 1:1:length(radii)
         delta = L/R;
         % assume vehicle sideslip starts at 0 (rad)
         beta = 0;
-        % Minimizing the objective function of M_z a_f-12degrees and a_y-AY 
+        % Minimizing the objective function of M_z a_f-12degrees and a_y-AY  
+        input = 1;
         x0 = [delta, beta, AYP];  % initial values
         fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
             rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r);
         fun(x0);
         % minimizing function
-        lb = [0 -.2 .5];
-        ub = [.5 .2 2];
-        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000,MaxIterations=1000000,FunctionTolerance=1e-8,Display="off");
+        lb = [0.01 -.3 .5];
+        ub = [1 .3 2];
+        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000, ...
+            MaxIterations=1000000,FunctionTolerance=1e-8,Display="none");
         x = lsqnonlin(fun, x0,lb,ub,opts);
         % output from minimizing
         delta = x(1);
         beta = x(2);
         AYP = x(3);
+        input = 0;
+        evalVogel = fun(x);
+        lateralg(turn) = evalVogel(1);
+        f_xplt(turn) = evalVogel(2);
         deltaTest(turn) = rad2deg(delta);
         betaTest(turn) = rad2deg(beta);
         AYPTest(turn) = AYP;
-        % recalculate values with optimized delta, beta, and AYP
-        % update speed and downforce
-        V = sqrt(R*9.81*AYP);
-        LF = Cl*V^2; 
-        % from downforce, update suspension travel (m):
-        dxf = LF*CoP/2/WRF; 
-        dxr = LF*(1-CoP)/2/WRR; 
-        % from suspension heave, update static camber (rad):
-        IA_0f = IA_staticf - dxf*IA_gainf; 
-        IA_0r = IA_staticr - dxr*IA_gainr; 
-        % update load on each axle (N)
-        wf = (WF+LF*CoP)/2;
-        wr = (WR+LF*(1-CoP))/2;
-        % assume vehicle sideslip starts at 0 (rad)
-        A_y = V^2/R/9.81; % (g's)
-        % calculate lateral load transfer (lbs)
-        WT = A_y*cg*W/mean([twf twr]);
-        % split f/r using LLTD
-        WTF = WT*LLTD;
-        WTR = WT*(1-LLTD);
-        % calculate f/r roll (rad)
-        phif = A_y*rg_f;
-        phir = A_y*rg_r;
-        % update individual wheel loads 
-        wfin = wf-WTF;
-        wfout = wf+WTF;
-        wrin = wr-WTR;
-        wrout = wr+WTR;
-        wfin1(turn) = wf-WTF;
-        wfout1(turn) = wf+WTF;
-        wrin1(turn) = wr-WTR;
-        wrout1(turn) = wr+WTR;
-        % update individual wheel camber (from roll, then from steer
-        % effects)
-        IA_f_in = -twf*sin(phif)/2*IA_gainf - IA_0f - KPIf*(1-cos(delta)) - casterf*sin(delta) +phif;
-        IA_f_out = -twf*sin(phif)/2*IA_gainf + IA_0f + KPIf*(1-cos(delta)) - casterf*sin(delta) + phif;
-        IA_r_in = -twr*sin(phir)/2*IA_gainr - IA_0r - KPIr*(1-cos(deltar)) - casterf*sin(deltar) +phir;
-        IA_r_out = -twr*sin(phir)/2*IA_gainr + IA_0r + KPIr*(1-cos(deltar)) - casterf*sin(deltar) + phir;
-        % calculate yaw rate
-        r = A_y*9.81/V;
-        % from yaw, sideslip and steer you can get slip angles
-        a_f = beta+a*r/V-delta;
-        a_r = beta-b*r/V;
-        % with slip angles, load and camber, calculate lateral force at
-        % the front
-        F_fin = -MF52_Fy_fcn([-a_f wfin -IA_f_in])*sf_y*cos(delta); % inputs = (rad Newtons rad)
-        F_fout = MF52_Fy_fcn([a_f wfout -IA_f_out])*sf_y*cos(delta);
-        % before you calculate the rears, you ned to see what the diff is
-        % doing
-        % calculate the drag from aero and the front tires
-        F_xDrag = Cd*V^2 + (F_fin+F_fout)*sin(delta)/cos(delta);
-        f_xplt(turn) = (F_fin+F_fout)*sin(delta)/cos(delta)/400;
-        % calculate the grip penalty assuming the rears must overcome that
-        % drag
-        rscale = 1-(F_xDrag/W/polyval(grip,V))^2; % Comes from traction circle
-        % now calculate rear tire forces, with said penalty
-        F_rin = -MF52_Fy_fcn([-a_r wrin -IA_r_in])*sf_y*rscale; 
-        F_rout = MF52_Fy_fcn([a_r wrout -IA_r_out])*sf_y*rscale;
-        F_fin1(turn) = F_fin;
-        F_fout1(turn) = F_fout;
-        F_rin1(turn) = F_rin;
-        F_rout1(turn) = F_rout;
-        % sum of forces and moments
-        F_y = F_fin+F_fout+F_rin+F_rout;
-        M_z_diff = F_xDrag*T_lock*twr/2;  
-        % calculate resultant lateral acceleration
-        lateralg(turn) = F_y/W;  
-%         M_z = (F_fin+F_fout)*a-(F_rin+F_rout)*b-M_z_diff;       
-%         B = rad2deg(beta);
-%         af = rad2deg(a_f);
-%         ar = rad2deg(a_r);
-        steer = rad2deg(delta);
-        steerTest(turn) = steer;
-%         UG = rad2deg(delta-L/R)*9.81/AY;
-%         Ugradient(1) = UG;
-%         skid = 2*pi*R/V;
-%         steering(turn) = steer;
-%         speed(turn) = V;
 
 end
 
+% velocity_y = lateralg.*9.81.*radii;
+% velocity_y = sqrt(velocity_y);
+% range = linspace(4.5,velocity_y(end));
+% lateral = polyfit(velocity_y,lateralg,4);
+% 
+% figure
+% Evaluated = polyval(lateral,range);
+% [M,I] = max(Evaluated);
+% plot(velocity_y,lateralg,'o','Color',color2)
+% hold on
+% plot(range,Evaluated,'Color',color2)
+% hold on
+% plot(range(I),M,'m*')
+% title('Maximum Lateral Acceleration Capacity vs Velocity','FontWeight','bold','FontSize',24)
+% xlabel('Velocity (m/s','FontSize',18)
+% ylabel('Lateral Acceleration (g)','FontSize',18)
+% txt = ['        \leftarrow Max Acceleration (',num2str(M),')'];
+% text(range(I),M,txt,'Interpreter','tex','FontSize',12)
+% grid on
+% grid minor
+% lgd = legend('','Fitted Curve');
+% lgd.FontSize = 14;
 
 
 
-%{
-lateralg 
-figure
-plot(radii,F_fin1,'m',radii,F_fout1,'c',radii, F_rin1,'b',radii,F_rout1,'g')
-legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-grid on
-hold off
-figure
-plot(radii,wfin1,'m',radii,wfout1,'c',radii, wrin1,'b',radii,wrout1,'g')
-legend('Front Inner', 'Front outer', 'Rear Inner', 'Rear Outer')
-grid on
-hold off
-velocity_y = lateralg.*9.81.*radii;
-velocity_y = sqrt(velocity_y);
-range = linspace(4.5,velocity_y(end));
-hold on
-lateral = polyfit(velocity_y,lateralg,3);
-figure
-plot(velocity_y,f_xplt,'o')
-hold on
-plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
-grid on 
-grid minor
-hold off
-%}
 
 % Braking Performance
-velocity = 4.5:1.5:22.5; % range of velocities at which sim will evaluate (m/s)
 disp('     Braking Envelope')
 % the braking sim works exactly the same as acceleration, except now all 4
 % tires are contributing to the total braking capacity
@@ -394,7 +335,7 @@ r_max = max(radii);
 spcount = spcount+1;
 shift_points(spcount) = V+1;
 top_speed = V;
-VMAX = top_speed;
+% VMAX = top_speed; %%%%
 % make the rest of your functions for the GGV diagram
 % braking as a function of speed
 deccel = polyfit(velocity,A_X,4);
@@ -530,7 +471,7 @@ disp('Loading Endurance Track Coordinates')
 
 
 %%%%%%custom track
-track = readtable('Track Creation/17_lincoln_endurance_track.xls');
+track = readtable('Track Creation/17_lincoln_endurance_track_highres.xls');
 
 % t = 1:height(track);
 % path_points = [track.X, track.Y]'/1000;
@@ -639,7 +580,7 @@ path_radius = 7.62+tw/2+.1524;
 speed = polyval(cornering,path_radius);
 % calculate skidpad time
 skidpad_time = path_radius*2*pi/speed;
-% calculate score based on 2019 times
+% calculate score based on 2019 times  
 Tmin_skid = 4.865;
 Tmax_skid = Tmin_skid*1.45;
 Skidpad_Score = 71.5*((Tmax_skid/skidpad_time)^2-1)/((Tmax_skid/Tmin_skid)^2-1) + 3.5;
@@ -674,7 +615,7 @@ for i = 1:1:length(segment)
         shifting = 0;
     end
 
-    vmax = VMAX;
+    vmax = VMAX-1;
     % determine instantaneous acceleration capacity
     AX = fnval(accel,vel);
     dd = d/interval;
@@ -761,7 +702,11 @@ rearF = zeros(3,3);
 % frontF(1,:) = [0 -(WF/2 -WF*AX_min*cg/L/2)*AX_min 0];
 % rearF(1,:) = [W*AX_max/2 -(WR/2 +WR*AX_min*cg/L/2)*AX_min 0];
 
+if parforvalue == 1
 output = struct('laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocity,'acceleration',acceleration,'lateral_accel' ...
     ,lateral_accel,'gear_counter',gear_counter,'path_length',path_length,'weights',weights,'distance',distance, 'accel_time' ...
     ,accel_time, 'Endurance_Score',Endurance_Score, 'Accel_Score', Accel_Score, 'Skidpad_Score',Skidpad_Score);
+else
+output = [laptime accel_time];
 % output = [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax accel_time Endurance_Score Autocross_Score Accel_Score Skidpad_Score];
+end
