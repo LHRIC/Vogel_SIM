@@ -1,6 +1,6 @@
 clear all
 
-load("fingers_crossed_optim_params.mat")
+load("R20_Tire.mat")
 
 % PCX1= OptimParameterSet.PCX1
 % PDX1= OptimParameterSet.PDX1

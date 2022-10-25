@@ -1,4 +1,6 @@
-function [output]=LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots, FD)
+function [output]=LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, ...
+    IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, ...
+    tqMod, showPlots,sf_x,sf_y,parforvalue,FD)
 %% Section 0: Name all symbolic variables
 % Don't touch this. This is just naming a bunch of variables and making
 % them global so that all the other functions can access them
@@ -21,15 +23,14 @@ load("Tire Modeling/Lateral_Tire-Model_Optim_Params.mat")
    
 % Next you load in the longitudinal tire model
 % find your pathname and filename for the tire you want to load in
-load("Tire Modeling/12.mat") 
+load("Tire Modeling/Blakes_Longitdudinal_Coeff.mat") 
 tire_radius = .2032; % (meters)
 
 
 % finally, we have some scaling factors for longitudinal (x) and lateral
 % (y) friction. You can use these to tune the lap sim to correlate better 
 % to logged data 
-sf_x = .6;
-sf_y = .6;   
+ 
 %% Section 2: Input Powertrain Model
 % change whatever you want here, this is the 2018 powertrain package iirc
 % just keep your units consistent please
@@ -189,70 +190,63 @@ grip = polyfit(velocity,A_xr,3);
 
 AYP = .5;
 disp('Lateral Acceleration Envelope')
-
-load('lateralg.mat')
-disp("////////////////////////////////////WARNING////////////////////" + ...
-    "LOADING PRECALCULATED LATERALG")
-
-% lateralg = zeros(1,length(radii));
-% for turn = 1:1:length(radii)
-%     % first define your vehicle characteristics:
-%         a = L*(1-WDF);
-%         b = L*WDF;
-%         R = radii(turn); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%         % update speed and downforce
-%         V = sqrt(R*9.81*AYP);
-%         LF = Cl*V^2; 
-%         % from downforce, update suspension travel (m):
-%         dxf = LF*CoP/2/WRF; 
-%         dxr = LF*(1-CoP)/2/WRR; 
-%         % from suspension heave, update static camber (rad):
-%         IA_0f = IA_staticf - dxf*IA_gainf; 
-%         IA_0r = IA_staticr - dxr*IA_gainr; 
-%         % update load on each wheel (N)
-%         wf = (WF+LF*CoP)/2;
-%         wr = (WR+LF*(1-CoP))/2;
-%         % guess ackermann steer angle as starting steer angle
-%         delta = L/R;
-%         % assume vehicle sideslip starts at 0 (rad)
-%         beta = 0;
-%         % Minimizing the objective function of M_z a_f-12degrees and a_y-AY  
-%         input = 1;
-%         x0 = [delta, beta, AYP];  % initial values
-%         fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
-%             rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r);
-%         fun(x0);
-%         % minimizing function
-%         lb = [0.01 -.3 .5];
-%         ub = [1 .3 2];
-%         opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000, ...
-%             MaxIterations=1000000,FunctionTolerance=1e-8,Display="final-detailed");
-%         x = lsqnonlin(fun, x0,lb,ub,opts);
-%         % output from minimizing
-%         delta = x(1)
-%         beta = x(2)
-%         AYP = x(3)
-%         input = 0;
-%         evalVogel = fun(x);
-%         lateralg(turn) = evalVogel(1);
-%         f_xplt(turn) = evalVogel(2);
-%         deltaTest(turn) = rad2deg(delta);
-%         betaTest(turn) = rad2deg(beta);
-%         AYPTest(turn) = AYP;
 % 
-% end
+% load('lateralg.mat')
+% disp("////////////////////////////////////WARNING////////////////////" + ...
+%     "LOADING PRECALCULATED LATERALG")
 
-velocity_y = lateralg.*9.81.*radii;
-velocity_y = sqrt(velocity_y);
-range = linspace(4.5,velocity_y(end));
-lateral = polyfit(velocity_y,lateralg,3);
-% figure
-% plot(velocity_y,f_xplt,'o')
-% hold on
-% plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
-% grid on 
-% grid minor
-% hold off
+lateralg = zeros(1,length(radii));
+for turn = 1:1:length(radii)
+    % first define your vehicle characteristics:
+        a = L*(1-WDF);
+        b = L*WDF;
+        R = radii(turn); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % update speed and downforce
+        V = sqrt(R*9.81*AYP);
+        LF = Cl*V^2; 
+        % from downforce, update suspension travel (m):
+        dxf = LF*CoP/2/WRF; 
+        dxr = LF*(1-CoP)/2/WRR; 
+        % from suspension heave, update static camber (rad):
+        IA_0f = IA_staticf - dxf*IA_gainf; 
+        IA_0r = IA_staticr - dxr*IA_gainr; 
+        % update load on each wheel (N)
+        wf = (WF+LF*CoP)/2;
+        wr = (WR+LF*(1-CoP))/2;
+        % guess ackermann steer angle as starting steer angle
+        delta = L/R;
+        % assume vehicle sideslip starts at 0 (rad)
+        beta = 0;
+        % Minimizing the objective function of M_z a_f-12degrees and a_y-AY  
+        input = 1;
+        x0 = [delta, beta, AYP];  % initial values
+        fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
+            rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r);
+        fun(x0);
+        % minimizing function
+        lb = [0.01 -.3 .5];
+        ub = [1 .3 2];
+        opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000, ...
+            MaxIterations=1000000,FunctionTolerance=1e-8,Display="none");
+        x = lsqnonlin(fun, x0,lb,ub,opts);
+        % output from minimizing
+        delta = x(1);
+        beta = x(2);
+        AYP = x(3);
+        input = 0;
+        evalVogel = fun(x);
+        lateralg(turn) = evalVogel(1);
+        f_xplt(turn) = evalVogel(2);
+        deltaTest(turn) = rad2deg(delta);
+        betaTest(turn) = rad2deg(beta);
+        AYPTest(turn) = AYP;
+
+end
+
+% velocity_y = lateralg.*9.81.*radii;
+% velocity_y = sqrt(velocity_y);
+% range = linspace(4.5,velocity_y(end));
+% lateral = polyfit(velocity_y,lateralg,4);
 % 
 % figure
 % Evaluated = polyval(lateral,range);
@@ -708,7 +702,11 @@ rearF = zeros(3,3);
 % frontF(1,:) = [0 -(WF/2 -WF*AX_min*cg/L/2)*AX_min 0];
 % rearF(1,:) = [W*AX_max/2 -(WR/2 +WR*AX_min*cg/L/2)*AX_min 0];
 
+if parforvalue == 1
 output = struct('laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocity,'acceleration',acceleration,'lateral_accel' ...
     ,lateral_accel,'gear_counter',gear_counter,'path_length',path_length,'weights',weights,'distance',distance, 'accel_time' ...
     ,accel_time, 'Endurance_Score',Endurance_Score, 'Accel_Score', Accel_Score, 'Skidpad_Score',Skidpad_Score);
+else
+output = [laptime accel_time];
 % output = [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax accel_time Endurance_Score Autocross_Score Accel_Score Skidpad_Score];
+end
