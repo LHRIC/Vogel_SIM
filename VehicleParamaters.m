@@ -63,6 +63,7 @@ CoP = .48; % front downforce distribution (%% Run simulation
 %% Powertrain Parameters
 
 tqMod = 1;
+FD = 37/11;
 
 %% Simulate
 % 
@@ -70,7 +71,7 @@ tqMod = 1;
 % 
 %     LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
 %         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-%         casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots);
+%         casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots, fd);
 % 
 % distance = LapSimOutput.distance;
 % velocity = LapSimOutput.velocity;
@@ -92,12 +93,12 @@ tqMod = 1;
 % disp(ZZ)
 % A = [' Skidpad score: ',num2str(Skidpad_score)];
 % disp(A)
-Weight = (525:20:725)*4.4482216153;
-for runs = 1:length(Weight)
-    W = Weight(runs);
+FD = (25/11:1/11:50/11);
+for runs = 1:length(FD)
+    FD_ = FD(runs);
     LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-        casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots);
+        casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots, FD_);
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
@@ -120,23 +121,23 @@ disp(ZZ)
 A = [' Skidpad score: ',num2str(Skidpad_score)];
 disp(A)
 
-filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(W),".mat");
+filename = append("C:\GrabCode\Vogel_Sim\Output_Files\WSens_", num2str(FD_),".mat");
 
 % save(filename, 'LapSimOutput')
 
 end
 
 figure
-plot(Weight./4.4482216153,Endurance_time,'o',Weight./4.4482216153,Endurance_time)
-title('Endurance time sensitivity to Weight increase','FontWeight','bold','FontSize',24)
-xlabel('Weight (lbs.)','FontSize',18)
+plot(FD,Endurance_time,'o',FD,Endurance_time)
+title('Endurance time sensitivity to Final Drive','FontWeight','bold','FontSize',24)
+xlabel('Final Drive','FontSize',18)
 ylabel('Endurance Time (s)','FontSize',18)
 hold off
 
 figure
-plot(Weight./4.4482216153,Accel_time,'o',Weight./4.4482216153,Accel_time)
-title('Accel Time sensitivty to Weight increase ','FontWeight','bold','FontSize',24)
-xlabel('Weight (lbs.)','FontSize',18)
+plot(FD,Accel_time,'o',FD,Accel_time)
+title('Accel Time sensitivity to Final Drive ','FontWeight','bold','FontSize',24)
+xlabel('Final Drive','FontSize',18)
 ylabel('Accel Time','FontSize',18)
 
 %% Section 19: Plot Results
