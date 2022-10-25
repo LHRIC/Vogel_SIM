@@ -20,12 +20,8 @@ global path_boundaries r_min r_max cornering accel grip deccel lateral...
 %     path_points(i,:) = [x3 y3];             
 % end
 
-
-disp('INTERVAL IS CHANGED')
-interval = 10;
-% interval = 1000;
-sections = 10;
-% sections = 6000;
+interval = 1000;
+sections = 6000;
 VMAX = top_speed;
 r_min = 4.5;
 
@@ -34,21 +30,14 @@ path_points = [track.X, track.Y]/1000;
 
 KT = LineCurvature2D(path_points);
 KT = KT(~isnan(KT));
-% smallvalues = ;
-KT(find(abs(KT)<1/r_max)) = 1/r_max;
+smallvalues = find(abs(KT)<.00001);
+KT(smallvalues) = 1/r_max;
 RT = abs(1./KT);
 RT(end-2:end) = [];
-
-
-
-
-
-
-
 % figure
 % patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
 % h = colorbar;
-% set(get(h,'title'),'string','Curvature');
+% set(get(h,'title'),'string','Velocity (V) [m/s]');
 % set(gca,'XTick',[], 'YTick', [])
 
 % x = linspace(1,t(end-1),10000);
@@ -151,7 +140,7 @@ for i = 1:1:length(segment) % for each track segment
             % find potential acceleration available:
             ax_f(count) = AX*(1-(min(AY,ay_f(count))/AY)^2);
             tt = roots([0.5*9.81*ax_f(count) vel -dd]);
-            % accelerate according to that capacity, update speed and
+            % accelerate accoding to that capacity, update speed and
             % position accordingly
             dt_f(count) = max(tt);
             dv = 9.81*ax_f(count)*dt_f(count);
