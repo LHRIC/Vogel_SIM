@@ -317,12 +317,13 @@ elseif sweepControl(4) == 1
     title(gB, 'Total CL', 'fontsize', 15)
 
     [minB, iBmin] = min(TimeBM);
-    plot(CoPBM(iBmin), minB, 'm*', 'MarkerSize', 25, 'linewidth', 1.5)
-    %text(CoPBM(iBmin), minB, '\leftarrow Min. Laptime');
+    minCoPB = CoPBM(iBmin);
+    plot(minCoPB, minB, 'm*', 'MarkerSize', 25, 'linewidth', 1.5)
     legend('Data Points', 'Minimum Configuration', 'location', 'northwest')
-    minConfig = fprintf('CoP Location:%.2f\nTime:%.2fs', CoPBM(iBmin), minB);
-    text(0.6, 80.6, minConfig)
-
+    minConfigCoP = "CoP: " + minCoPB;
+    minConfigTime = "Laptime: " + minB;
+    minConfig = [minConfigCoP; minConfigTime];
+    text(0.6, 80.6, minConfig, "FontSize", 20, "Color", "red");
 
     hold off
 
