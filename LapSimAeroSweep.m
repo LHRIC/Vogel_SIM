@@ -9,7 +9,7 @@ clc
 showPlots = false;
 sweepControl = [0 0 1 0];
 saveParam = 0;
-parforvalue = 0;
+parforvalue = 1;
 sf_x = 0.6;
 sf_y = 0.6;
 tqMod = 1;

@@ -707,6 +707,6 @@ output = struct('laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocit
     ,lateral_accel,'gear_counter',gear_counter,'path_length',path_length,'weights',weights,'distance',distance, 'accel_time' ...
     ,accel_time, 'Endurance_Score',Endurance_Score, 'Accel_Score', Accel_Score, 'Skidpad_Score',Skidpad_Score);
 else
-% output = [laptime accel_time];
-output = [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax accel_time Endurance_Score Autocross_Score Accel_Score Skidpad_Score];
+output = [laptime accel_time];
+% output = [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax accel_time Endurance_Score Autocross_Score Accel_Score Skidpad_Score];
 end
