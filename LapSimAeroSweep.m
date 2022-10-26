@@ -9,6 +9,10 @@ clc
 showPlots = false;
 sweepControl = [0 0 1 0];
 saveParam = 0;
+parforvalue = 0;
+sf_x = 0.6;
+sf_y = 0.6;
+tqMod = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Section 1: Vehicle Architecture
@@ -26,6 +30,8 @@ cg = cg/39.37; % conver to m
 L = L/3.280839895013123; % convert to m
 twf = twf/3.280839895013123; % convert to m
 twr = twr/3.280839895013123; % convert to m
+
+FD = 37/11;
 
 %% Section 2: Input Suspension Kinematics
 % this section is actually optional. So if you set everything to zero, you
@@ -79,7 +85,7 @@ if sweepControl(1) == 1
 
             W = WBase + (5.38 + 24.7*Cl + 23.7*Cl^2);
     
-            LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, showPlots);
+            LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, Cl, Cd, CoP, tqMod, showPlots, sf_x, sf_y, parforvalue, FD);
 
             T_axismax = max(LapSimOutput.time_elapsed);
 
@@ -124,7 +130,7 @@ if sweepControl(2) == 1
     
             CoPC = CoPRange(kCoP);
    
-            LapSimOutput = LapSim(LLTD, WBase, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, ClaSetI, CdaSetI, CoPC, showPlots);
+            LapSimOutput = LapSim(LLTD, WBase, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, ClaSetI, CdaSetI, CoPC, tqMod, showPlots, sf_x, sf_y, parforvalue, FD);
 
             T_axismax = max(LapSimOutput.time_elapsed);
     
@@ -166,7 +172,7 @@ if sweepControl(3) == 1
    
             CoPCG = CoPRange2(iCoPG);
 
-            LapSimOutput = LapSim(LLTD, WBase, CG, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, ClaSet, CdaSet, CoPCG, showPlots);
+            LapSimOutput = LapSim(LLTD, WBase, CG, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, ClaSet, CdaSet, CoPCG, tqMod, showPlots, sf_x, sf_y, parforvalue, FD);
 
             T_axismax = max(LapSimOutput.time_elapsed);
 
@@ -216,7 +222,7 @@ if sweepControl(4) == 1
 
         CoPNew = (L * CoPB + CoPShift)/L;
 
-        LapSimOutput = LapSim(LLTD, WBase, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, (ClaNew * -0.6125), (CdaB * 0.6125), CoPNew, showPlots);
+        LapSimOutput = LapSim(LLTD, WBase, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, casterr, KPIr, (ClaNew * -0.6125), (CdaB * 0.6125), CoPNew, tqMod, showPlots, sf_x, sf_y, parforvalue, FD);
 
         T_axismax = max(LapSimOutput.time_elapsed);
 
