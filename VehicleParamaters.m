@@ -7,9 +7,9 @@ set(groot,'defaultLegendInterpreter','latex');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 showPlots = false;
-singlerunOptions = [0 0 0 0 0 0 1];  % (1) = single run (2) = Mass Sweep (3) = Cg height Sweep 
+singlerunOptions = [0 0 0 0 0 0 0 1];  % (1) = single run (2) = Mass Sweep (3) = Cg height Sweep 
 % (4) = Weight Distribution Sweep (with CoP) (5) = Track width sweep (6) = Friction Scaling Sweep
-% (7) = Lateral Load Transfer Distribution Sweep
+% (7) = Lateral Load Transfer Distribution Sweep % (8) = Final Drive
 
 combinedrunOptions = [0 0]; % (1) = LLTD and Weight distribution (2) = CoP and Cgx
 
@@ -23,6 +23,7 @@ lateralFriction = (.4:.05:.9);
 LLTDistribution = (.30:.05:.80);
 centerofPressure = (.4:.1/5:.6);
 parforvalue = 0;
+FD = (25/11:1/11:46/11);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -84,7 +85,7 @@ CoP = .48; % front downforce distribution (%% Run simulation
 
 %% Powertrain Parameters
 tqMod = 1;
-FD = 37/11;
+FD = FD
 
 %% Single Paramater Sweeps
 if singlerunOptions(1) == 1
@@ -361,6 +362,39 @@ figure
 plot(LLTDistribution,Accel_time,'o',LLTDistribution,Accel_time)
 title('Accel time sensitivty to LLTD','FontWeight','bold','FontSize',24)
 xlabel('LLTD','FontSize',18)
+ylabel('Accel Time (s)','FontSize',18)
+grid on 
+grid minor
+
+end
+
+if singlerunOptions(8) == 1 
+
+
+parfor runs = 1:length(FD)
+    finalDrive = FD(runs)
+
+LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
+        IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
+        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue, finalDrive);
+
+Endurance_time(runs) = LapSimOutput(1)
+Accel_time(runs) = LapSimOutput(2)
+end
+
+figure
+plot(FD,Endurance_time,'o',FD,Endurance_time)
+title('Endurance time sensitivity to Final Drive','FontWeight','bold','FontSize',24)
+xlabel('Final Drive','FontSize',18)
+ylabel('Endurance Time (s)','FontSize',18)
+grid on 
+grid minor
+hold off
+
+figure
+plot(FD,Accel_time,'o',FD,Accel_time)
+title('Accel time sensitivty to Final Drive','FontWeight','bold','FontSize',24)
+xlabel('Final Drive','FontSize',18)
 ylabel('Accel Time (s)','FontSize',18)
 grid on 
 grid minor

@@ -46,7 +46,7 @@ gear = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24]; % transmission gear ratios
 finalDrive = FD; % large sprocket/small sprocket
 shiftpoint = 12500; % optimal shiftpoint for most gears [RPM]
 drivetrainLosses = .85; % percent of torque that makes it to the rear wheels 
-shift_time = .25; % seconds
+shift_time = .2; % seconds
 T_lock = 0; % differential locking torque (0 =  open, 1 = locked)
 
 % Intermediary Calcs/Save your results into the workspace
