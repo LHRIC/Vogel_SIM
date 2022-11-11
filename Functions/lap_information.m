@@ -149,7 +149,8 @@ for i = 1:1:length(segment) % for each track segment
             % if you are not shifting, and are going below max possible
             % speed,
             % find potential acceleration available:
-            ax_f(count) = AX*(1-(min(AY,ay_f(count))/AY)^2);
+            ax_f(count) = AX*(1-(min(AY,ay_f(count))/AY)^2); %%%?????????????????shouldn't this be like Ax_max = 
+            %%???? shouldn't this be like Ax = Ax_max*sqrt(1-(ay/Ay_max)^2)
             tt = roots([0.5*9.81*ax_f(count) vel -dd]);
             % accelerate according to that capacity, update speed and
             % position accordingly

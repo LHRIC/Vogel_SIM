@@ -6,8 +6,8 @@ set(groot,'defaultLegendInterpreter','latex');
 % Vechicle Paramaters
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-showPlots = false;
-singlerunOptions = [0 0 0 0 0 0 0 1];  % (1) = single run (2) = Mass Sweep (3) = Cg height Sweep 
+showPlots = true;
+singlerunOptions = [1 0 0 0 0 0 0 0];  % (1) = single run (2) = Mass Sweep (3) = Cg height Sweep 
 % (4) = Weight Distribution Sweep (with CoP) (5) = Track width sweep (6) = Friction Scaling Sweep
 % (7) = Lateral Load Transfer Distribution Sweep % (8) = Final Drive
 
@@ -30,13 +30,14 @@ FD = (25/11:1/11:46/11);
 %% Section 1: Vehicle Architecture
 disp('Loading Vehicle Characteristics')
 % These are the basic vehicle architecture primary inputs:
-LLTD = .515; % Front lateral load transfer distribution (%)
+LLTD = .5; % Front lateral load transfer distribution (%)
 W = 650; % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
 cg = 12.5; % center of gravity height (in)
 L = 60.63/12; % wheelbase (ft)
-twf = 50.5/12; % front track width (ft)
-twr = 50.5/12; % rear track width (ft)
+twf = 48/12; % front track width (ft)
+twr = 48/12; % rear track width (ft)
+FD = 37/11;
 
 W = W*4.4482216153; % convert to N
 cg = cg/39.37; % convert to m
@@ -85,7 +86,7 @@ CoP = .48; % front downforce distribution (%% Run simulation
 
 %% Powertrain Parameters
 tqMod = 1;
-FD = FD
+FD = FD;
 
 %% Single Paramater Sweeps
 if singlerunOptions(1) == 1
@@ -93,7 +94,7 @@ if singlerunOptions(1) == 1
 
         LapSimOutput = LapSim(LLTD, W, WDF, cg, L, twf, twr, rg_f, rg_r,pg, WRF, WRR, ...
         IA_staticf, IA_staticr, IA_compensationr, IA_compensationf, casterf, KPIf, ...
-        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue);
+        casterr, KPIr, Cl, Cd, CoP, tqMod,showPlots, sf_x,sf_y,parforvalue,FD);
 
 distance = LapSimOutput.distance;
 velocity = LapSimOutput.velocity;
