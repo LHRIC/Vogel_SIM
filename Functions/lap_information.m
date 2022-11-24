@@ -1,4 +1,4 @@
-function [lap_time time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(track, showPlots)
+function [lap_time, time_elapsed, velocity, acceleration, lateral_accel, gear_counter, path_length, weights, distance] = lap_information(track, showPlots)
 global path_boundaries r_min r_max cornering accel grip deccel lateral...
     shift_points top_speed shift_time
 %% Generate vehicle trajectory
@@ -38,12 +38,6 @@ KT = KT(~isnan(KT));
 KT(find(abs(KT)<1/r_max)) = 1/r_max;
 RT = abs(1./KT);
 RT(end-2:end) = [];
-
-
-
-
-
-
 
 % figure
 % patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')

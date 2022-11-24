@@ -34,16 +34,15 @@ LLTD = .5; % Front lateral load transfer distribution (%)
 W = 650; % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
 cg = 12.5; % center of gravity height (in)
-L = 60.63/12; % wheelbase (ft)
-twf = 48/12; % front track width (ft)
-twr = 48/12; % rear track width (ft)
+L = 1.535; % wheelbase (m)
+twf = 48; % front track width (in)
+twr = 48; % rear track width (in)
 FD = 37/11;
 
 W = W*4.4482216153; % convert to N
 cg = cg/39.37; % convert to m
-L = L/3.280839895013123; % convert to m
-twf = twf/3.280839895013123; % convert to m
-twr = twr/3.280839895013123; % convert to m
+twf = twf*.0254; % convert to m
+twr = twr*.0254; % convert to m
 
 %% Section 2: Input Suspension Kinematics
 disp('Loading Suspension Kinematics')

@@ -190,11 +190,12 @@ grip = polyfit(velocity,A_xr,3);
 
 AYP = .5;
 disp('Lateral Acceleration Envelope')
-% 
-% load('lateralg.mat')
-% disp("////////////////////////////////////WARNING////////////////////" + ...
-%     "LOADING PRECALCULATED LATERALG")
 
+load('lateralg.mat')
+disp("////////////////////////////////////WARNING////////////////////" + ...
+    "LOADING PRECALCULATED LATERALG")
+
+%{
 lateralg = zeros(1,length(radii));
 for turn = 1:1:length(radii)
     % first define your vehicle characteristics:
@@ -265,7 +266,7 @@ end
 % grid minor
 % lgd = legend('','Fitted Curve');
 % lgd.FontSize = 14;
-
+%}
 
 
 
@@ -482,7 +483,7 @@ track = readtable('Track Creation/17_lincoln_endurance_track_highres.xls');
 
 %% Section 11: Simulate Endurance Lap
 %disp('Plotting Vehicle Trajectory')
-[laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance] = lap_information(track, showPlots);
+[laptime, time_elapsed, velocity, acceleration, lateral_accel, gear_counter, path_length, weights, distance] = lap_information(track, showPlots);
 
 %% Section 12: Load Autocross Track Coordinates
 % %disp('Loading Autocross Track Coordinates')
@@ -702,11 +703,11 @@ rearF = zeros(3,3);
 % frontF(1,:) = [0 -(WF/2 -WF*AX_min*cg/L/2)*AX_min 0];
 % rearF(1,:) = [W*AX_max/2 -(WR/2 +WR*AX_min*cg/L/2)*AX_min 0];
 
-if parforvalue == 1
+% if parforvalue == 1
 output = struct('laptime',laptime,'time_elapsed',time_elapsed,'velocity',velocity,'acceleration',acceleration,'lateral_accel' ...
     ,lateral_accel,'gear_counter',gear_counter,'path_length',path_length,'weights',weights,'distance',distance, 'accel_time' ...
     ,accel_time, 'Endurance_Score',Endurance_Score, 'Accel_Score', Accel_Score, 'Skidpad_Score',Skidpad_Score);
-else
-output = [laptime accel_time];
+% else
+% output = [laptime accel_time];
 % output = [laptime time_elapsed velocity acceleration lateral_accel gear_counter path_length weights distance laptime_ax time_elapsed_ax velocity_ax, acceleration_ax lateral_accel_ax gear_counter_ax path_length_ax weights_ax distance_ax accel_time Endurance_Score Autocross_Score Accel_Score Skidpad_Score];
-end
+% end
