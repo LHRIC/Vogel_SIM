@@ -31,7 +31,7 @@ FD = (25/11:1/11:46/11);
 disp('Loading Vehicle Characteristics')
 % These are the basic vehicle architecture primary inputs:
 LLTD = .5; % Front lateral load transfer distribution (%)
-W = 650; % vehicle + driver weight (lbs)
+W = 496; % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
 cg = 12.5; % center of gravity height (in)
 L = 1.535; % wheelbase (m)
@@ -77,11 +77,13 @@ sf_y = .6;
 %% Section 3: Input Aero Parameters
 disp('Loading Aero Model')
 
+%%Updated 5/27/23 - TM: Mimics Comp Car setup
+
 % Cl = linspace(.03,.6,2);
-Cl = 1.77; %279/418
+Cl = 2.89; %279/418
 % Cd = linspace(.01,.03,2);
-Cd = .8; % .024
-CoP = .48; % front downforce distribution (%% Run simulation
+Cd = 1.36; % .024
+CoP = .60; % front downforce distribution (%% Run simulation
 
 %% Powertrain Parameters
 tqMod = 1;

@@ -10,7 +10,7 @@ showPlots = true;
 disp('Loading Vehicle Characteristics')
 % These are the basic vehicle architecture primary inputs:
 LLTD = .515; % Front lateral load transfer distribution (%)
-W = 650; % vehicle + driver weight (lbs)
+W = 496 + 160; % vehicle + driver weight (lbs)
 WDF = .45; % front weight distribution (%)
 cg = 12.5; % center of gravity height (in)
 L = 60.63/12; % wheelbase (ft)

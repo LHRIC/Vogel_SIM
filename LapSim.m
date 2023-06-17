@@ -108,6 +108,9 @@ for  i = 1:1:length(velocity) % for each velocity
     IA_0r = IA_staticr - dxr*IA_gainr;
     Ax = 0;
     AX_diff = 1;
+    %%%
+    % - TM: Attempts to find grip limited maximum acceleration for each velocity???
+    %%%
     while AX_diff>0
         %disp([Ax AX])
         Ax = Ax+.01; % increment acceleration values by .01
@@ -132,8 +135,8 @@ for  i = 1:1:length(velocity) % for each velocity
     wr_count(i) = wr;
     A_xr(i) = AX; % little x defines the grip limited maximum accleration
     output = Powertrainlapsim(max(7.5,V)); % 7.5 reg, 10 launch
-    FX = output(1); % Newtons
-    FX = FX-Cd*V^2;
+    FX = output(1); % Newtons: Force on tire contact patch
+    FX = FX-Cd*V^2; % Adding the effect of downforce
     fx(i) = FX/W;
     AX(i) = min(FX/W,A_xr(i));
     output = Powertrainlapsim(V);
@@ -347,36 +350,36 @@ radii = velocity_y.^2./lateralg/9.81;
 cornering = polyfit(radii,velocity_y,4);
 
 if showPlots == true
-figure
-t = tiledlayout(2,3);
-title(t, "CG Height: " + cg + "m ("+ cg*39.37 +" inches)")
-nexttile
-range = linspace(4.5,30);
-plot(velocity,A_xr,'o',range,polyval(grip,range))
-title('Tire limited and Grip limited Acceleration vs Velocity')
-grid on
-grid minor
-hold on
-fnplt(accel)
-legend('Tire Limited','Grip Limited')
-nexttile
-plot(velocity,A_X,'o',range,polyval(deccel,range))
-title('Braking Acceleration vs Velocity')
-grid on
-grid minor
-nexttile
-range = linspace(4.5,velocity_y(end));
-plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
-title('Lateral Acceleration vs Velocity')
-hold on
-grid on
-grid minor
-nexttile
-range = linspace(radii(1),radii(end));
-plot(radii,velocity_y,'o',range,polyval(cornering,range))
-title('Velocity vs Radius')
-grid on
-grid minor
+    figure
+    t = tiledlayout(2,3);
+    title(t, "CG Height: " + cg + "m ("+ cg*39.37 +" inches)")
+    nexttile
+    range = linspace(4.5,30);
+    plot(velocity,A_xr,'o',range,polyval(grip,range))
+    title('Tire limited and Grip limited Acceleration vs Velocity')
+    grid on
+    grid minor
+    hold on
+    fnplt(accel)
+    legend('Tire Limited','Grip Limited')
+    nexttile
+    plot(velocity,A_X,'o',range,polyval(deccel,range))
+    title('Braking Acceleration vs Velocity')
+    grid on
+    grid minor
+    nexttile
+    range = linspace(4.5,velocity_y(end));
+    plot(velocity_y,lateralg,'o',range,polyval(lateral,range))
+    title('Lateral Acceleration vs Velocity')
+    hold on
+    grid on
+    grid minor
+    nexttile
+    range = linspace(radii(1),radii(end));
+    plot(radii,velocity_y,'o',range,polyval(cornering,range))
+    title('Velocity vs Radius')
+    grid on
+    grid minor
 end
 
 %% Section 7: Load Endurance Track Coordinates
