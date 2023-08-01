@@ -3,6 +3,7 @@ import matlab.engine
 
 class MF52:
     def __init__(self):
+        print("Starting Matlab Engine")
         self.__matlab_engine = matlab.engine.start_matlab()
         # This is called from the root path for some reason.
         # possibly called in the location of the file that created
@@ -75,7 +76,6 @@ class MF52:
         return Fx
 
     def Fy(self, ALPHA, Fz, GAMMA):
-        print("Staring Matlab Engine")
         X = matlab.double([ALPHA, Fz, GAMMA])
         Fy = self.__matlab_engine.mfeval_wrapper(X)
         return Fy

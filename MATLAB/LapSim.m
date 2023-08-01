@@ -197,12 +197,13 @@ grip = polyfit(velocity,A_xr,3);
 AYP = .5;
 disp('Lateral Acceleration Envelope')
 
-%load('lateralg.mat')
+load('lateralg.mat')
 %disp("////////////////////////////////////WARNING////////////////////" + ...
 %    "LOADING PRECALCULATED LATERALG")
 
 
 lateralg = zeros(1,length(radii));
+p = zeros(3, length(radii));
 for turn = 1:1:length(radii)
     % first define your vehicle characteristics:
         a = L*(1-WDF);
@@ -236,10 +237,14 @@ for turn = 1:1:length(radii)
         opts = optimoptions("lsqnonlin",MaxFunctionEvaluations=1000000, ...
             MaxIterations=1000000,FunctionTolerance=1e-8,Display="none");
         x = lsqnonlin(fun, x0,lb,ub,opts);
-        % output from minimizing
+        % output from minimizing;
         delta = x(1);
         beta = x(2);
         AYP = x(3);
+        p(1, turn) = delta;
+        p(2, turn) = beta;
+        p(3, turn) = AYP;
+
         input = 0;
         evalVogel = fun(x);
         lateralg(turn) = evalVogel(1);
@@ -249,11 +254,16 @@ for turn = 1:1:length(radii)
         AYPTest(turn) = AYP;
 
 end
+disp(p);
+disp(lateralg);
+error("a");
 
 velocity_y = lateralg.*9.81.*radii;
 velocity_y = sqrt(velocity_y);
 range = linspace(4.5,velocity_y(end));
 lateral = polyfit(velocity_y,lateralg,4);
+
+disp()
 
 figure
 Evaluated = polyval(lateral,range);
