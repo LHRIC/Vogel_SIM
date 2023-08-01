@@ -38,7 +38,6 @@ tire_radius = .2032; % (meters)
 disp('Loading Engine Model')
 
 engineSpeed = 6200:100:14100; % RPM
-disp(engineSpeed);
 
 % torque should be in N-m:
 engineTq = tqMod*[41.57 42.98 44.43 45.65 46.44 47.09 47.52 48.58 49.57 50.41 51.43 51.48 51 49.311 48.94 48.66 49.62 49.60 47.89 47.91 48.09 48.57 49.07 49.31 49.58 49.56 49.84 50.10 50.00 50.00 50.75 51.25 52.01 52.44 52.59 52.73 53.34 53.72 52.11 52.25 51.66 50.5 50.34 50.50 50.50 50.55 50.63 50.17 50.80 49.73 49.35 49.11 48.65 48.28 48.28 47.99 47.68 47.43 47.07 46.67 45.49 45.37 44.67 43.8 43.0 42.3 42.00 41.96 41.70 40.43 39.83 38.60 38.46 37.56 36.34 35.35 33.75 33.54 32.63 31.63];
@@ -137,7 +136,10 @@ for  i = 1:1:length(velocity) % for each velocity
     A_xr(i) = AX; % little x defines the grip limited maximum accleration
     output = Powertrainlapsim(max(7.5,V)); % 7.5 reg, 10 launch
     FX = output(1); % Newtons: Force on tire contact patch
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %Should be Cl right??? - TM
     FX = FX-Cd*V^2; % Adding the effect of downforce
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fx(i) = FX/W;
     AX(i) = min(FX/W,A_xr(i));
     output = Powertrainlapsim(V);
