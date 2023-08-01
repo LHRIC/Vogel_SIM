@@ -38,6 +38,8 @@ class DYN:
         self.friction_scaling_x = 0.6
         self.friction_scaling_y = 0.6
 
+        #Unit Conversions
+
         self.total_weight = self.total_weight * 4.4482216153  # N
         self.total_weight_f = self.total_weight * self.weight_dist_f
         self.total_weight_r = self.total_weight * (1 - self.weight_dist_f)
@@ -51,4 +53,4 @@ class DYN:
         self.camber_comp_r = self.camber_comp_r / 100
 
         self.camber_gain_f = self.camber_roll_induced_f * self.camber_comp_f
-        self.camber_comp_r = self.camber_roll_induced_r * self.camber_comp_r
+        self.camber_gain_r = self.camber_roll_induced_r * self.camber_comp_r

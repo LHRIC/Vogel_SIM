@@ -38,6 +38,7 @@ tire_radius = .2032; % (meters)
 disp('Loading Engine Model')
 
 engineSpeed = 6200:100:14100; % RPM
+disp(engineSpeed);
 
 % torque should be in N-m:
 engineTq = tqMod*[41.57 42.98 44.43 45.65 46.44 47.09 47.52 48.58 49.57 50.41 51.43 51.48 51 49.311 48.94 48.66 49.62 49.60 47.89 47.91 48.09 48.57 49.07 49.31 49.58 49.56 49.84 50.10 50.00 50.00 50.75 51.25 52.01 52.44 52.59 52.73 53.34 53.72 52.11 52.25 51.66 50.5 50.34 50.50 50.50 50.55 50.63 50.17 50.80 49.73 49.35 49.11 48.65 48.28 48.28 47.99 47.68 47.43 47.07 46.67 45.49 45.37 44.67 43.8 43.0 42.3 42.00 41.96 41.70 40.43 39.83 38.60 38.46 37.56 36.34 35.35 33.75 33.54 32.63 31.63];
@@ -194,11 +195,11 @@ grip = polyfit(velocity,A_xr,3);
 AYP = .5;
 disp('Lateral Acceleration Envelope')
 
-load('lateralg.mat')
-disp("////////////////////////////////////WARNING////////////////////" + ...
-    "LOADING PRECALCULATED LATERALG")
+%load('lateralg.mat')
+%disp("////////////////////////////////////WARNING////////////////////" + ...
+%    "LOADING PRECALCULATED LATERALG")
 
-%{
+
 lateralg = zeros(1,length(radii));
 for turn = 1:1:length(radii)
     % first define your vehicle characteristics:
@@ -247,29 +248,29 @@ for turn = 1:1:length(radii)
 
 end
 
-% velocity_y = lateralg.*9.81.*radii;
-% velocity_y = sqrt(velocity_y);
-% range = linspace(4.5,velocity_y(end));
-% lateral = polyfit(velocity_y,lateralg,4);
-% 
-% figure
-% Evaluated = polyval(lateral,range);
-% [M,I] = max(Evaluated);
-% plot(velocity_y,lateralg,'o','Color',color2)
-% hold on
-% plot(range,Evaluated,'Color',color2)
-% hold on
-% plot(range(I),M,'m*')
-% title('Maximum Lateral Acceleration Capacity vs Velocity','FontWeight','bold','FontSize',24)
-% xlabel('Velocity (m/s','FontSize',18)
-% ylabel('Lateral Acceleration (g)','FontSize',18)
-% txt = ['        \leftarrow Max Acceleration (',num2str(M),')'];
-% text(range(I),M,txt,'Interpreter','tex','FontSize',12)
-% grid on
-% grid minor
-% lgd = legend('','Fitted Curve');
-% lgd.FontSize = 14;
-%}
+velocity_y = lateralg.*9.81.*radii;
+velocity_y = sqrt(velocity_y);
+range = linspace(4.5,velocity_y(end));
+lateral = polyfit(velocity_y,lateralg,4);
+
+figure
+Evaluated = polyval(lateral,range);
+[M,I] = max(Evaluated);
+plot(velocity_y,lateralg,'o')
+hold on
+plot(range,Evaluated)
+hold on
+plot(range(I),M,'m*')
+title('Maximum Lateral Acceleration Capacity vs Velocity','FontWeight','bold','FontSize',24)
+xlabel('Velocity (m/s','FontSize',18)
+ylabel('Lateral Acceleration (g)','FontSize',18)
+txt = ['        \leftarrow Max Acceleration (',num2str(M),')'];
+text(range(I),M,txt,'Interpreter','tex','FontSize',12)
+grid on
+grid minor
+lgd = legend('','Fitted Curve');
+lgd.FontSize = 14;
+
 
 
 
