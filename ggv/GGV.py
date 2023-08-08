@@ -31,9 +31,10 @@ class GGV:
 
         self._grip_lim_accel = None
         self._power_lim_accel = None
+
+        # These three FitFunctions describe the entire performance envelope (GGV) of the car.
         self._accel_capability = None
         self._braking_capability = None
-
         self._lateral_capability = np.array([
             1.38195832278988,
             1.42938584362690,
