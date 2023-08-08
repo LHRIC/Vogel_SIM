@@ -204,6 +204,7 @@ load('lateralg.mat')
 
 lateralg = zeros(1,length(radii));
 p = zeros(3, length(radii));
+disp(radii);
 for turn = 1:1:length(radii)
     % first define your vehicle characteristics:
         a = L*(1-WDF);
@@ -227,10 +228,19 @@ for turn = 1:1:length(radii)
         beta = 0;
         % Minimizing the objective function of M_z a_f-12degrees and a_y-AY  
         input = 1;
+        %{
+        lll = fun(lb);
+        fprintf("%3i %3i %3i, ", lll.');
+        jjj = fun(ub);
+        fprintf("%3i %3i %3i\n", jjj.');
+        %}
+
+        
         x0 = [delta, beta, AYP];  % initial values
         fun = @(x)vogel(x,a,b,Cd,IA_gainf,IA_gainr,twf,KPIf,cg,W,twr,LLTD,rg_r, ...
             rg_f,casterf,KPIr,deltar,sf_y,T_lock,R,wf,wr,IA_0f,IA_0r);
         fun(x0);
+
         % minimizing function
         lb = [0.01 -.3 .5];
         ub = [1 .3 2];
@@ -252,18 +262,15 @@ for turn = 1:1:length(radii)
         deltaTest(turn) = rad2deg(delta);
         betaTest(turn) = rad2deg(beta);
         AYPTest(turn) = AYP;
+        
 
 end
-disp(p);
-disp(lateralg);
-error("a");
-
 velocity_y = lateralg.*9.81.*radii;
 velocity_y = sqrt(velocity_y);
 range = linspace(4.5,velocity_y(end));
 lateral = polyfit(velocity_y,lateralg,4);
 
-disp()
+
 
 figure
 Evaluated = polyval(lateral,range);

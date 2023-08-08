@@ -80,10 +80,10 @@ disp('Loading Aero Model')
 %%Updated 5/27/23 - TM: Mimics Comp Car setup
 
 % Cl = linspace(.03,.6,2);
-Cl = 2.89; %279/418
+Cl = 1.77; %279/418
 % Cd = linspace(.01,.03,2);
-Cd = 1.36; % .024
-CoP = .60; % front downforce distribution (%% Run simulation
+Cd = 0.8; % .024
+CoP = .48; % front downforce distribution (%% Run simulation
 
 %% Powertrain Parameters
 tqMod = 1;

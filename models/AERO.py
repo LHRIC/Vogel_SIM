@@ -2,6 +2,6 @@ import numpy as np
 
 class AERO:
     def __init__(self):
-        self.Cl = 2.89
-        self.Cd = 1.36
-        self.CoP = 0.6
+        self.Cl = 1.77
+        self.Cd = 0.8
+        self.CoP = 0.48

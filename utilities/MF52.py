@@ -79,7 +79,3 @@ class MF52:
         X = matlab.double([ALPHA, Fz, GAMMA])
         Fy = self.__matlab_engine.mfeval_wrapper(X)
         return Fy
-
-    @staticmethod
-    def test():
-        print('yay')

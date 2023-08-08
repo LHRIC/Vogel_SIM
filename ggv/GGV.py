@@ -4,28 +4,60 @@ import math
 import utilities.MF52 as MF52
 import matplotlib.pyplot as plt
 from csaps import csaps
-from scipy.optimize import least_squares
+from scipy.optimize import least_squares, minimize
 import statistics
 import pickle
-
+import models
+from fitting import csaps, polyfit
 
 class GGV:
-    def __init__(self, AERO, DYN, PTN, gear_tot, v_max):
+    def __init__(self, AERO: models.AERO, DYN: models.DYN, PTN: models.PTN, gear_tot, v_max):
         self.AERO = AERO
         self.DYN = DYN
         self.PTN = PTN
+        self._MF52 = MF52()
+
         self.gear_tot = gear_tot
         self.v_max = v_max
 
         self.velocity_range = np.arange(4, math.floor(self.v_max) + 1, 1)
-        self.radii_range = np.arange(3.5, 37.5, 1.5)
-        print(len(self.velocity_range))
-        print(len(self.radii_range))
-        exit()
+        self.radii_range = np.arange(3.5, 36, 1.5)
+
         self.curr_gear = 1
         self.shift_count = 1
 
-        self._MF52 = MF52()
+        self._vogel_selector = 1
+        self._calc_lateral = False
+
+        self._grip_lim_accel = None
+        self._power_lim_accel = None
+        self._accel_capability = None
+        self._braking_capability = None
+
+        self._lateral_capability = np.array([
+            1.38195832278988,
+            1.42938584362690,
+            1.46626343925345,
+            1.49126646868585,
+            1.51244972228054,
+            1.53029970410364,
+            1.54641562015666,
+            1.56156587853348,
+            1.57629799755505,
+            1.59036217462828,
+            1.60381424225666,
+            1.61660679209661,
+            1.62875493176357,
+            1.64020405391575,
+            1.65090601787886,
+            1.66090586967413,
+            1.66084693559365,
+            1.65788498156999,
+            1.65256859579085,
+            1.64521365471666,
+            1.63619883252664,
+            1.62583858287551,
+        ])
 
     def calc_grip_lim_max_accel(self, v):
         downforce = self.AERO.Cl * v**2  # Downforce: Newtons
@@ -61,6 +93,7 @@ class GGV:
         return AX
 
     def calc_power_lim_max_accel(self, v):
+        
         gear_idx = 0
         rpm = self.PTN.shiftpoint
 
@@ -82,123 +115,172 @@ class GGV:
 
         return (Fx, gear_idx)
 
+    def calc_lateral_accel(self, R):
+        AYP = 0.5
+
+        self.a = self.DYN.wheelbase * (1 - self.DYN.weight_dist_f)
+        self.b = self.DYN.wheelbase * self.DYN.weight_dist_f
+        self.R = R
+        
+        # Initial guess for velocity from radii and lateral acceleration guess 
+        V = math.sqrt(R * 9.81 * AYP)
+
+        # Down (Lift) Force calculated from velo guess
+        LF = self.AERO.Cl * V**2
+
+        # Update suspension travel
+        dxf = LF * self.AERO.CoP / 2 / self.DYN.ride_rate_f
+        dxr = LF * (1 - self.AERO.CoP) / 2 / self.DYN.ride_rate_r
+
+        # Get static camber from suspension heave
+        self.IA_0f = self.DYN.static_camber_f - dxf * self.DYN.camber_gain_f
+        self.IA_0r = self.DYN.static_camber_r - dxr * self.DYN.camber_gain_r
+
+        # Get loads on each wheel
+        self.wf = (self.DYN.total_weight_f + LF * self.AERO.CoP) / 2
+        self.wr = (self.DYN.total_weight_r + LF * (1 - self.AERO.CoP)) / 2
+
+        # Guess initial ackermann steer angle
+        delta = self.DYN.wheelbase / R
+
+        # Assume sideslip starts at 0
+        beta = 0
+
+        # a, b, R, wf, wr, IA_0f, IA_0r, 0, velocity_fit_x, grip_cap_fit_y
+        x0 = [delta, beta, AYP]
+        lb = [0.01, -0.3, 0.1]
+        ub = [1, 0.3, 3]
+
+        # print(self.vogel(lb), end=", ")
+        # print(self.vogel(ub))
+
+        self._vogel_selector = 1
+        x = least_squares(self.vogel, x0, bounds=(lb, ub), method="trf")
+
+        delta = x.x[0]
+        beta = x.x[1]
+        AYP = x.x[2]
+
+        self._vogel_selector = 0
+        eval_vogel = self.vogel([delta, beta, AYP])
+
+        # delta_l.append(delta)
+        # beta_l.append(beta)
+        # AYP_l.append(AYP)
+
+        return eval_vogel[0]
+    
+    def calc_decel(self, v):
+        downforce = self.AERO.Cl * v**2  # Downforce: Newtons
+        # dxf, dxr
+        sus_drop_f = downforce * (self.AERO.CoP) / 2 / self.DYN.ride_rate_f
+        sus_drop_r = downforce * (1 - self.AERO.CoP) / 2 / self.DYN.ride_rate_r
+
+        # IA_0r, IA_0f
+        IA_0f = self.DYN.static_camber_f - sus_drop_f * self.DYN.camber_gain_f
+        IA_0r = self.DYN.static_camber_r - sus_drop_r * self.DYN.camber_gain_r
+
+        Ax = 0.99
+        while A_x_diff > 0:
+            Ax += 0.01
+            pitch = Ax * self.DYN.pitch_grad
+
+            wf = (self.DYN.total_weight_f + downforce * (self.AERO.CoP)) / 2
+            wr = (self.DYN.total_weight_r + downforce * (1 - self.AERO.CoP)) / 2
+            wf += (
+                Ax * self.DYN.cg_height * self.DYN.total_weight / self.DYN.wheelbase / 2
+            )
+            wr -= (
+                Ax * self.DYN.cg_height * self.DYN.total_weight / self.DYN.wheelbase / 2
+            )
+
+            IA_f = (-self.DYN.wheelbase * 12 * math.sin(pitch) / 2 * self.DYN.camber_gain_f) + IA_0f
+            IA_r = (self.DYN.wheelbase * 12 * math.sin(pitch) / 2 * self.DYN.camber_gain_r) + IA_0r
+
+            fx_f = []
+            fx_r = []
+
+            for sl in np.arange(-0.23, 0, 0.01):
+                Fx_f = self._MF52.Fx(-wf, -IA_f, sl) * self.DYN.friction_scaling_x
+                Fx_r = self._MF52.Fx(-wr, -IA_r, sl) * self.DYN.friction_scaling_x
+                fx_f.append(Fx_f)
+                fx_r.append(Fx_r)
+
+            FXF = min(fx_f)
+            FXR = min(fx_r)
+
+            FX = abs(2 * FXF + 2 * FXR)
+            AX = FX / self.DYN.total_weight  # THIS IS IN G'S, SEE ABOVE
+            A_x_diff = AX - Ax
+        return Ax
+
+    
     def generate(self):
         power_lim_a = []
         grip_lim_a = []
         accel_cap = []
         for v in self.velocity_range:
+            print(f"Calculating: Long. accel capability for {v} m/s")
             Ax_r = self.calc_grip_lim_max_accel(v)
             grip_lim_a.append(Ax_r)
 
-            FX_r, gear_idx = self.calc_power_lim_max_accel(v)
+            FX_r, gear_idx = self.calc_power_lim_max_accel(max(7.5, v))
             FX_r -= self.AERO.Cl * v**2  # Downforce: Newtons
             AX_r = FX_r / self.DYN.total_weight
             power_lim_a.append(AX_r)
 
             accel_cap.append(min(Ax_r, AX_r))
-
-        self.velocity_fit_x = np.linspace(
-            self.velocity_range[0], self.velocity_range[-1], 150
-        )
-        self.accel_cap_fit_y = csaps(
-            self.velocity_range, accel_cap, self.velocity_fit_x, smooth=0.9
-        )
-        self.grip_cap_fit_y = csaps(
-            self.velocity_range, grip_lim_a, self.velocity_fit_x, smooth=0.9
-        )
-
-        """ 
-        fig, ax = plt.subplots()
-        ax.plot(self.velocity_range, accel_cap, 'o')
-        ax.plot(xi, yi)
-        ax.plot(self.velocity_range, grip_lim_a)
-        plt.show()
         
+        self._grip_lim_accel = polyfit(self.velocity_range, grip_lim_a, 3)
+        self._power_lim_accel = csaps(self.velocity_range, power_lim_a)
+        self._accel_capability = csaps(self.velocity_range, accel_cap)
 
-        fig, ax = plt.subplots()
-        ax.plot(self.velocity_range, power_lim_a, "o")
-        ax.plot(velocity_fit_x, accel_cap_fit_y)
-        ax.plot(velocity_fit_x, grip_cap_fit_y)
-        ax.plot(self.velocity_range, grip_lim_a, "x")
-        plt.show()
-        """
+        self._grip_lim_accel.plot(show=False)
+        #self._power_lim_accel.plot()
 
-        AYP = 0.5
+        self._accel_capability.plot(show=False)
+
+
         lateral_g = []
-        delta_l = []
-        beta_l = []
-        AYP_l = []
-        for R in self.radii_range:
-            self.a = self.DYN.wheelbase * (1 - self.DYN.weight_dist_f)
-            self.b = self.DYN.wheelbase * self.DYN.weight_dist_f
-            self.R = R
-            # update speed and downforce
-            V = math.sqrt(R * 9.81 * AYP)
-            LF = self.AERO.Cl * V**2
+        if(self._calc_lateral):
+            for R in self.radii_range:
+                print(f"Calculating: Lat. accel capability for {R}/{self.radii_range[-1]} m")
+                lateral_g.append(self.calc_lateral_accel(R))
 
-            # Update suspension travel
-            dxf = LF * self.AERO.CoP / 2 / self.DYN.ride_rate_f
-            dxr = LF * (1 - self.AERO.CoP) / 2 / self.DYN.ride_rate_r
+            lateral_g = np.array(lateral_g)
+            velocity_y = lateral_g * 9.81
+            velocity_y = np.multiply(velocity_y, self.radii_range)
+            velocity_y = np.sqrt(velocity_y)
 
-            # Get static camber from suspension heave
-            self.IA_0f = self.DYN.static_camber_f - dxf * self.DYN.camber_gain_f
-            self.IA_0r = self.DYN.static_camber_r - dxr * self.DYN.camber_gain_r
+            self._lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
+            self._lateral_capability.plot(show=True)
+        else:
+            # Try and load lateral acceleration from file. if file does not exist, error out
+            # TODO: Implement
+            print("WARNING: Loading precalculated lateral envelope")
+            lateral_g = self._lateral_capability
+            velocity_y = lateral_g * 9.81
+            velocity_y = np.multiply(velocity_y, self.radii_range)
+            velocity_y = np.sqrt(velocity_y)
 
-            # Get loads on each wheel
-            self.wf = (self.DYN.total_weight_f + LF * self.AERO.CoP) / 2
-            self.wr = (self.DYN.total_weight_r + LF * (1 - self.AERO.CoP)) / 2
-
-            # Guess initial ackermann
-            delta = self.DYN.wheelbase / R
-
-            # Assume sideslip starts at 0
-            beta = 0
-            # a, b, R, wf, wr, IA_0f, IA_0r, 0, velocity_fit_x, grip_cap_fit_y
-            x0 = [delta, beta, AYP]
-            lb = [0.01, -.3, .5]
-            ub = [1, .3, 2]
-
-            x = least_squares(self.vogel, x0, bounds=(lb, ub))
-
-            delta = x.x[0]
-            beta = x.x[1]
-            AYP = x.x[2]
-
-            #delta_l.append(delta)
-            #beta_l.append(beta)
-            #AYP_l.append(AYP)
-            
-            V = math.sqrt(self.R * 9.81 * AYP)
-            A_y = V**2 / self.R / 9.81  # (g's)
-
-            lateral_g.append(A_y)
-            
+            self._lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
+            self._lateral_capability.plot(show=True)
         
-        lateral_g = np.array(lateral_g)
-        velocity_y = lateral_g*9.81*self.radii_range
-        velocity_y = np.sqrt(velocity_y)
-        
-        lateral_cap = Polynomial.fit(velocity_y, lateral_g, deg=4)
-        lateral_cap = lateral_cap.linspace()
+        braking_g = []
+        for v in self.velocity_range:
+            print(f"Calculating: Long. braking capability for {v} m/s")
+            Ax = self.calc_grip_lim_max_accel(v)
+            braking_g.append(Ax)
+        self._braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
+        self._braking_capability.plot(show=True)
 
-        res = {
-            "x": velocity_y,
-            "y": lateral_g
-        }
 
-        dbfile = open('./lateral_x_y', 'ab')
-        pickle.dump(res, dbfile)
-        dbfile.close()
 
-        fig, ax = plt.subplots()
-        ax.plot(velocity_y, lateral_g, "o")
-        ax.plot(lateral_cap[0], lateral_cap[1])
-        plt.show()
-        
-
+    # TODO: Memoize the hell out of this function to reduce least squares minimization time.
+    # Will make the lateral accel calcult
     def vogel(self, x):
         deltar = 0
-        
+
         delta = x[0]
         beta = x[1]
         AYP = x[2]
@@ -211,6 +293,14 @@ class GGV:
             * self.DYN.total_weight
             / statistics.mean([self.DYN.trackwidth_f, self.DYN.trackwidth_r])
         )
+        '''
+        WT = (
+            A_y* self.DYN.cg_height
+            * self.DYN.total_weight
+            / statistics.mean([self.DYN.trackwidth_f, self.DYN.trackwidth_r])
+
+        )
+        '''
 
         WTF = WT * self.DYN.LLTD
         WTR = WT * (1 - self.DYN.LLTD)
@@ -258,7 +348,9 @@ class GGV:
         a_r = beta - self.b * omega / V
 
         F_fin = (
-            self._MF52.Fy(a_f, wfin, -IA_f_in) * self.DYN.friction_scaling_y * math.cos(delta)
+            self._MF52.Fy(a_f, wfin, -IA_f_in)
+            * self.DYN.friction_scaling_y
+            * math.cos(delta)
         )  # inputs = (rad Newtons rad)
         F_fout = (
             self._MF52.Fy(a_f, wfout, -IA_f_out)
@@ -270,20 +362,30 @@ class GGV:
             delta
         )
 
-        grip_val = np.interp(V, self.velocity_fit_x, self.grip_cap_fit_y)
+        grip_val = self._grip_lim_accel.evaluate(V)
+        #np.interp(V, self.velocity_fit_x, self.grip_cap_fit_y)
 
         rscale = 1 - (F_xDrag / self.DYN.total_weight / (grip_val)) ** 2
 
-        F_rin = self._MF52.Fy(a_r, wrin, -IA_r_in) * self.DYN.friction_scaling_y * rscale
-        F_rout = self._MF52.Fy(a_r, wrout, -IA_r_out) * self.DYN.friction_scaling_y * rscale
+        F_rin = (
+            self._MF52.Fy(a_r, wrin, -IA_r_in) * self.DYN.friction_scaling_y * rscale
+        )
+        F_rout = (
+            self._MF52.Fy(a_r, wrout, -IA_r_out) * self.DYN.friction_scaling_y * rscale
+        )
 
         F_y = F_fin + F_fout + F_rin + F_rout
+        f_xplt = (F_fin + F_fout) * math.sin(delta) / math.cos(delta) / 400
 
         M_z_diff = F_xDrag * self.PTN.diff_locked * self.DYN.trackwidth_r / 2
         M_z = (F_fin + F_fout) * self.a - (F_rin + F_rout) * self.b - M_z_diff
 
         AY = F_y / self.DYN.total_weight
+
         slipAngle = a_f - math.radians(-12)
         diff_AY = A_y - AY
 
-        return [M_z, slipAngle, diff_AY]
+        if self._vogel_selector == 1:
+            return [M_z, slipAngle, diff_AY]
+        else:
+            return [A_y, f_xplt, a_f, a_r]
