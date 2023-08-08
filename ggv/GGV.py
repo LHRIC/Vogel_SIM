@@ -217,20 +217,20 @@ class GGV:
 
     
     def generate(self):
-        power_lim_a = []
-        grip_lim_a = []
-        accel_cap = []
-        for v in self.velocity_range:
+        power_lim_a = np.empty((len(self.velocity_range),))
+        grip_lim_a = np.empty((len(self.velocity_range),))
+        accel_cap = np.empty((len(self.velocity_range),))
+        for idx, v in enumerate(self.velocity_range):
             print(f"Calculating: Long. accel capability for {v} m/s")
             Ax_r = self.calc_grip_lim_max_accel(v)
-            grip_lim_a.append(Ax_r)
+            grip_lim_a[idx] = (Ax_r)
 
             FX_r, gear_idx = self.calc_power_lim_max_accel(max(7.5, v))
             FX_r -= self.AERO.Cl * v**2  # Downforce: Newtons
             AX_r = FX_r / self.DYN.total_weight
-            power_lim_a.append(AX_r)
+            power_lim_a[idx] = (AX_r)
 
-            accel_cap.append(min(Ax_r, AX_r))
+            accel_cap[idx] = (min(Ax_r, AX_r))
         
         self._grip_lim_accel = polyfit(self.velocity_range, grip_lim_a, 3)
         self._power_lim_accel = csaps(self.velocity_range, power_lim_a)
@@ -242,11 +242,11 @@ class GGV:
         self._accel_capability.plot(show=False)
 
 
-        lateral_g = []
+        lateral_g = np.empty((len(self.radii_range),))
         if(self._calc_lateral):
-            for R in self.radii_range:
+            for idx, R in enumerate(self.radii_range):
                 print(f"Calculating: Lat. accel capability for {R}/{self.radii_range[-1]} m")
-                lateral_g.append(self.calc_lateral_accel(R))
+                lateral_g[idx] = (self.calc_lateral_accel(R))
 
             lateral_g = np.array(lateral_g)
             velocity_y = lateral_g * 9.81
@@ -267,11 +267,11 @@ class GGV:
             self._lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
             self._lateral_capability.plot(show=True)
         
-        braking_g = []
-        for v in self.velocity_range:
+        braking_g = np.empty((len(self.velocity_range),))
+        for idx, v in enumerate(self.velocity_range):
             print(f"Calculating: Long. braking capability for {v} m/s")
             Ax = self.calc_grip_lim_max_accel(v)
-            braking_g.append(Ax)
+            braking_g[idx] = (Ax)
         self._braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
         self._braking_capability.plot(show=True)
 
