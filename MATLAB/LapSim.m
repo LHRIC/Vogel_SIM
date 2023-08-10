@@ -136,10 +136,7 @@ for  i = 1:1:length(velocity) % for each velocity
     A_xr(i) = AX; % little x defines the grip limited maximum accleration
     output = Powertrainlapsim(max(7.5,V)); % 7.5 reg, 10 launch
     FX = output(1); % Newtons: Force on tire contact patch
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %Should be Cl right??? - TM
-    FX = FX-Cd*V^2; % Adding the effect of downforce
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    FX = FX-Cd*V^2; % Adding the effect of drag
     fx(i) = FX/W;
     AX(i) = min(FX/W,A_xr(i));
     output = Powertrainlapsim(V);
@@ -201,7 +198,7 @@ load('lateralg.mat')
 %disp("////////////////////////////////////WARNING////////////////////" + ...
 %    "LOADING PRECALCULATED LATERALG")
 
-
+%{
 lateralg = zeros(1,length(radii));
 p = zeros(3, length(radii));
 disp(radii);
@@ -290,7 +287,7 @@ grid minor
 lgd = legend('','Fitted Curve');
 lgd.FontSize = 14;
 
-
+%}
 
 
 % Braking Performance

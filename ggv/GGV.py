@@ -25,6 +25,7 @@ class GGV:
 
         self.curr_gear = 1
         self.shift_count = 1
+        self.expected_gears = []
 
         self._vogel_selector = 1
         self._calc_lateral = False
@@ -33,9 +34,10 @@ class GGV:
         self._power_lim_accel = None
 
         # These three FitFunctions describe the entire performance envelope (GGV) of the car.
-        self._accel_capability = None
-        self._braking_capability = None
-        self._lateral_capability = np.array([
+        self.accel_capability = None
+        self.cornering_capability = None
+        self.braking_capability = None
+        self.lateral_capability = np.array([
             1.38195832278988,
             1.42938584362690,
             1.46626343925345,
@@ -114,6 +116,7 @@ class GGV:
         wheel_torque = crankshaft_torque * total_red * self.PTN.drivetrain_losses
         Fx = wheel_torque / self.DYN.tire_radius
 
+        # gear_idx is what gear we are in after acceling to the input velocity
         return (Fx, gear_idx)
 
     def calc_lateral_accel(self, R):
@@ -220,26 +223,26 @@ class GGV:
         power_lim_a = np.empty((len(self.velocity_range),))
         grip_lim_a = np.empty((len(self.velocity_range),))
         accel_cap = np.empty((len(self.velocity_range),))
+
+        '''The gear that you start each velocity iteration in'''
         for idx, v in enumerate(self.velocity_range):
-            print(f"Calculating: Long. accel capability for {v} m/s")
+            #print(f"Calculating: Long. accel capability for {v} m/s")
             Ax_r = self.calc_grip_lim_max_accel(v)
             grip_lim_a[idx] = (Ax_r)
 
             FX_r, gear_idx = self.calc_power_lim_max_accel(max(7.5, v))
+            self.expected_gears.append(gear_idx)
+
             FX_r -= self.AERO.Cl * v**2  # Downforce: Newtons
             AX_r = FX_r / self.DYN.total_weight
             power_lim_a[idx] = (AX_r)
 
             accel_cap[idx] = (min(Ax_r, AX_r))
         
+
         self._grip_lim_accel = polyfit(self.velocity_range, grip_lim_a, 3)
         self._power_lim_accel = csaps(self.velocity_range, power_lim_a)
-        self._accel_capability = csaps(self.velocity_range, accel_cap)
-
-        self._grip_lim_accel.plot(show=False)
-        #self._power_lim_accel.plot()
-
-        self._accel_capability.plot(show=False)
+        self.accel_capability = csaps(self.velocity_range, accel_cap)
 
 
         lateral_g = np.empty((len(self.radii_range),))
@@ -253,27 +256,27 @@ class GGV:
             velocity_y = np.multiply(velocity_y, self.radii_range)
             velocity_y = np.sqrt(velocity_y)
 
-            self._lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
-            self._lateral_capability.plot(show=True)
+            self.lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
+
         else:
             # Try and load lateral acceleration from file. if file does not exist, error out
             # TODO: Implement
             print("WARNING: Loading precalculated lateral envelope")
-            lateral_g = self._lateral_capability
+            lateral_g = self.lateral_capability
             velocity_y = lateral_g * 9.81
             velocity_y = np.multiply(velocity_y, self.radii_range)
             velocity_y = np.sqrt(velocity_y)
 
-            self._lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
-            self._lateral_capability.plot(show=True)
+            self.lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
+            
+        self.cornering_capability = polyfit(self.radii_range, velocity_y, 4)
         
         braking_g = np.empty((len(self.velocity_range),))
         for idx, v in enumerate(self.velocity_range):
             print(f"Calculating: Long. braking capability for {v} m/s")
             Ax = self.calc_grip_lim_max_accel(v)
             braking_g[idx] = (Ax)
-        self._braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
-        self._braking_capability.plot(show=True)
+        self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
 
 
 

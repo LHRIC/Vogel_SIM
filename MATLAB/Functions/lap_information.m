@@ -39,22 +39,22 @@ KT(find(abs(KT)<1/r_max)) = 1/r_max;
 RT = abs(1./KT);
 RT(end-2:end) = [];
 
-% figure
-% patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
-% h = colorbar;
-% set(get(h,'title'),'string','Curvature');
-% set(gca,'XTick',[], 'YTick', [])
+figure
+patch(path_points(:,1),path_points(:,2),KT,KT,'EdgeColor','interp','FaceColor','none')
+h = colorbar;
+set(get(h,'title'),'string','Curvature');
+set(gca,'XTick',[], 'YTick', [])
 
-% x = linspace(1,t(end-1),10000);
-% ppv = csaps(t,path_points,1);
-% vehicle_path = ppval(ppv,x);
-%  if showPlots == true
-% figure
-% plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
-% hold on
-% fnplt(ppv)
-% hold on
-% end
+x = linspace(1,t(end-1),10000);
+%ppv = csaps(t,path_points,1);
+%vehicle_path = ppval(ppv,x);
+if showPlots == true
+figure
+plot(track.X/1000,track.Y/1000,'o',track.X(1)/1000,track.Y(1)/1000,'o')
+%hold on
+%fnplt(ppv)
+%hold on
+end
 
 % x = linspace(1,t(end-1),1000);
 % ppv = interp1([1:length(path_points)],path_points,x,'makima');
@@ -177,6 +177,8 @@ for i = 1:1:length(segment) % for each track segment
             gear = newgear;
         end
     end
+
+    
     if shifting == 1
         gear = gear;
     else
@@ -238,12 +240,12 @@ end
 % Initiate forward sim again, knowing your starting velocity now
 
 count = 0;
-    v = V0;
-    vel = v;
-    gears = find((shift_points-vel)>0);
-    gear = gears(1)-1;
-    newgear = gear;
-    time_shifting = 0;
+v = V0;
+vel = v;
+gears = find((shift_points-vel)>0);
+gear = gears(1)-1;
+newgear = gear;
+time_shifting = 0;
 for i = 1:1:length(segment)
     d = dist(i);
 
