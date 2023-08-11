@@ -21,13 +21,23 @@ class Vehicle:
         self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max)
         
         self.trajectory = Trajectory.Trajectory(trajectory_path, self.GGV.radii_range[0], self.GGV.radii_range[-1])
+        print(self.trajectory.num_points)
         self._interval = 10
 
-        self._mesh_size = self.trajectory.num_points * self._interval
+        self._mesh_size = (self.trajectory.num_points) * self._interval
         self.count = np.zeros(self._mesh_size)
-        self.dist = np.zeros(self._mesh_size)
-        self.velocity = np.zeros(self._mesh_size)
-        self.gear = np.zeros(self._mesh_size)
+
+        self.dist_f = np.zeros(self._mesh_size)
+        self.dist_r = np.zeros(self._mesh_size)
+
+        self.x = np.zeros(self._mesh_size)
+        self.y = np.zeros(self._mesh_size)
+
+        self.velocity_f = np.zeros(self._mesh_size)
+        self.velocity_r = np.zeros(self._mesh_size)
+
+        self.gear_f = np.zeros(self._mesh_size)
+        self.gear_r = np.zeros(self._mesh_size)
     
     def simulate_forwards(self, starting_v):
         vel = starting_v
@@ -36,27 +46,27 @@ class Vehicle:
         time_shifting = 0
         is_shifting = False
         count = 0
-        distance = 0
-
-        for point_idx in range(self.trajectory.num_points - 1):
+        distance= 0
+        for point_idx in range(self.trajectory.num_points):
             x_1 = self.trajectory.points[0][point_idx]
             y_1 = self.trajectory.points[1][point_idx]
-            x_2 = self.trajectory.points[0][point_idx + 1]
-            y_2 = self.trajectory.points[1][point_idx + 1]
+            x_2 = self.trajectory.points[0][(point_idx + 1) % self.trajectory.num_points]
+            y_2 = self.trajectory.points[1][(point_idx + 1) % self.trajectory.num_points]
 
             '''Distance of trajectory interval in meters'''
             dist = math.sqrt((x_1-x_2)**2 + (y_2-y_1)**2)
 
             r = self.trajectory.radii[point_idx]
 
-            '''Max Achievable Cornering Velocity'''
+            '''Max Achievable Cornering Velocity through this segment'''
             v_max = min(self.v_max, self.GGV.cornering_capability.evaluate(r))
 
-            for i in range(len(self.GGV.expected_gears)):
-                if(self.GGV.expected_gears[i] > vel):
-                    required_gear = self.GGV.expected_gears[i]
+            for idx, v in enumerate(self.GGV.velocity_range):
+                if(v > vel):
+                    required_gear = self.GGV.expected_gears[idx]
+                    break
             
-            is_shifting = required_gear > gear
+            is_shifting = required_gear != gear
 
             AX_cap = self.GGV.accel_capability.evaluate(vel)
             AY_cap = self.GGV.lateral_capability.evaluate(vel)
@@ -65,6 +75,14 @@ class Vehicle:
             delta_d = dist / self._interval
 
             for j in range(self._interval):
+                self.x[count] = x_1 + (x_2 - x_1) * j/self._interval
+                self.y[count] = y_1 + (y_2 - y_1) * j/self._interval
+
+                self.count[count] = count
+                self.velocity_f[count] = vel
+                self.gear_f[count] = gear
+                self.dist_f[count] =  distance + delta_d * j
+
                 dt = delta_d / vel
                 if is_shifting and vel < v_max:
                     # Currently shifting, do not accelerate
@@ -96,26 +114,62 @@ class Vehicle:
                     is_shifting = False
                     time_shifting = 0
                     gear = required_gear
-
-                self.count[count] = count
-                self.dist[count] = distance
-                self.velocity[count] = vel
-                self.gear[count] = gear
-
+                
                 count += 1
-                distance += delta_d
 
-        fig, ax = plt.subplots()
-        ax.plot(self.dist, self.velocity)
-        plt.show()
+            distance += dist
+        '''
         c = []
-        for i in range(self._mesh_size):
+        for i in range(self._mesh_size + 1):
             if i % self._interval == 0:
                 c.append(self.gear[i])
             
         plt.scatter(self.trajectory.points[0], self.trajectory.points[1], c=c)
         plt.colorbar()
         plt.show()
+        '''
+        
+
+    def simulate_reverse(self):
+        vel = self.velocity_f[-1]
+        distance = 0
+        count = int(self.count[-1])
+        for point_idx in range(self.trajectory.num_points - 1, -1, -1):
+            x_1 = self.trajectory.points[0][point_idx]
+            y_1 = self.trajectory.points[1][point_idx]
+            x_2 = self.trajectory.points[0][(point_idx - 1) % self.trajectory.num_points]
+            y_2 = self.trajectory.points[1][(point_idx - 1) % self.trajectory.num_points]
+
+            '''Distance of trajectory interval in meters'''
+            dist = math.sqrt((x_1-x_2)**2 + (y_2-y_1)**2)
+
+            r = self.trajectory.radii[point_idx]
+
+            '''Max Achievable Cornering Velocity through this segment'''
+            v_max = min(self.v_max, self.GGV.cornering_capability.evaluate(r))
+
+            AX_cap = self.GGV.accel_capability.evaluate(vel)
+            AY_cap = self.GGV.lateral_capability.evaluate(vel)
+            AY_actual = vel ** 2 / (r * 9.81)
+
+            delta_d = dist/self._interval
+            for j in range(self._interval):
+                self.velocity_r[count] = vel
+                self.dist_r[count] =  distance + delta_d * j
+                if vel < v_max:
+                    AX_actual = AX_cap*(1-(min(AY_cap,AY_actual)/AY_cap)**2)
+                    p = Polynomial([-delta_d, vel, 0.5*9.81*AX_actual])
+                    tt = p.roots()
+                    dt = max(tt)
+                    dv = 9.81 * AX_actual * dt
+                    dv_max = v_max - vel
+                    vel += min(dv, dv_max)
+                else:
+                    vel = v_max
+
+                count -= 1
+            distance += dist
+                
 
 if __name__ == "__main__":
     v = Vehicle()

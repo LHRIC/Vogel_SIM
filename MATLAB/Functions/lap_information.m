@@ -178,12 +178,13 @@ for i = 1:1:length(segment) % for each track segment
         end
     end
 
-    
+
     if shifting == 1
         gear = gear;
     else
         gear = newgear;
     end
+    disp(gear);
 end
 
 dtot = 0;    
