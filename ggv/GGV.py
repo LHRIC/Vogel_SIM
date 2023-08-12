@@ -11,11 +11,12 @@ import models
 from fitting import csaps, polyfit
 
 class GGV:
-    def __init__(self, AERO: models.AERO, DYN: models.DYN, PTN: models.PTN, gear_tot, v_max):
+    def __init__(self, AERO: models.AERO, DYN: models.DYN, PTN: models.PTN, gear_tot, v_max, matlab_engine):
         self.AERO = AERO
         self.DYN = DYN
         self.PTN = PTN
-        self._MF52 = MF52()
+        print(self.DYN.vehicle_weight)
+        self._MF52 = MF52(matlab_engine)
 
         self.gear_tot = gear_tot
         self.v_max = v_max

@@ -6,7 +6,7 @@ class DYN:
         self.LLTD = 0.5
         self.driver_weight = 96
         self.vehicle_weight = 400
-        self.total_weight = 496
+        self.total_weight = self.driver_weight + self.vehicle_weight
 
         self.weight_dist_f = 0.45
         self.cg_height = 12.5  # inches

@@ -2,9 +2,8 @@ import math
 import matlab.engine
 
 class MF52:
-    def __init__(self):
-        print("Starting Matlab Engine")
-        self.__matlab_engine = matlab.engine.start_matlab()
+    def __init__(self, matlab_engine):
+        self.__matlab_engine = matlab_engine
         # This is called from the root path for some reason.
         # possibly called in the location of the file that created
         # an instance of the MF52 class.

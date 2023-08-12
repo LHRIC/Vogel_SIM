@@ -9,35 +9,67 @@ import matplotlib.pyplot as plt
 import matlab
 
 class Vehicle:
-    def __init__(self, trajectory_path):
-        self.AERO = models.AERO()
-        self.DYN = models.DYN()
-        self.PTN = models.PTN()
+    def __init__(self, trajectory_path, AERO, DYN, PTN, mesh_resolution=10):
+        self.AERO = AERO
+        self.DYN = DYN
+        self.PTN = PTN
+
+        print("Starting Matlab Engine")
+        self._matlab_engine = matlab.engine.start_matlab()
 
         '''Total Reduction'''
         self.gear_tot = self.PTN.gear_ratios[-1] * self.PTN.final_drive * self.PTN.primary_reduction
         '''Max Achievable Velocity, assuming RPM never exceeds shiftpoint'''
         self.v_max = self.PTN.shiftpoint / (self.gear_tot/self.DYN.tire_radius*60/(2 * math.pi))
-        self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max)
+        self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max, self._matlab_engine)
         
         self.trajectory = Trajectory.Trajectory(trajectory_path, self.GGV.radii_range[0], self.GGV.radii_range[-1])
         print(self.trajectory.num_points)
-        self._interval = 10
+        self._interval = mesh_resolution
 
         self._mesh_size = (self.trajectory.num_points) * self._interval
         self.count = np.zeros(self._mesh_size)
 
-        self.dist_f = np.zeros(self._mesh_size)
-        self.dist_r = np.zeros(self._mesh_size)
+        self.time = np.zeros(self._mesh_size)
 
         self.x = np.zeros(self._mesh_size)
         self.y = np.zeros(self._mesh_size)
+
+        '''Vehicle State Attributes'''
+        
+        self.dist_f = np.zeros(self._mesh_size)
+        self.dist_r = np.zeros(self._mesh_size)
 
         self.velocity_f = np.zeros(self._mesh_size)
         self.velocity_r = np.zeros(self._mesh_size)
 
         self.gear_f = np.zeros(self._mesh_size)
         self.gear_r = np.zeros(self._mesh_size)
+
+    def reset_ggv(self):
+        self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max, self._matlab_engine)   
+
+    def simulate(self):
+        vel = 20 * 0.3048; # m/s
+        self.simulate_forwards(vel)
+        self.simulate_reverse()
+        self.simulate_forwards(self.velocity_r[0])
+
+        comb = np.zeros(len(self.velocity_r))
+        for i in self.count:
+            i = int(i)
+            m = min(self.velocity_f[i], self.velocity_r[i])
+            comb[i] = m
+
+        '''
+        ax.plot(self.dist_f, comb)
+        plt.show()
+        plt.scatter(self.x, self.y, c=comb)
+        plt.colorbar()
+        plt.show()
+        '''
+
+        return max(self.time)  
     
     def simulate_forwards(self, starting_v):
         vel = starting_v
@@ -47,6 +79,7 @@ class Vehicle:
         is_shifting = False
         count = 0
         distance= 0
+        time = 0
         for point_idx in range(self.trajectory.num_points):
             x_1 = self.trajectory.points[0][point_idx]
             y_1 = self.trajectory.points[1][point_idx]
@@ -84,6 +117,7 @@ class Vehicle:
                 self.dist_f[count] =  distance + delta_d * j
 
                 dt = delta_d / vel
+                self.time[count] = time + dt * j
                 if is_shifting and vel < v_max:
                     # Currently shifting, do not accelerate
                     dt = delta_d / vel
@@ -116,7 +150,8 @@ class Vehicle:
                     gear = required_gear
                 
                 count += 1
-
+                time += dt
+            
             distance += dist
         '''
         c = []
@@ -128,7 +163,6 @@ class Vehicle:
         plt.colorbar()
         plt.show()
         '''
-        
 
     def simulate_reverse(self):
         vel = self.velocity_f[-1]
@@ -169,15 +203,4 @@ class Vehicle:
 
                 count -= 1
             distance += dist
-                
-
-if __name__ == "__main__":
-    v = Vehicle()
-    #print(len(v.PTN.rpm_range))
-    #print(len(v.PTN.torque_curve))
-    v.GGV.generate()
-    t = Trajectory.Trajectory("./trajectory/17_lincoln_endurance_track_highres.xls", v.GGV.radii_range[0], v.GGV.radii_range[-1])
-    plt.scatter(t._trajectory[0], t._trajectory[1], c=t._radii)
-    plt.colorbar()
-    plt.show()
 
