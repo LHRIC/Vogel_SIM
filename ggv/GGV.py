@@ -15,7 +15,6 @@ class GGV:
         self.AERO = AERO
         self.DYN = DYN
         self.PTN = PTN
-        print(self.DYN.vehicle_weight)
         self._MF52 = MF52(matlab_engine)
 
         self.gear_tot = gear_tot

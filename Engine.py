@@ -11,12 +11,6 @@ class Engine:
         self._vehicle.GGV.generate()
         laptime = self._vehicle.simulate()
         
-        '''
-        plt.scatter(self._vehicle.x, self._vehicle.y, c=self._vehicle.ax)
-        plt.colorbar()
-
-        plt.show()
-        '''
         fig, ax = plt.subplots()
         ax.axis('equal')
         plt.scatter(self._vehicle.ay, self._vehicle.ax)
@@ -37,17 +31,33 @@ class Engine:
         
         
 
-    def sweep(self, lb, ub, step_size) -> None:
-        sweep_range = np.linspace(lb, ub, num=step_size)
-        times = []
-        for p in sweep_range:
-            self._vehicle.GGV.DYN.total_weight = p
-            self._vehicle.GGV.generate()
-            laptime = self._vehicle.simulate()
-            times.append(laptime)
-            self._vehicle.reset_ggv()
+    def sweep(self, num_steps, **kwargs) -> None:
+        if(len(kwargs) > 1):
+            print("WARN: Coupled parameter sweeps are not yet supported")
+            return
+        else:
+            sweep_param = list(kwargs.keys())[0]
+            sweep_class = None
+            if getattr(self._vehicle.AERO, sweep_param, None) is not None:
+                sweep_class = self._vehicle.AERO
+            elif getattr(self._vehicle.DYN, sweep_param, None) is not None:
+                sweep_class = self._vehicle.DYN
+            elif getattr(self._vehicle.PTN, sweep_param, None) is not None:
+                sweep_class = self._vehicle.PTN
+            else:
+                print(f'ERROR: Parameter "{sweep_param}" not found')
+                return
+            sweep_range = kwargs[sweep_param]
+            sweep_range = np.linspace(sweep_range[0], sweep_range[1], num=num_steps)
+            times = []
+            for p in sweep_range:
+                setattr(sweep_class, sweep_param, p)
+                self._vehicle.GGV.generate()
+                laptime = self._vehicle.simulate()
+                times.append(laptime)
+                self._vehicle.reset_ggv()
 
-        fig, ax = plt.subplots()
-        ax.plot(sweep_range, times, "o-")
-        plt.show()
+            fig, ax = plt.subplots()
+            ax.plot(sweep_range, times, "o-")
+            plt.show()
         
