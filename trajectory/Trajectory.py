@@ -12,8 +12,8 @@ class Trajectory:
 
         self.load(file)
         self.calc_curvature(self.points[0], self.points[1])
-        self._curvature[self._curvature == 0] = 1e-6
-        self.radii = np.divide(1, self._curvature)
+        self._curvature[self._curvature == 0] = 1e-12
+        self.radii = np.divide(1, np.abs(self._curvature))
 
         # Clamp the trajectory turn radii to the GGV limits
         self.radii[self.radii > r_max] = r_max
@@ -38,7 +38,7 @@ class Trajectory:
         xx_t = np.gradient(x_t)
         yy_t = np.gradient(y_t)
 
-        self._curvature = np.abs(xx_t * y_t - x_t * yy_t) / (x_t * x_t + y_t * y_t)**1.5
+        self._curvature = (xx_t * y_t - x_t * yy_t) / (x_t * x_t + y_t * y_t)**1.5
         
         
 

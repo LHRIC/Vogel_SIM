@@ -76,6 +76,7 @@ class GGV:
         while A_x_diff > 0:
             Ax += 0.01
             pitch = -Ax * self.DYN.pitch_grad
+            # Calc load on each tire
             wr = (self.DYN.total_weight_r + downforce * (1 - self.AERO.CoP)) / 2
             wr += (
                 Ax * self.DYN.cg_height * self.DYN.total_weight / self.DYN.wheelbase / 2
@@ -121,6 +122,7 @@ class GGV:
         return (Fx, gear_idx)
 
     def calc_lateral_accel(self, R):
+        # Almost like an estimation of the over/understeer balance of the car
         AYP = 0.5
 
         self.a = self.DYN.wheelbase * (1 - self.DYN.weight_dist_f)
@@ -234,7 +236,8 @@ class GGV:
             FX_r, gear_idx = self.calc_power_lim_max_accel(max(7.5, v))
             self.expected_gears.append(gear_idx)
 
-            FX_r -= self.AERO.Cl * v**2  # Downforce: Newtons
+            # TODO: Investigate whether or not the grip limited case should subtract drag as well.
+            FX_r -= self.AERO.Cd * v**2  #Take drag into account
             AX_r = FX_r / self.DYN.total_weight
             power_lim_a[idx] = (AX_r)
 
@@ -292,6 +295,8 @@ class GGV:
 
         V = math.sqrt(self.R * 9.81 * AYP)
         A_y = V**2 / self.R / 9.81  # (g's)
+
+        '''Calculate the weight transfer from cornering'''
         WT = (
             A_y
             * self.DYN.cg_height
@@ -313,6 +318,8 @@ class GGV:
         phif = A_y * self.DYN.roll_grad_f
         phir = A_y * self.DYN.roll_grad_f
 
+
+        '''Apply weight transfer to each tire accordingly'''
         wfin = self.wf - WTF
         wfout = self.wf + WTF
         wrin = self.wr - WTR

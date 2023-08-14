@@ -24,7 +24,6 @@ class Vehicle:
         self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max, self._matlab_engine)
         
         self.trajectory = Trajectory.Trajectory(trajectory_path, self.GGV.radii_range[0], self.GGV.radii_range[-1])
-        print(self.trajectory.num_points)
         self._interval = mesh_resolution
 
         self._mesh_size = (self.trajectory.num_points) * self._interval
@@ -36,15 +35,26 @@ class Vehicle:
         self.y = np.zeros(self._mesh_size)
 
         '''Vehicle State Attributes'''
-        
+        self.dist = np.zeros(self._mesh_size)
         self.dist_f = np.zeros(self._mesh_size)
         self.dist_r = np.zeros(self._mesh_size)
 
+        self.turn_dir = np.zeros(self._mesh_size)
+
+        self.velocity = np.zeros(self._mesh_size)
         self.velocity_f = np.zeros(self._mesh_size)
         self.velocity_r = np.zeros(self._mesh_size)
 
-        self.gear_f = np.zeros(self._mesh_size)
-        self.gear_r = np.zeros(self._mesh_size)
+        self.gear = np.zeros(self._mesh_size)
+
+        self.ax = np.zeros(self._mesh_size)
+        self.ax_f = np.zeros(self._mesh_size)
+        self.ax_r = np.zeros(self._mesh_size)
+
+        self.ay = np.zeros(self._mesh_size)
+        self.ay_f = np.zeros(self._mesh_size)
+        self.ay_r = np.zeros(self._mesh_size)
+
 
     def reset_ggv(self):
         self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max, self._matlab_engine)   
@@ -55,12 +65,23 @@ class Vehicle:
         self.simulate_reverse()
         self.simulate_forwards(self.velocity_r[0])
 
-        comb = np.zeros(len(self.velocity_r))
         for i in self.count:
             i = int(i)
-            m = min(self.velocity_f[i], self.velocity_r[i])
-            comb[i] = m
+            self.dist[i] = self.dist_f[i]
+            if self.velocity_f[i] < self.velocity_r[i]:
+                self.velocity[i] = self.velocity_f[i]
+                self.ax[i] = self.ax_f[i]
+                self.ay[i] = self.ay_f[i]
+            else:
+                self.velocity[i] = self.velocity_r[i]
+                self.ax[i] = -1 * self.ax_r[i]
+                self.ay[i] = self.ay_r[i]
 
+            '''Determine turn handedness and remove outliers'''
+            self.ay = np.multiply(self.ay, self.turn_dir)
+            self.ay[self.ay > self.GGV.lateral_capability.evaluate(self.v_max + 1)] = self.GGV.lateral_capability.evaluate(self.v_max + 1)
+        
+        
         '''
         ax.plot(self.dist_f, comb)
         plt.show()
@@ -111,9 +132,13 @@ class Vehicle:
                 self.x[count] = x_1 + (x_2 - x_1) * j/self._interval
                 self.y[count] = y_1 + (y_2 - y_1) * j/self._interval
 
+                self.ay_f[count] = AY_actual
+
+                self.turn_dir[count] = np.sign(self.trajectory._curvature[point_idx])
+
                 self.count[count] = count
                 self.velocity_f[count] = vel
-                self.gear_f[count] = gear
+                self.gear[count] = gear
                 self.dist_f[count] =  distance + delta_d * j
 
                 dt = delta_d / vel
@@ -122,14 +147,22 @@ class Vehicle:
                     # Currently shifting, do not accelerate
                     dt = delta_d / vel
                     time_shifting += dt
+                    self.ax_f[count] = 0
                 elif vel < v_max:
-                    ax_potential = AX_cap*(1-(min(AY_cap,AY_actual)/AY_cap)**2)
-                
+                    # Take a slice of the GGV using AX_cap and AY_cap as verticies
+                    # the actual lateral acceleration will define the remaining longitudinal acceleration.
+                    ax_potential = AX_cap*math.sqrt(1-(min(AY_cap,AY_actual)/AY_cap)**2)
+                    self.ax_f[count] = ax_potential
+
+                    # Solve the 1D kinematic equation for time
                     p = Polynomial([-delta_d, vel, 0.5*9.81*ax_potential])
                     tt = p.roots()
                     dt = max(tt)
 
+                    #Solve for change in velocity
                     dv = 9.81 * ax_potential * dt
+
+                    #Clamp new velocity to v_max
                     vel = min(v_max, vel + dv)
 
                     for i in range(len(self.GGV.expected_gears)):
@@ -141,6 +174,7 @@ class Vehicle:
                     # Vehicle is neither shifting or accelerating, is at vmax
                     vel = v_max
                     dt = delta_d / vel
+                    self.ax_f[count] = 0
 
                 
 
@@ -190,8 +224,11 @@ class Vehicle:
             for j in range(self._interval):
                 self.velocity_r[count] = vel
                 self.dist_r[count] =  distance + delta_d * j
+
+                self.ay_r[count] = AY_actual
                 if vel < v_max:
                     AX_actual = AX_cap*(1-(min(AY_cap,AY_actual)/AY_cap)**2)
+                    self.ax_r[count] = AX_actual
                     p = Polynomial([-delta_d, vel, 0.5*9.81*AX_actual])
                     tt = p.roots()
                     dt = max(tt)
@@ -200,6 +237,7 @@ class Vehicle:
                     vel += min(dv, dv_max)
                 else:
                     vel = v_max
+                    self.ax_r[count] = 0
 
                 count -= 1
             distance += dist
