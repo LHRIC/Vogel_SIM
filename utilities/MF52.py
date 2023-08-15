@@ -15,9 +15,9 @@ class MF52:
         # an instance of the MF52 class.
         
         self.FZ0 = 800  # Nominal tire load: newtons
-        self.lCoeff = [1.32384487892880, 2.14482184949554, -0.100000000000000, 0.00116791584176700, -3.47327118568818, -4.08922340024882, 0.374047785439375, -1.56483287414258e-18, 25, 0.100000000000000, -
+        self.longCoeff = [1.32384487892880, 2.14482184949554, -0.100000000000000, 0.00116791584176700, -3.47327118568818, -4.08922340024882, 0.374047785439375, -1.56483287414258e-18, 25, 0.100000000000000, -
                           0.784633274177115, -0.00421824086612800, -0.00312988012049700, -0.0166570654892410, -0.100000000000000, -0.601337395748281, 0.0144461947641190, -0.262573151301394, 0.0266010058725470, 0, 0, 0, 0, 0, 0, 0]
-        
+        self.latCoeff = [0.349, -0.00115, 8.760, 730.300, 1745.322, 0.0139, -0.000277, 1.02025435, 0, 0, 0, 0, 0, 0, 0, 0.00362, -0.0143, -0.0116]
         self.c_Fx = None
         self.c_Fy = None
 
@@ -37,13 +37,14 @@ class MF52:
             raise RuntimeError(f"Requested parameter ({Fz}, {GammaX}, {SL}) outside of Fx tire model bounds") 
         else:
             return Fx 
+    '''
     def Fy(self, ALPHA, Fz, GAMMA):
         Fy = self.c_Fy((ALPHA, Fz, GAMMA))
         if(math.isnan(Fy)):
             raise RuntimeError(f"Requested parameter ({ALPHA}, {Fz}, {GAMMA}) outside of Fy tire model bounds") 
         else:
             return Fy
-
+    '''
 
     def Fx(self, Fz, GammaX, SL):
         Fz = abs(Fz)
@@ -51,32 +52,32 @@ class MF52:
         DFz = (Fz - Fz0PR) / Fz0PR
 
         # Setting initial parameters
-        PCx1 = self.lCoeff[0]
-        PDx1 = self.lCoeff[1]
-        PDx2 = self.lCoeff[2]
-        PDx3 = self.lCoeff[3]
-        PEx1 = self.lCoeff[4]
-        PEx2 = self.lCoeff[5]
-        PEx3 = self.lCoeff[6]
-        PEx4 = self.lCoeff[7]
-        PKx1 = self.lCoeff[8]
-        PKx2 = self.lCoeff[9]
-        PKx3 = self.lCoeff[10]
-        PHx1 = self.lCoeff[11]
-        PHx2 = self.lCoeff[12]
-        PVx1 = self.lCoeff[13]
-        PVx2 = self.lCoeff[14]
-        PPx1 = self.lCoeff[15]
-        PPx2 = self.lCoeff[16]
-        PPx3 = self.lCoeff[17]
-        PPx4 = self.lCoeff[18]
-        RBx1 = self.lCoeff[19]
-        RBx2 = self.lCoeff[20]
-        RBx3 = self.lCoeff[21]
-        RCx1 = self.lCoeff[22]
-        REx1 = self.lCoeff[23]
-        REx2 = self.lCoeff[24]
-        RHx1 = self.lCoeff[25]
+        PCx1 = self.longCoeff[0]
+        PDx1 = self.longCoeff[1]
+        PDx2 = self.longCoeff[2]
+        PDx3 = self.longCoeff[3]
+        PEx1 = self.longCoeff[4]
+        PEx2 = self.longCoeff[5]
+        PEx3 = self.longCoeff[6]
+        PEx4 = self.longCoeff[7]
+        PKx1 = self.longCoeff[8]
+        PKx2 = self.longCoeff[9]
+        PKx3 = self.longCoeff[10]
+        PHx1 = self.longCoeff[11]
+        PHx2 = self.longCoeff[12]
+        PVx1 = self.longCoeff[13]
+        PVx2 = self.longCoeff[14]
+        PPx1 = self.longCoeff[15]
+        PPx2 = self.longCoeff[16]
+        PPx3 = self.longCoeff[17]
+        PPx4 = self.longCoeff[18]
+        RBx1 = self.longCoeff[19]
+        RBx2 = self.longCoeff[20]
+        RBx3 = self.longCoeff[21]
+        RCx1 = self.longCoeff[22]
+        REx1 = self.longCoeff[23]
+        REx2 = self.longCoeff[24]
+        RHx1 = self.longCoeff[25]
 
         SHx = RHx1
         Ex = REx1+REx2*DFz
@@ -114,6 +115,23 @@ class MF52:
             Fy = engine.mfeval_wrapper(X)
         return Fy
     
+    def Fy(self, SL, Fz, IA):
+        SL = math.degrees(SL)
+        IA = math.degrees(IA)
+
+        [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17] = self.latCoeff
+        C = a0
+        D = Fz * (a1 * Fz + a2) * (1 - a15 * IA ** 2)
+
+        BCD = a3 * math.sin(math.atan(Fz / a4) * 2) * (1 - a5 * abs(IA))
+        B = BCD / (C * D)
+
+        H = a8 * Fz + a9 + a10 * IA
+        E = (a6 * Fz + a7) * (1 - (a16 * IA + a17) * math.copysign(1, SL + H))
+        V = a11 * Fz + a12 + (a13 * Fz + a14) * IA * Fz
+        Bx1 = B * (SL + H)
+        
+        return 0.52 * (D * math.sin(C * math.atan(Bx1 - E * (Bx1 - math.atan(Bx1)))) + V) * -1
 if __name__ == '__main__':
     tm = MF52()
     '''
