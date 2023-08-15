@@ -131,7 +131,7 @@ class MF52:
         V = a11 * Fz + a12 + (a13 * Fz + a14) * IA * Fz
         Bx1 = B * (SL + H)
         
-        return 0.52 * (D * math.sin(C * math.atan(Bx1 - E * (Bx1 - math.atan(Bx1)))) + V) * -1
+        return (D * math.sin(C * math.atan(Bx1 - E * (Bx1 - math.atan(Bx1)))) + V) * -1
 if __name__ == '__main__':
     tm = MF52()
     '''

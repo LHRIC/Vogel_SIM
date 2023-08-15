@@ -2,7 +2,7 @@ from Vehicle import Vehicle
 import numpy as np
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
-from multiprocessing import Manager, Pool, Queue 
+from multiprocessing import Manager, Pool, Queue, cpu_count
 import os
 
 class Engine:
@@ -64,7 +64,8 @@ class Engine:
             sweep_range = np.linspace(sweep_range[0], sweep_range[1], num=num_steps)
             times = []
 
-            with Pool(num_steps) as p:
+            num_processes = cpu_count() * 2
+            with Pool(num_processes) as p:
                 times = p.map(self.compute_task, sweep_range)
                         
 
