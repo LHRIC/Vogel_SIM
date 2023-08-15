@@ -12,16 +12,13 @@ class Vehicle:
     def __init__(self, trajectory_path, AERO, DYN, PTN, mesh_resolution=10):
         self.AERO = AERO
         self.DYN = DYN
-        self.PTN = PTN
-
-        print("Starting Matlab Engine")
-        self._matlab_engine = matlab.engine.start_matlab()
+        self.PTN = PTN        
 
         '''Total Reduction'''
         self.gear_tot = self.PTN.gear_ratios[-1] * self.PTN.final_drive * self.PTN.primary_reduction
         '''Max Achievable Velocity, assuming RPM never exceeds shiftpoint'''
         self.v_max = self.PTN.shiftpoint / (self.gear_tot/self.DYN.tire_radius*60/(2 * math.pi))
-        self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max, self._matlab_engine)
+        self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max)
         
         self.trajectory = Trajectory.Trajectory(trajectory_path, self.GGV.radii_range[0], self.GGV.radii_range[-1])
         self._interval = mesh_resolution
@@ -54,6 +51,9 @@ class Vehicle:
         self.ay = np.zeros(self._mesh_size)
         self.ay_f = np.zeros(self._mesh_size)
         self.ay_r = np.zeros(self._mesh_size)
+    
+        def __del__(self):
+            self._matlab_engine.quit()
 
 
     def reset_ggv(self):

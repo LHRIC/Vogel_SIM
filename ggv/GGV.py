@@ -1,7 +1,6 @@
 import numpy as np
 from numpy.polynomial import Polynomial
 import math
-import utilities.MF52 as MF52
 import matplotlib.pyplot as plt
 from csaps import csaps
 from scipy.optimize import least_squares, minimize
@@ -9,13 +8,16 @@ import statistics
 import pickle
 import models
 from fitting import csaps, polyfit
+import matlab.engine
+from utilities import MF52
 
 class GGV:
-    def __init__(self, AERO: models.AERO, DYN: models.DYN, PTN: models.PTN, gear_tot, v_max, matlab_engine):
+    def __init__(self, AERO: models.AERO, DYN: models.DYN, PTN: models.PTN, gear_tot, v_max):
         self.AERO = AERO
         self.DYN = DYN
         self.PTN = PTN
-        self._MF52 = MF52(matlab_engine)
+        engine = matlab.engine.start_matlab()
+        self._MF52 = MF52(engine)
 
         self.gear_tot = gear_tot
         self.v_max = v_max
@@ -276,7 +278,7 @@ class GGV:
         
         braking_g = np.empty((len(self.velocity_range),))
         for idx, v in enumerate(self.velocity_range):
-            print(f"Calculating: Long. braking capability for {v} m/s")
+            #print(f"Calculating: Long. braking capability for {v} m/s")
             Ax = self.calc_grip_lim_max_accel(v)
             braking_g[idx] = (Ax)
         self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
