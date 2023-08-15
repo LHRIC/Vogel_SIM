@@ -16,8 +16,7 @@ class GGV:
         self.AERO = AERO
         self.DYN = DYN
         self.PTN = PTN
-        engine = matlab.engine.start_matlab()
-        self._MF52 = MF52(engine)
+        self._MF52 = MF52()
 
         self.gear_tot = gear_tot
         self.v_max = v_max
@@ -30,7 +29,7 @@ class GGV:
         self.expected_gears = []
 
         self._vogel_selector = 1
-        self._calc_lateral = False
+        self._calc_lateral = True
 
         self._grip_lim_accel = None
         self._power_lim_accel = None
@@ -230,7 +229,7 @@ class GGV:
 
         '''The gear that you start each velocity iteration in'''
         for idx, v in enumerate(self.velocity_range):
-            #print(f"Calculating: Long. accel capability for {v} m/s")
+            print(f"Calculating: Long. accel capability for {v} m/s")
             Ax_r = self.calc_grip_lim_max_accel(v)
             grip_lim_a[idx] = (Ax_r)
 
@@ -278,7 +277,7 @@ class GGV:
         
         braking_g = np.empty((len(self.velocity_range),))
         for idx, v in enumerate(self.velocity_range):
-            #print(f"Calculating: Long. braking capability for {v} m/s")
+            print(f"Calculating: Long. braking capability for {v} m/s")
             Ax = self.calc_grip_lim_max_accel(v)
             braking_g[idx] = (Ax)
         self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)

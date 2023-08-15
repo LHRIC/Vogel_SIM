@@ -1,18 +1,50 @@
 import math
 import matlab.engine
+import numpy as np
+import pickle
+from functools import cache
+import matplotlib.pyplot as plt
+
+from scipy.interpolate import RegularGridInterpolator
 
 class MF52:
-    def __init__(self, matlab_engine):
-        self.__matlab_engine = matlab_engine
+    def __init__(self):
+        #self.__matlab_engine = matlab_engine
         # This is called from the root path for some reason.
         # possibly called in the location of the file that created
         # an instance of the MF52 class.
-        s = self.__matlab_engine.genpath('./utilities')
-        self.__matlab_engine.addpath(s, nargout=0)
+        
         self.FZ0 = 800  # Nominal tire load: newtons
         self.lCoeff = [1.32384487892880, 2.14482184949554, -0.100000000000000, 0.00116791584176700, -3.47327118568818, -4.08922340024882, 0.374047785439375, -1.56483287414258e-18, 25, 0.100000000000000, -
                           0.784633274177115, -0.00421824086612800, -0.00312988012049700, -0.0166570654892410, -0.100000000000000, -0.601337395748281, 0.0144461947641190, -0.262573151301394, 0.0266010058725470, 0, 0, 0, 0, 0, 0, 0]
         
+        self.c_Fx = None
+        self.c_Fy = None
+
+        with open("./utilities/FxInterpolator.pickle", "rb") as Fx_in:
+            self.c_Fx = pickle.load(Fx_in)
+            Fx_in.close()
+        with open("./utilities/FyInterpolator.pickle", "rb") as Fy_in:
+            self.c_Fy = pickle.load(Fy_in)
+            Fy_in.close()
+
+        self.c_Fx.bounds_error = False
+        self.c_Fy.bounds_error = False
+
+    def Fx_interp(self, Fz, GammaX, SL):
+        Fx = self.c_Fx((Fz, GammaX, SL))
+        if(math.isnan(Fx)):
+            raise RuntimeError(f"Requested parameter ({Fz}, {GammaX}, {SL}) outside of Fx tire model bounds") 
+        else:
+            return Fx 
+    def Fy(self, ALPHA, Fz, GAMMA):
+        Fy = self.c_Fy((ALPHA, Fz, GAMMA))
+        if(math.isnan(Fy)):
+            raise RuntimeError(f"Requested parameter ({ALPHA}, {Fz}, {GAMMA}) outside of Fy tire model bounds") 
+        else:
+            return Fy
+
+
     def Fx(self, Fz, GammaX, SL):
         Fz = abs(Fz)
         Fz0PR = abs(self.FZ0)
@@ -74,7 +106,59 @@ class MF52:
 
         return Fx
 
-    def Fy(self, ALPHA, Fz, GAMMA):
+    def Fy_old(self, ALPHA, Fz, GAMMA, engine=None):
         X = matlab.double([ALPHA, Fz, GAMMA])
-        Fy = self.__matlab_engine.mfeval_wrapper(X)
+        if engine is None:
+            Fy = self.__matlab_engine.mfeval_wrapper(X)
+        else:
+            Fy = engine.mfeval_wrapper(X)
         return Fy
+    
+if __name__ == '__main__':
+    tm = MF52()
+    '''
+    wr = np.linspace(-2000, 0, 2000)
+    IA_r = np.linspace(-5, 5, 50)
+    sl = np.linspace(-0.1, 1, 100)
+
+
+    engine = matlab.engine.start_matlab()
+    tm = MF52()
+    
+    Fx_arr = np.zeros((2000, 50, 100))
+
+    for i in range(len(wr)):
+        print(wr[i])
+        for j in range(len(IA_r)):
+            for k in range(len(sl)):
+                Fx_arr[i, j, k] = tm.Fx_old(wr[i], IA_r[j], sl[k])
+    
+    fn = RegularGridInterpolator((wr, IA_r, sl), Fx_arr)
+
+    with open('./utilities/FxInterpolator.pickle', 'wb') as pickle_file:
+        pickle.dump(fn, pickle_file, pickle.HIGHEST_PROTOCOL)
+    
+    '''
+    
+    a_r = np.linspace(-0.5, 0.5, 50)
+    wr = np.linspace(-300, 1500, 200)
+    IA_r = np.linspace(-0.01, 0.2, 50)
+
+    engine = matlab.engine.start_matlab()
+    s = engine.genpath('./utilities')
+    engine.addpath(s, nargout=0)
+    tm = MF52()
+
+    Fy_arr = np.zeros((50, 200, 50))
+
+    
+    for i in range(len(a_r)):
+        print(a_r[i])
+        for j in range(len(wr)):
+            for k in range(len(IA_r)):
+                Fy_arr[i, j, k] = tm.Fy_old(a_r[i], wr[j], IA_r[k], engine=engine)
+    
+    fn = RegularGridInterpolator((a_r, wr, IA_r), Fy_arr)
+
+    with open('./utilities/FyInterpolator.pickle', 'wb') as pickle_file:
+        pickle.dump(fn, pickle_file, pickle.HIGHEST_PROTOCOL)

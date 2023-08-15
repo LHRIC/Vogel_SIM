@@ -17,23 +17,25 @@ class Engine:
         
         self._sweep_param = None
         self._sweep_class = None
-        #self._vehicle = Vehicle(AERO=AERO, DYN=DYN, PTN=PTN, trajectory_path=trajectory)
+        #vehicle = Vehicle(AERO=AERO, DYN=DYN, PTN=PTN, trajectory_path=trajectory)
 
     def single_run(self):
-        self._vehicle.GGV.generate()
-        laptime = self._vehicle.simulate()
-        
+        vehicle = Vehicle(AERO=self._AERO, DYN=self._DYN, PTN=self._PTN, trajectory_path=self._trajectory_path)
+        vehicle.GGV.generate()
+        laptime = vehicle.simulate()
+        print(laptime)
+
         fig, ax = plt.subplots()
         ax.axis('equal')
-        plt.scatter(self._vehicle.ay, self._vehicle.ax)
+        plt.scatter(vehicle.ay, vehicle.ax)
         plt.show()
 
-        plt.plot(self._vehicle.dist, self._vehicle.velocity, markersize=1)
+        plt.scatter(vehicle.x, vehicle.y, c=vehicle.velocity)
         plt.show()
 
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        ax.plot(self._vehicle.ay, self._vehicle.ax, self._vehicle.velocity, "o", markersize=1)
+        ax.plot(vehicle.ay, vehicle.ax, vehicle.velocity, "o", markersize=1)
         ax.set_xlabel('Lateral Accel. (g)')
         ax.set_ylabel('Longitudinal Accel (g)')
         ax.set_zlabel('Velocity (m/s)')
@@ -43,7 +45,7 @@ class Engine:
         
         
 
-    def sweep(self, num_steps, multiprocessing=False, **kwargs) -> None:
+    def sweep(self, num_steps, **kwargs) -> None:
         if(len(kwargs) > 1):
             print("WARN: Coupled parameter sweeps are not yet supported")
             return
@@ -62,20 +64,20 @@ class Engine:
             sweep_range = np.linspace(sweep_range[0], sweep_range[1], num=num_steps)
             times = []
 
-            with Pool(10) as p:
-                times = p.map(self.sr, sweep_range)
+            with Pool(num_steps) as p:
+                times = p.map(self.compute_task, sweep_range)
                         
 
             fig, ax = plt.subplots()
             ax.plot(sweep_range, list(times), "o-")
             plt.show()
         
-    def sr(self, p):
+    def compute_task(self, p):
         
         '''
         print(str(os.getpid()) + ": " + q.get())
         '''
-        print("Simulating")
+        print("Simulating: " + self._sweep_param + " = " + str(p))
         vehicle = Vehicle(AERO=self._AERO, DYN=self._DYN, PTN=self._PTN, trajectory_path=self._trajectory_path)
         sweep_model = getattr(vehicle, self._sweep_class)
         setattr(sweep_model, self._sweep_param, p)
