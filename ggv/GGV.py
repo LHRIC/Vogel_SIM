@@ -2,14 +2,14 @@ import numpy as np
 from numpy.polynomial import Polynomial
 import math
 import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
 from csaps import csaps
-from scipy.optimize import least_squares, minimize
+from scipy.optimize import least_squares
 import statistics
-import pickle
 import models
 from fitting import csaps, polyfit
-import matlab.engine
 from utilities import MF52
+import mpl_toolkits.mplot3d.art3d as art3d
 
 class GGV:
     def __init__(self, AERO: models.AERO, DYN: models.DYN, PTN: models.PTN, gear_tot, v_max):
@@ -38,6 +38,7 @@ class GGV:
         self.accel_capability = None
         self.cornering_capability = None
         self.braking_capability = None
+
         self.lateral_capability = np.array([
             1.38195832278988,
             1.42938584362690,
@@ -63,6 +64,31 @@ class GGV:
             1.62583858287551,
         ])
 
+    def plot(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        AY = []
+        AX = []
+        vel = []
+        for r in np.arange(3.5, 36, 1):
+            v_max = min(self.v_max, self.cornering_capability.evaluate(r))
+            vel.append(v_max)
+            AX_cap = self.accel_capability.evaluate(v_max)
+            AY_cap = self.lateral_capability.evaluate(v_max)
+            ellipse = Ellipse(xy=(0, 0), width=AY_cap*2, height=AX_cap*2, 
+                        edgecolor='r', fc='None', lw=2)
+            ax.add_patch(ellipse)
+            art3d.pathpatch_2d_to_3d(ellipse, z=v_max, zdir="z")
+        
+        ax.set_xlabel('Lateral Accel. (g)')
+        ax.set_ylabel('Longitudinal Accel (g)')
+        ax.set_zlabel('Velocity (m/s)')
+        plt.xlim([-1.5, 1.5])
+        plt.ylim([-1.5, 1.5])
+        ax.axes.set_zlim3d(bottom=0, top=30)
+        plt.show()
+
+
     def calc_grip_lim_max_accel(self, v):
         downforce = self.AERO.Cl * v**2  # Downforce: Newtons
         # dxr
@@ -76,11 +102,15 @@ class GGV:
         while A_x_diff > 0:
             Ax += 0.01
             pitch = -Ax * self.DYN.pitch_grad
-            # Calc load on each tire
+            # Calc load on each tire from static load and downforce
             wr = (self.DYN.total_weight_r + downforce * (1 - self.AERO.CoP)) / 2
+            
+            # Add on the effects of longitudinal weight transfer
             wr += (
                 Ax * self.DYN.cg_height * self.DYN.total_weight / self.DYN.wheelbase / 2
             )
+
+            #Calculate new camber from camber gain
             IA_r = (
                 self.DYN.wheelbase * math.sin(pitch) / 2 * self.DYN.camber_gain_r
                 + IA_0r
@@ -90,9 +120,15 @@ class GGV:
             for sl in np.arange(0, 1.01, 0.01):
                 Fx = self._MF52.Fx(-wr, -IA_r, sl) * self.DYN.friction_scaling_x
                 fxr.append(Fx)
+            
+            # Get the maximum possible force experienced by the tire 
             FXR = max(fxr)
             FX = abs(2 * FXR)
+
+            # Calculate potential acceleration if the force was generated at both rear contact patches
             AX = FX / self.DYN.total_weight  # THIS IS IN G'S, SEE ABOVE
+
+            #Iterate until acceleration converges
             A_x_diff = AX - Ax
 
         return AX
@@ -207,7 +243,7 @@ class GGV:
             fx_f = []
             fx_r = []
 
-            for sl in np.arange(-0.23, 0, 0.01):
+            for sl in np.arange(-0.23, 0.01, 0.01):
                 Fx_f = self._MF52.Fx(-wf, -IA_f, sl) * self.DYN.friction_scaling_x
                 Fx_r = self._MF52.Fx(-wr, -IA_r, sl) * self.DYN.friction_scaling_x
                 fx_f.append(Fx_f)
@@ -255,13 +291,11 @@ class GGV:
                 lateral_g[idx] = (self.calc_lateral_accel(R))
 
             lateral_g = np.array(lateral_g)
-            velocity_y = lateral_g * 9.81
-            velocity_y = np.multiply(velocity_y, self.radii_range)
+            accel_y = lateral_g * 9.81
+            velocity_y = np.multiply(accel_y, self.radii_range)
             velocity_y = np.sqrt(velocity_y)
 
             self.lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
-
-            self.lateral_capability.plot()
 
         else:
             print("WARNING: Loading precalculated lateral envelope")
@@ -272,6 +306,8 @@ class GGV:
 
             self.lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
             
+        # Defines the max cornering velocity vs radii *based on lateral acceleration capacity*
+        # Not based on steady-state cornering acceleration
         self.cornering_capability = polyfit(self.radii_range, velocity_y, 4)
         
         braking_g = np.empty((len(self.velocity_range),))

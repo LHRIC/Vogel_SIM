@@ -14,7 +14,7 @@ class PTN:
         self.final_drive = 37/11
         self.shiftpoint = 12500
         self.drivetrain_losses = 0.85
-        self.shift_time = 0.2 #seconds
+        self.shift_time = 0.25 #seconds
         self.diff_locked = False; #False - open, True - closed
 
 

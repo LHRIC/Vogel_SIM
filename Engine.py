@@ -39,6 +39,11 @@ class Engine:
         plt.xlim([-1.5, 1.5])
         plt.ylim([-1.5, 1.5])
         plt.show()
+
+    def test_ggv(self):
+        vehicle = Vehicle(AERO=self._AERO, DYN=self._DYN, PTN=self._PTN, trajectory_path=self._trajectory_path)
+        vehicle.GGV.generate()
+        vehicle.GGV.plot()
         
         
 

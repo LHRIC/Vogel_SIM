@@ -37,7 +37,7 @@ class DYN:
         self.camber_roll_induced_r = math.asin(2 / self.trackwidth_r)
 
         self.friction_scaling_x = 0.6
-        self.friction_scaling_y = 0.6
+        self.friction_scaling_y = 0.42
 
         #Unit Conversions
 
