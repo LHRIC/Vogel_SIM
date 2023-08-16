@@ -248,7 +248,6 @@ class GGV:
         self._power_lim_accel = csaps(self.velocity_range, power_lim_a)
         self.accel_capability = csaps(self.velocity_range, accel_cap)
 
-
         lateral_g = np.empty((len(self.radii_range),))
         if(self._calc_lateral):
             for idx, R in enumerate(self.radii_range):
@@ -262,9 +261,9 @@ class GGV:
 
             self.lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
 
+            self.lateral_capability.plot()
+
         else:
-            # Try and load lateral acceleration from file. if file does not exist, error out
-            # TODO: Implement
             print("WARNING: Loading precalculated lateral envelope")
             lateral_g = self.lateral_capability
             velocity_y = lateral_g * 9.81
@@ -296,21 +295,13 @@ class GGV:
         V = math.sqrt(self.R * 9.81 * AYP)
         A_y = V**2 / self.R / 9.81  # (g's)
 
-        '''Calculate the weight transfer from cornering'''
+        '''Calculate the weight transfer from cornering in Newtons'''
         WT = (
             A_y
             * self.DYN.cg_height
             * self.DYN.total_weight
             / statistics.mean([self.DYN.trackwidth_f, self.DYN.trackwidth_r])
         )
-        '''
-        WT = (
-            A_y* self.DYN.cg_height
-            * self.DYN.total_weight
-            / statistics.mean([self.DYN.trackwidth_f, self.DYN.trackwidth_r])
-
-        )
-        '''
 
         WTF = WT * self.DYN.LLTD
         WTR = WT * (1 - self.DYN.LLTD)
@@ -374,10 +365,10 @@ class GGV:
             delta
         )
 
-        grip_val = self._grip_lim_accel.evaluate(V)
+        grip_lim_accel = self._grip_lim_accel.evaluate(V)
         #np.interp(V, self.velocity_fit_x, self.grip_cap_fit_y)
 
-        rscale = 1 - (F_xDrag / self.DYN.total_weight / (grip_val)) ** 2
+        rscale = 1 - (F_xDrag / self.DYN.total_weight / (grip_lim_accel)) ** 2
 
         F_rin = (
             self._MF52.Fy(a_r, wrin, -IA_r_in) * self.DYN.friction_scaling_y * rscale

@@ -12,12 +12,9 @@ class Engine:
         self._AERO = AERO
         self._DYN = DYN
         self._PTN = PTN
-
-        #print("Starting Matlab Engine")
         
         self._sweep_param = None
         self._sweep_class = None
-        #vehicle = Vehicle(AERO=AERO, DYN=DYN, PTN=PTN, trajectory_path=trajectory)
 
     def single_run(self):
         vehicle = Vehicle(AERO=self._AERO, DYN=self._DYN, PTN=self._PTN, trajectory_path=self._trajectory_path)
