@@ -30,7 +30,7 @@ class Engine:
 
 
         for i in range(len(vehicle.ax_f)):
-            if(vehicle.ax_f[i] != 0):
+            if(vehicle.is_shifting[i] != 1):
                 Ax_f[i]  = vehicle.ax_f[i]
                 Ay_f[i]  = vehicle.ay_f[i]
                 V_f[i]  = vehicle.velocity_f[i]

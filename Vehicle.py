@@ -43,6 +43,7 @@ class Vehicle:
         self.velocity_r = np.zeros(self._mesh_size)
 
         self.gear = np.zeros(self._mesh_size)
+        self.is_shifting = np.zeros(self._mesh_size)
 
         self.ax = np.zeros(self._mesh_size)
         self.ax_f = np.zeros(self._mesh_size)
@@ -154,6 +155,7 @@ class Vehicle:
                     dt = delta_d / vel
                     time_shifting += dt
                     self.ax_f[count] = 0
+                    self.is_shifting[count] = 1
                 elif vel < v_max:
                     # Take a slice of the GGV using AX_cap and AY_cap as verticies
                     # the actual lateral acceleration will define the remaining longitudinal acceleration.
