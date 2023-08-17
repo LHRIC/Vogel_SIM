@@ -23,10 +23,17 @@ class Engine:
         laptime = vehicle.simulate()
         print(laptime)
         
-        Ax_f = vehicle.ax_f
-        Ay_f = vehicle.ay_f
+        Ax_f = np.zeros(len(vehicle.ax_f))
+        Ay_f = np.zeros(len(vehicle.ay_f))
 
-        V_f = vehicle.velocity_f
+        V_f = np.zeros(len(vehicle.velocity_f))
+
+
+        for i in range(len(vehicle.ax_f)):
+            if(vehicle.ax_f[i] != 0):
+                Ax_f[i]  = vehicle.ax_f[i]
+                Ay_f[i]  = vehicle.ay_f[i]
+                V_f[i]  = vehicle.velocity_f[i]
 
         ploty1, plotz1 = np.meshgrid(np.linspace(np.min(Ay_f), np.max(Ay_f), 60),
                                       np.linspace(np.min(V_f), np.max(V_f), 60))

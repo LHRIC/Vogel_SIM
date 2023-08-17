@@ -31,11 +31,7 @@ class DYN_2:
         self.KPI_f = 0
         self.KPI_r = 0
 
-        self.camber_roll_induced_f = math.asin(2 / (self.trackwidth_f / 0.0254))
-        self.camber_roll_induced_r = math.asin(2 / (self.trackwidth_r / 0.0254))
-
-        self.friction_scaling_x = 0.6
-        self.friction_scaling_y = 0.6
+        self.unit_conv()
 
     #Unit Conversions
     def unit_conv(self):

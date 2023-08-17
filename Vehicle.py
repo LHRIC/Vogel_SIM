@@ -138,7 +138,7 @@ class Vehicle:
                 self.x[count] = x_1 + (x_2 - x_1) * j/self._interval
                 self.y[count] = y_1 + (y_2 - y_1) * j/self._interval
 
-                self.ay_f[count] = AY_actual
+                self.ay_f[count] = min(AY_cap,AY_actual)
 
                 self.turn_dir[count] = np.sign(self.trajectory._curvature[point_idx])
 
@@ -231,7 +231,7 @@ class Vehicle:
                 self.velocity_r[count] = vel
                 self.dist_r[count] =  distance + delta_d * j
 
-                self.ay_r[count] = AY_actual
+                self.ay_r[count] = min(AY_cap,AY_actual)
                 if vel < v_max:
                     AX_actual = AX_cap*(1-(min(AY_cap,AY_actual)/AY_cap)**2)
                     self.ax_r[count] = AX_actual
