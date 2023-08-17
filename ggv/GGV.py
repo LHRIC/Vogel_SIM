@@ -65,27 +65,30 @@ class GGV:
         ])
 
     def plot(self):
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
+        fig, ax = plt.subplots()
         AY = []
-        AX = []
+        AX_acc = []
+        AX_dec = []
         vel = []
         for r in np.arange(3.5, 36, 1):
             v_max = min(self.v_max, self.cornering_capability.evaluate(r))
-            vel.append(v_max)
-            AX_cap = self.accel_capability.evaluate(v_max)
+            AX_acc_cap = self.accel_capability.evaluate(v_max)
+            AX_dec_cap = self.braking_capability.evaluate(v_max)
             AY_cap = self.lateral_capability.evaluate(v_max)
-            ellipse = Ellipse(xy=(0, 0), width=AY_cap*2, height=AX_cap*2, 
-                        edgecolor='r', fc='None', lw=2)
-            ax.add_patch(ellipse)
-            art3d.pathpatch_2d_to_3d(ellipse, z=v_max, zdir="z")
+            
+            AY.append(AY_cap)
+            AX_acc.append(AX_acc_cap)
+            AX_dec.append(-1 * AX_dec_cap)
+            vel.append(v_max)
+
+            #ellipse = Ellipse(xy=(0, 0), width=AY_cap*2, height=AX_acc_cap*2, 
+            #            edgecolor='r', fc='None', lw=2)
+            #ax.add_patch(ellipse)
+            #art3d.pathpatch_2d_to_3d(ellipse, z=v_max, zdir="z")
         
-        ax.set_xlabel('Lateral Accel. (g)')
-        ax.set_ylabel('Longitudinal Accel (g)')
-        ax.set_zlabel('Velocity (m/s)')
-        plt.xlim([-1.5, 1.5])
-        plt.ylim([-1.5, 1.5])
-        ax.axes.set_zlim3d(bottom=0, top=30)
+        ax.plot(vel, AX_acc)
+        ax.plot(vel, AX_dec)
+        ax.plot(vel, AY)
         plt.show()
 
 

@@ -10,10 +10,11 @@ def main():
     ptn_model = models.PTN()
 
     simulator = Engine(AERO=aero_model, DYN=dyn_model, PTN=ptn_model, trajectory="./trajectory/17_lincoln_endurance_track_highres.xls")
-    #simulator.sweep(num_steps=30, total_weight=(300*4.4482216153, 600*4.4482216153))
-    #simulator.sweep(num_steps = 15, cg_height=(10 / 39.37, 15 / 39.37))
-    #simulator.single_run()
-    simulator.test_ggv()
-    
+    #simulator.sweep(num_steps=30, total_weight=(300, 600))
+    #simulator.sweep(num_steps = 15, cg_height=(10, 15))
+    #simulator.sweep(num_steps = 30, trackwidth_f=(1.2, 1.35))
+    simulator.single_run()
+    #simulator.test_ggv()
+
 if __name__ == "__main__":
     main()

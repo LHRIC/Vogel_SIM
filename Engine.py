@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
 from multiprocessing import Manager, Pool, Queue, cpu_count
 import os
+import scipy.interpolate as interp
 
 class Engine:
 
@@ -21,6 +22,51 @@ class Engine:
         vehicle.GGV.generate()
         laptime = vehicle.simulate()
         print(laptime)
+        
+        Ax_f = vehicle.ax_f
+        Ay_f = vehicle.ay_f
+
+        V_f = vehicle.velocity_f
+
+        ploty1, plotz1 = np.meshgrid(np.linspace(np.min(Ay_f), np.max(Ay_f), 60),
+                                      np.linspace(np.min(V_f), np.max(V_f), 60))
+        
+        plotx1 = interp.griddata((Ay_f, V_f), Ax_f, (ploty1, plotz1),
+                                 method='linear', fill_value=0.0)
+        
+        Ax_r = vehicle.ax_r
+        Ay_r = vehicle.ay_r
+
+        V_r = vehicle.velocity_r
+        # Griddata
+        ploty2, plotz2, = np.meshgrid(np.linspace(np.min(Ay_r), np.max(Ay_r), 60),
+                                      np.linspace(np.min(V_r), np.max(V_r), 60))
+        plotx2 = interp.griddata((Ay_r, V_r), Ax_r, (ploty2, plotz2),
+                                 method='linear', fill_value=0.0)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        surf1 = ax.plot_surface(plotx1, ploty1, plotz1,
+                                cstride=1, rstride=1, cmap='coolwarm',
+                                edgecolor='black', linewidth=0.2,
+                                antialiased=True)
+        
+        surf2 = ax.plot_surface(plotx2, ploty2, plotz2,
+                                cstride=1, rstride=1, cmap='coolwarm',
+                                edgecolor='black', linewidth=0.2,
+                                antialiased=True)
+        
+         # Add a color bar which maps values to colors.
+        fig.colorbar(surf1)
+
+        plt.title("GGV")
+        plt.xlabel('ax [g]')
+        plt.ylabel('ay [g]')
+        ax.set_zlabel('velocity [m/s]')
+        plt.show()
+        '''
+
+        
 
         fig, ax = plt.subplots()
         ax.axis('equal')
@@ -39,6 +85,7 @@ class Engine:
         plt.xlim([-1.5, 1.5])
         plt.ylim([-1.5, 1.5])
         plt.show()
+        '''
 
     def test_ggv(self):
         vehicle = Vehicle(AERO=self._AERO, DYN=self._DYN, PTN=self._PTN, trajectory_path=self._trajectory_path)
@@ -84,6 +131,8 @@ class Engine:
         vehicle = Vehicle(AERO=self._AERO, DYN=self._DYN, PTN=self._PTN, trajectory_path=self._trajectory_path)
         sweep_model = getattr(vehicle, self._sweep_class)
         setattr(sweep_model, self._sweep_param, p)
+        sweep_model.unit_conv()
+        
         vehicle.GGV.generate()
         laptime = vehicle.simulate()
         return laptime

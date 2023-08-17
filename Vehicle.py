@@ -77,10 +77,16 @@ class Vehicle:
                 self.ax[i] = -1 * self.ax_r[i]
                 self.ay[i] = self.ay_r[i]
 
-            '''Determine turn handedness and remove outliers'''
-            self.ay = np.multiply(self.ay, self.turn_dir)
-            self.ay[self.ay > self.GGV.lateral_capability.evaluate(self.v_max + 1)] = self.GGV.lateral_capability.evaluate(self.v_max + 1)
+        '''Determine turn handedness and remove outliers'''
+        self.ay[self.ay > self.GGV.lateral_capability.evaluate(self.v_max + 1)] = self.GGV.lateral_capability.evaluate(self.v_max + 1)
+        self.ay_f[self.ay_f > self.GGV.lateral_capability.evaluate(self.v_max + 1)] = self.GGV.lateral_capability.evaluate(self.v_max + 1)
+        self.ay_r[self.ay_r > self.GGV.lateral_capability.evaluate(self.v_max + 1)] = self.GGV.lateral_capability.evaluate(self.v_max + 1)
         
+        self.ay = np.multiply(self.ay, self.turn_dir)
+        self.ay_f = np.multiply(self.ay_f, self.turn_dir)
+        self.ay_r = np.multiply(self.ay_r, self.turn_dir)
+        
+        self.ax_r = np.multiply(self.ax_r, -1)
         
         '''
         ax.plot(self.dist_f, comb)
