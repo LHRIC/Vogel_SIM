@@ -1,4 +1,3 @@
-import numpy as np
 from .SystemModel import SystemModel
 
 class AERO(SystemModel):

@@ -1,15 +1,10 @@
 import numpy as np
-from numpy.polynomial import Polynomial
 import math
-import matplotlib.pyplot as plt
-from matplotlib.patches import Ellipse
-from csaps import csaps
 from scipy.optimize import least_squares
-import statistics
+from statistics import mean
 import models
 from fitting import csaps, polyfit
 from utilities import MF52
-import mpl_toolkits.mplot3d.art3d as art3d
 
 class GGV:
     def __init__(self, AERO: models.AERO, DYN: models.DYN, PTN: models.PTN, gear_tot, v_max):
@@ -319,7 +314,7 @@ class GGV:
             A_y
             * self.DYN.cg_height
             * self.DYN.total_weight
-            / statistics.mean([self.DYN.trackwidth_f, self.DYN.trackwidth_r])
+            / mean([self.DYN.trackwidth_f, self.DYN.trackwidth_r])
         )
 
         WTF = WT * self.DYN.LLTD

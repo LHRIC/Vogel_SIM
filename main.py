@@ -1,8 +1,5 @@
 from Engine import Engine
-from trajectory import Trajectory
 import models
-import numpy as np
-import math
 
 def main():
     aero_model = models.AERO()

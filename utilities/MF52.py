@@ -1,11 +1,6 @@
 import math
 import matlab.engine
-import numpy as np
 import pickle
-from functools import cache
-import matplotlib.pyplot as plt
-
-from scipy.interpolate import RegularGridInterpolator
 
 class MF52:
     def __init__(self):

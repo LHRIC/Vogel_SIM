@@ -1,12 +1,9 @@
-import models
 import ggv.GGV as GGV
 import trajectory.Trajectory as Trajectory
 from numpy.polynomial import Polynomial
 import numpy as np
 import math
-import matplotlib.pyplot as plt
 
-import matlab
 
 class Vehicle:
     def __init__(self, trajectory_path, AERO, DYN, PTN, mesh_resolution=10):
@@ -286,16 +283,6 @@ class Vehicle:
                 time += dt
             
             distance += dist
-        '''
-        c = []
-        for i in range(self._mesh_size + 1):
-            if i % self._interval == 0:
-                c.append(self.gear[i])
-            
-        plt.scatter(self.trajectory.points[0], self.trajectory.points[1], c=c)
-        plt.colorbar()
-        plt.show()
-        '''
 
     def simulate_reverse(self):
         vel = self.velocity_f[-1]
