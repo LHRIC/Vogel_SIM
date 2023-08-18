@@ -13,8 +13,8 @@ def main():
     #simulator.sweep(num_steps=30, total_weight=(300, 600))
     #simulator.sweep(num_steps = 15, cg_height=(10, 15))
     #simulator.sweep(num_steps = 30, trackwidth_f=(1.2, 1.35))
-    simulator.sweep(num_steps = 30, run_mode="ACCEL", final_drive=(1, 5))
-    #simulator.single_run(run_mode="ACCEL", plot=True)
+    #simulator.sweep(num_steps = 30, run_mode="ACCEL", final_drive=(1, 5))
+    simulator.single_run(run_mode="ENDURANCE", plot=True)
     #simulator.test_ggv()
 
 if __name__ == "__main__":

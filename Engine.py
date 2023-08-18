@@ -81,9 +81,9 @@ class Engine:
                 fig1.colorbar(surf1)
 
                 plt.title("GGV")
-                plt.xlabel('ax [g]')
-                plt.ylabel('ay [g]')
-                ax1.set_zlabel('velocity [m/s]')
+                plt.xlabel('Ax [g]')
+                plt.ylabel('Ay [g]')
+                ax1.set_zlabel('Velocity [m/s]')
 
                 
 
@@ -92,7 +92,9 @@ class Engine:
                 ax2.plot(vehicle.ay, vehicle.ax, "o")
 
                 fig3, ax3 = plt.subplots()
-                ax3.scatter(vehicle.x, vehicle.y, c=vehicle.velocity)
+                sc = ax3.scatter(vehicle.x, vehicle.y, c=vehicle.velocity)
+                cbar = plt.colorbar(sc)
+                #cbar.set_label('Velocity [m/s]', rotation=270)
 
                 fig4 = plt.figure()
                 ax4 = fig4.add_subplot(projection='3d')
