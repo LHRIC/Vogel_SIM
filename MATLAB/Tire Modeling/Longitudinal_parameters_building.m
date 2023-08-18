@@ -1,0 +1,59 @@
+clear all
+
+load("R20_Tire.mat")
+
+% PCX1= OptimParameterSet.PCX1
+% PDX1= OptimParameterSet.PDX1
+% PDX2= OptimParameterSet.PDX2
+% PDX3= OptimParameterSet.PDX3
+% PEX1= OptimParameterSet.PEX1
+% PEX2= OptimParameterSet.PEX2
+% PEX3= OptimParameterSet.PEX3
+% PEX4= OptimParameterSet.PEX4
+% PKX1= OptimParameterSet.PKX1
+% PKX2= OptimParameterSet.PKX2
+% PKX3= OptimParameterSet.PKX3
+% PHX1= OptimParameterSet.PHX1
+% PHX2= OptimParameterSet.PHX2
+% PVX1= OptimParameterSet.PVX1
+% PVX2= OptimParameterSet.PVX2
+% PPX1= OptimParameterSet.PPX1
+% PPX2= OptimParameterSet.PPX2
+% PPX3= OptimParameterSet.PPX3
+% PPX4= OptimParameterSet.PPX4
+% RBX1= OptimParameterSet.RBX1
+% RBX2= OptimParameterSet.RBX2
+% RBX3= OptimParameterSet.RBX3
+% RCX1= OptimParameterSet.RCX1
+% REX1= OptimParameterSet.REX1
+% REX2= OptimParameterSet.REX2
+% RHX1= OptimParameterSet.RHX1
+
+PCX1= 1.323844878928801
+PDX1= 2.144821849495536
+PDX2= -.1
+PDX3= .001167915841767
+PEX1= -3.473271185688184
+PEX2= -4.089223400248820
+PEX3= .374047785439375
+PEX4= -1.564832874142583e-18
+PKX1= 25
+PKX2= .1
+PKX3= -.784633274177115
+PHX1= -.004218240866128
+PHX2= -.003129880120497
+PVX1= -.016657065489241
+PVX2= -.10000000000
+PPX1= -.601337395748281
+PPX2= .014446194764119
+PPX3= -.262573151301394
+PPX4= .026601005872547
+RBX1= 0
+RBX2= 0
+RBX3= 0
+RCX1= 0
+REX1= 0
+REX2= 0
+RHX1= 0
+
+lCoeff = [PCX1 PDX1 PDX2 PDX3 PEX1 PEX2 PEX3 PEX4 PKX1 PKX2 PKX3 PHX1 PHX2 PVX1 PVX2 PPX1 PPX2 PPX3 PPX4 RBX1 RBX2 RBX3 RCX1 REX1 REX2 RHX1]
