@@ -1,6 +1,7 @@
 import numpy as np
+from .SystemModel import SystemModel
 
-class AERO:
+class AERO(SystemModel):
     def __init__(self):
         self.Cl = 1.77
         self.Cd = 0.8

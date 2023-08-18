@@ -1,7 +1,7 @@
 import numpy as np
+from .SystemModel import SystemModel
 
-
-class PTN:
+class PTN(SystemModel):
     def __init__(self):
         # 6200:100:14100
         self.torque_mod = 1
@@ -16,7 +16,6 @@ class PTN:
         self.drivetrain_losses = 0.85
         self.shift_time = 0.25 #seconds
         self.diff_locked = False; #False - open, True - closed
-
 
 if __name__ == "__main__":
     a = PTN()

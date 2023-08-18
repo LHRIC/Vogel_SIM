@@ -64,33 +64,6 @@ class GGV:
             1.62583858287551,
         ])
 
-    def plot(self):
-        fig, ax = plt.subplots()
-        AY = []
-        AX_acc = []
-        AX_dec = []
-        vel = []
-        for r in np.arange(3.5, 36, 1):
-            v_max = min(self.v_max, self.cornering_capability.evaluate(r))
-            AX_acc_cap = self.accel_capability.evaluate(v_max)
-            AX_dec_cap = self.braking_capability.evaluate(v_max)
-            AY_cap = self.lateral_capability.evaluate(v_max)
-            
-            AY.append(AY_cap)
-            AX_acc.append(AX_acc_cap)
-            AX_dec.append(-1 * AX_dec_cap)
-            vel.append(v_max)
-
-            #ellipse = Ellipse(xy=(0, 0), width=AY_cap*2, height=AX_acc_cap*2, 
-            #            edgecolor='r', fc='None', lw=2)
-            #ax.add_patch(ellipse)
-            #art3d.pathpatch_2d_to_3d(ellipse, z=v_max, zdir="z")
-        
-        ax.plot(vel, AX_acc)
-        ax.plot(vel, AX_dec)
-        ax.plot(vel, AY)
-        plt.show()
-
 
     def calc_grip_lim_max_accel(self, v):
         downforce = self.AERO.Cl * v**2  # Downforce: Newtons
@@ -140,16 +113,23 @@ class GGV:
         
         gear_idx = 0
         rpm = self.PTN.shiftpoint
+        rpm_diff = 1000
 
         # Short little accel simulation, determine what gear the car will be in
         # if it had to accelerate to this velocity
-        while rpm >= self.PTN.shiftpoint:
+
+        #TODO: Revisit this calculation, not entirely sure that it is accurate
+        while rpm >= self.PTN.shiftpoint and rpm_diff > 1e-6:
             total_red = (
                 self.PTN.gear_ratios[gear_idx]
                 * self.PTN.final_drive
                 * self.PTN.primary_reduction
             )
             gear_idx += 1
+            gear_idx = min(self.PTN.num_gears - 1, gear_idx)
+
+            rpm_diff = abs(rpm -  v * total_red / self.DYN.tire_radius * 60 / (2 * math.pi))
+
             rpm = v * total_red / self.DYN.tire_radius * 60 / (2 * math.pi)
 
         # Determine torque at the crankshaft

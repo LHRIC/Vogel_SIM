@@ -1,7 +1,8 @@
 import numpy as np
 import math
+from .SystemModel import SystemModel
 
-class DYN:
+class DYN(SystemModel):
     def __init__(self):
         self.LLTD = 0.5
         self.driver_weight = 96

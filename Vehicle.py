@@ -58,9 +58,100 @@ class Vehicle:
 
 
     def reset_ggv(self):
-        self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max, self._matlab_engine)   
+        self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max, self._matlab_engine)
 
-    def simulate(self):
+    def simulate_accel(self):
+        vel = 1e-6
+        gear = 1
+        required_gear = gear
+        time_shifting = 0
+        is_shifting = False
+        count = 0
+        distance= 0
+        time = 0
+
+        for d in range(75):
+            #x_1 = self.trajectory.points[0][point_idx]
+            #x_2 = self.trajectory.points[0][(point_idx + 1) % self.trajectory.num_points]
+
+            '''Distance of trajectory interval in meters'''
+            dist = 1
+
+            for idx, v in enumerate(self.GGV.velocity_range):
+                if(v > vel):
+                    required_gear = self.GGV.expected_gears[idx]
+                    break
+            
+            is_shifting = required_gear != gear
+
+            AX_cap = self.GGV.accel_capability.evaluate(vel)
+            delta_d = dist / self._interval
+
+            for j in range(self._interval):
+                self.x[count] = d + dist * j/self._interval
+                self.y[count] = 0 * j/self._interval
+
+                self.ay[count] = 0
+
+                self.turn_dir[count] = 1
+
+                self.count[count] = count
+                self.velocity[count] = vel
+                self.gear[count] = gear
+                self.dist[count] =  distance + delta_d * j
+
+                v_max = self.v_max - 1
+
+                dt = delta_d / vel
+                self.time[count] = time + dt * j
+                if is_shifting and vel < v_max:
+                    # Currently shifting, do not accelerate
+                    dt = delta_d / vel
+                    time_shifting += dt
+                    self.ax[count] = 0
+                    self.is_shifting[count] = 1
+                elif vel < v_max:
+                    # Take a slice of the GGV using AX_cap and AY_cap as verticies
+                    # the actual lateral acceleration will define the remaining longitudinal acceleration.
+                    self.ax[count] = AX_cap
+
+                    # Solve the 1D kinematic equation for time
+                    p = Polynomial([-delta_d, vel, 0.5*9.81*AX_cap])
+                    tt = p.roots()
+                    dt = max(tt)
+
+                    #Solve for change in velocity
+                    dv = 9.81 * AX_cap * dt
+
+                    #Clamp new velocity to v_max
+                    vel = min(v_max, vel + dv)
+
+                    for i in range(len(self.GGV.expected_gears)):
+                        if(self.GGV.expected_gears[i] > vel):
+                            required_gear = self.GGV.expected_gears[i]
+                    
+                    is_shifting = required_gear > gear
+                else:
+                    # Vehicle is neither shifting or accelerating, is at vmax
+                    vel = v_max
+                    dt = delta_d / vel
+                    self.ax[count] = 0
+
+                
+
+                if time_shifting >= self.PTN.shift_time:
+                    is_shifting = False
+                    time_shifting = 0
+                    gear = required_gear
+                
+                count += 1
+                time += dt
+            
+            distance += dist
+
+        return max(self.time)
+
+    def simulate_endurance(self):
         vel = 20 * 0.3048; # m/s
         self.simulate_forwards(vel)
         self.simulate_reverse()
