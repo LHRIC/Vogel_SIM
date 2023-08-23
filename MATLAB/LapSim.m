@@ -194,11 +194,11 @@ grip = polyfit(velocity,A_xr,3);
 AYP = .5;
 disp('Lateral Acceleration Envelope')
 
-load('lateralg.mat')
+%load('lateralg.mat')
 %disp("////////////////////////////////////WARNING////////////////////" + ...
 %    "LOADING PRECALCULATED LATERALG")
 
-%{
+
 lateralg = zeros(1,length(radii));
 p = zeros(3, length(radii));
 disp(radii);
@@ -287,7 +287,6 @@ grid minor
 lgd = legend('','Fitted Curve');
 lgd.FontSize = 14;
 
-%}
 
 
 % Braking Performance
