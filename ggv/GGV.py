@@ -170,7 +170,7 @@ class GGV:
         # a, b, R, wf, wr, IA_0f, IA_0r, 0, velocity_fit_x, grip_cap_fit_y
         x0 = [delta, beta, AYP]
         lb = [0.01, -0.3, 0.1]
-        ub = [1, 0.3, 3]
+        ub = [0.5, 0.3, 3]
 
         # print(self.vogel(lb), end=", ")
         # print(self.vogel(ub))
