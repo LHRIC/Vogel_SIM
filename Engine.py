@@ -4,14 +4,12 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from multiprocessing import Pool, cpu_count
 import scipy.interpolate as interp
+import models
 
 class Engine:
 
-    def __init__(self, AERO, DYN, PTN, trajectory) -> None:
+    def __init__(self, trajectory) -> None:
         self._trajectory_path = trajectory
-        self._AERO = AERO
-        self._DYN = DYN
-        self._PTN = PTN
         
         self._sweep_params = []
         self._sweep_classes = []
@@ -112,6 +110,71 @@ class Engine:
                 fig, ax = plt.subplots()
                 ax.plot(vehicle.dist, vehicle.ax)
                 plt.show()
+
+    def sweep_authoritative(self, num_steps, run_mode="ENDURANCE", **kwargs) -> None:
+        self._run_mode = run_mode.upper()
+
+        self._sweep_params = list(kwargs.keys())
+        for param in self._sweep_params:
+            self._sweep_bounds.append(kwargs[param])
+
+        sweep_range = np.linspace(self._sweep_bounds[0][0], self._sweep_bounds[0][1], num=num_steps)
+        
+        DYN = models.DYN()
+        AERO = models.AERO()
+        PTN = models.PTN()
+
+        DYN_params = list(DYN.__dict__.keys())
+        AERO_params = list(AERO.__dict__.keys())
+        PTN_params = list(PTN.__dict__.keys())
+        payloads = []
+        times = []
+
+        for param_val in sweep_range:
+            if self._sweep_params[0] in DYN_params:
+                DYN = models.DYN(overrides={self._sweep_params[0]: param_val})
+            elif self._sweep_params[0] in AERO_params:
+                AERO = models.AERO(overrides={self._sweep_params[0]: param_val})
+            elif self._sweep_params[0] in PTN_params:
+                PTN = models.PTN(overrides={self._sweep_params[0]: param_val})
+
+            payloads.append({
+                'AERO': AERO,
+                'DYN': DYN,
+                'PTN': PTN
+            })
+
+
+        
+        num_processes = cpu_count() * 2
+        with Pool(num_processes) as p:
+            times = p.map(self.compute_task_authoritative, payloads)
+        
+        fig, ax = plt.subplots()
+        ax.plot(sweep_range, list(times), "o-")
+        plt.xlabel("Trackwidth (in)")
+        plt.ylabel("Laptime (s)")
+        plt.show()
+
+
+    def compute_task_authoritative(self, p):
+        AERO = p["AERO"]
+        DYN = p["DYN"]
+        PTN = p["PTN"]
+
+        vehicle = Vehicle(AERO=AERO, DYN=DYN, PTN=PTN, trajectory_path=self._trajectory_path)
+        
+        vehicle.GGV.generate()
+
+        laptime = 0
+        if(self._run_mode == "ENDURANCE"):
+            laptime = vehicle.simulate_endurance()
+        elif(self._run_mode == "ACCEL"):
+            laptime = vehicle.simulate_accel()
+        return laptime
+
+        
+        
 
     def sweep(self, num_steps, run_mode="ENDURANCE", **kwargs) -> None:
         self._run_mode = run_mode.upper()

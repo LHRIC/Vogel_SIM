@@ -1,18 +1,15 @@
 import math
-from .SystemModel import SystemModel
 
-class DYN(SystemModel):
-    def __init__(self):
+class DYN():
+    def __init__(self, overrides={}):
         self.LLTD = 0.5
-        self.driver_weight = 96
-        self.vehicle_weight = 400
-        self.total_weight = self.driver_weight + self.vehicle_weight
+        self.total_weight = 496
 
         self.weight_dist_f = 0.45
         self.cg_height = 12.5  # inches
         self.wheelbase = 1.535  # meters
         self.trackwidth_f = 48  # inches
-        self.trackwidth_r = 48  # inches
+        self.trackwidth_r = self.trackwidth_f # inches
 
         self.roll_grad_f = 0 #(rad/g)
         self.roll_grad_r = 0
@@ -33,14 +30,21 @@ class DYN(SystemModel):
         self.KPI_f = 0
         self.KPI_r = 0
 
-        self.camber_roll_induced_f = math.asin(2 / self.trackwidth_f)
-        self.camber_roll_induced_r = math.asin(2 / self.trackwidth_r)
-
         self.friction_scaling_x = 0.6
         self.friction_scaling_y = 0.6
 
-        #Unit Conversions
+        for key in overrides.keys():
+            val = overrides[key]
 
+            try:
+                setattr(self, key, val)
+            except:
+                exit("Ahhhh")
+        self.compute_deriv_params()
+        self.convert_units()
+
+
+    def convert_units(self):
         self.total_weight = self.total_weight * 4.4482216153  # N
         self.total_weight_f = self.total_weight * self.weight_dist_f
         self.total_weight_r = self.total_weight * (1 - self.weight_dist_f)
@@ -55,3 +59,8 @@ class DYN(SystemModel):
 
         self.camber_gain_f = self.camber_roll_induced_f * self.camber_comp_f
         self.camber_gain_r = self.camber_roll_induced_r * self.camber_comp_r
+
+    def compute_deriv_params(self):
+        self.camber_roll_induced_f = math.asin(2 / self.trackwidth_f)
+        self.camber_roll_induced_r = math.asin(2 / self.trackwidth_r)        
+

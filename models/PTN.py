@@ -1,8 +1,8 @@
 import numpy as np
 from .SystemModel import SystemModel
 
-class PTN(SystemModel):
-    def __init__(self):
+class PTN():
+    def __init__(self, overrides={}):
         # 6200:100:14100
         self.torque_mod = 1
         self.rpm_range = np.array([*range(6200, 14100 + 100, 100)])
@@ -16,6 +16,22 @@ class PTN(SystemModel):
         self.drivetrain_losses = 0.85
         self.shift_time = 0.25 #seconds
         self.diff_locked = False; #False - open, True - closed
+
+        for key in overrides.keys():
+            val = overrides[key]
+
+            try:
+                setattr(self, key, val)
+            except:
+                exit("Ahhhh")
+        self.compute_deriv_params()
+        self.convert_units()
+    
+    def compute_deriv_params(self):
+        pass
+
+    def convert_units(self):
+        pass
 
 if __name__ == "__main__":
     a = PTN()
