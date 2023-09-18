@@ -1,5 +1,5 @@
 import numpy as np
-from .SystemModel import SystemModel
+import matplotlib.pyplot as plt
 
 class PTN():
     def __init__(self, overrides={}):
@@ -35,5 +35,7 @@ class PTN():
 
 if __name__ == "__main__":
     a = PTN()
-    print(len(a.rpm_range))
-    print(len(a.torque_curve))
+    fig, ax = plt.subplots()
+
+    ax.plot(a.rpm_range, a.torque_curve)
+    plt.show()

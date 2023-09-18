@@ -5,7 +5,8 @@ def main():
 
 
     simulator = Engine(trajectory="./trajectory/17_lincoln_endurance_track_highres.xls")
-    simulator.sweep_authoritative(num_steps=20, trackwidth_f=(47.224, 53.15))
+    
+    simulator.sweep(num_steps=20, trackwidth_f=(47.224, 53.15))
     #simulator.sweep(num_steps = 15, cg_height=(10, 15))
     #simulator.sweep(num_steps = 30, trackwidth_f=(1.2, 1.35))
     #simulator.sweep(num_steps = 30, run_mode="ACCEL", final_drive=(1, 5))

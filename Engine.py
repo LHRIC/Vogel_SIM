@@ -18,7 +18,11 @@ class Engine:
         self._run_mode = "ENDURANCE"
 
     def single_run(self, run_mode="ENDURANCE", plot=False):
-        vehicle = Vehicle(AERO=self._AERO, DYN=self._DYN, PTN=self._PTN, trajectory_path=self._trajectory_path)
+        DYN = models.DYN()
+        AERO = models.AERO()
+        PTN = models.PTN()
+
+        vehicle = Vehicle(AERO=AERO, DYN=DYN, PTN=PTN, trajectory_path=self._trajectory_path)
         vehicle.GGV.generate()
         laptime = 0
 
@@ -111,10 +115,15 @@ class Engine:
                 ax.plot(vehicle.dist, vehicle.ax)
                 plt.show()
 
-    def sweep_authoritative(self, num_steps, run_mode="ENDURANCE", **kwargs) -> None:
+    def sweep(self, num_steps, run_mode="ENDURANCE", **kwargs) -> None:
         self._run_mode = run_mode.upper()
 
         self._sweep_params = list(kwargs.keys())
+
+        if(len(kwargs) > 1):
+            print("ERROR: Coupled parameter sweeps are not yet supported")
+            return
+
         for param in self._sweep_params:
             self._sweep_bounds.append(kwargs[param])
 
@@ -174,90 +183,6 @@ class Engine:
         return laptime
 
         
-        
-
-    def sweep(self, num_steps, run_mode="ENDURANCE", **kwargs) -> None:
-        self._run_mode = run_mode.upper()
-        
-        self._sweep_params = list(kwargs.keys())
-        for param in self._sweep_params:
-            self._sweep_bounds.append(kwargs[param])
-            if getattr(self._AERO, param, None) is not None:
-                self._sweep_classes.append("AERO")
-            elif getattr(self._DYN, param, None) is not None:
-                self._sweep_classes.append("DYN")
-            elif getattr(self._PTN, param, None) is not None:
-                self._sweep_classes.append("PTN")
-            else:
-                print(f'ERROR: Parameter "{param}" not found')
-                return
-        
-        if(len(kwargs) == 1):
-            # Single variable sweep
-            sweep_range = np.linspace(self._sweep_bounds[0][0], self._sweep_bounds[0][1], num=num_steps)
-            times = []
-
-            num_processes = cpu_count() * 2
-            with Pool(num_processes) as p:
-                times = p.map(self.compute_task, sweep_range)
-                        
-
-            fig, ax = plt.subplots()
-            ax.plot(sweep_range, list(times), "o-")
-            plt.show()
-        elif(len(kwargs) == 2):
-            sweep_range_x = np.linspace(self._sweep_bounds[0][0], self._sweep_bounds[0][1], num=num_steps)
-            sweep_range_y = np.linspace(self._sweep_bounds[1][0], self._sweep_bounds[1][1], num=num_steps)
-            xx, yy = np.meshgrid(sweep_range_x, sweep_range_y)
-            R = np.sin(np.sqrt(xx**2 + yy**2))
-
-            Z = np.zeros_like(xx)
-
-            comb_params = []
-            for i in range(num_steps):
-                for j in range(num_steps):
-                    x = xx[i][j]
-                    y = yy[i][j]
-                    comb_params.append((x, y))
-            
-            num_processes = cpu_count() * 2
-            with Pool(num_processes) as p:
-                times = p.map(self.compute_task, comb_params)
-
-            c = 0
-            for i in range(num_steps):
-                for j in range(num_steps):
-                    Z[i][j] = times[c]
-                    c += 1
-
-
-            # Plot the surface.
-            fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-            surf = ax.plot_surface(xx, yy, Z, cmap="coolwarm",
-                       linewidth=0, antialiased=False)
-            fig.colorbar(surf, shrink=0.5, aspect=5)
-
-            plt.show()
-        else:
-            print(f"WARN: Parameter sweeps with {len(kwargs)} variables are not supported.")
-            return
-        '''
-        if(len(kwargs) > 1):
-            
-        else:
-            sweep_range = kwargs[self._sweep_param]
-            sweep_range = np.linspace(sweep_range[0], sweep_range[1], num=num_steps)
-            times = []
-
-            num_processes = cpu_count() * 2
-            with Pool(num_processes) as p:
-                times = p.map(self.compute_task, sweep_range)
-                        
-
-            fig, ax = plt.subplots()
-            ax.plot(sweep_range, list(times), "o-")
-            plt.show()
-        '''
     
         
     def compute_task(self, p):
