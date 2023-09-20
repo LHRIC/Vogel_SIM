@@ -1,6 +1,7 @@
 import math
+from models.system_model import SystemModel
 
-class DYN():
+class DYN(SystemModel):
     def __init__(self, overrides={}):
         self.LLTD = 0.5
         self.total_weight = 496

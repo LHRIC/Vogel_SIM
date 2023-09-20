@@ -1,5 +1,5 @@
 import math
-from .SystemModel import SystemModel
+from models.system_model import SystemModel
 
 class DYN_2(SystemModel):
     def __init__(self):

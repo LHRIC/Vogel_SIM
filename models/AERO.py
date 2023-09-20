@@ -1,6 +1,6 @@
-from .SystemModel import SystemModel
+from models.system_model import SystemModel
 
-class AERO():
+class AERO(SystemModel):
     def __init__(self, overrides={}):
         self.Cl = 1.77
         self.Cd = 0.8

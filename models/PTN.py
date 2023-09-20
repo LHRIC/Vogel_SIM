@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from models.system_model import SystemModel
 
-class PTN():
+class PTN(SystemModel):
     def __init__(self, overrides={}):
         # 6200:100:14100
         self.torque_mod = 1
