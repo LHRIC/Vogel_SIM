@@ -1,6 +1,8 @@
 import math
 import matlab.engine
 import pickle
+import scipy
+import numpy as np
 
 class MF52:
     def __init__(self):
@@ -13,15 +15,28 @@ class MF52:
         self.c_Fx = None
         self.c_Fy = None
 
-        with open("./utilities/FxInterpolator.pickle", "rb") as Fx_in:
-            self.c_Fx = pickle.load(Fx_in)
-            Fx_in.close()
-        with open("./utilities/FyInterpolator.pickle", "rb") as Fy_in:
-            self.c_Fy = pickle.load(Fy_in)
-            Fy_in.close()
+        lat_rs = scipy.io.loadmat('./utilities/LateralResponseSurface.mat')
 
-        self.c_Fx.bounds_error = False
-        self.c_Fy.bounds_error = False
+        self.lat_rs = lat_rs["LateralResponseSurface"]
+
+        res = 50
+
+        self.Fz_range = np.linspace(0, 1400, res)
+        self.alpha_range = np.linspace(-0.5, 0.5, res)
+        self.gamma_range = np.linspace(-0.05, 0.05, res)
+    
+    def find_window(self, val, arr):
+        if(val < min(arr)):
+            print(f'{val} less than {min(arr)}')
+            return (0, 0)
+        elif(val > max(arr)):
+            print(f'{val} greater than {max(arr)}')
+            l = len(arr) - 1
+            return (l, l)
+
+        for i in range(len(arr)):
+            if(arr[i] >= val):
+                return (i-1, i)
 
     def Fx_interp(self, Fz, GammaX, SL):
         Fx = self.c_Fx((Fz, GammaX, SL))
@@ -100,6 +115,59 @@ class MF52:
         return Fy
     
     def Fy(self, SL, Fz, IA):
+
+        if(Fz <= 0):
+            return 0
+        
+        '''
+        
+        x = Fz
+        y = SL
+        z = IA
+        #x, y, z = SL, IA, Fz
+
+        x0_idx, x1_idx = self.find_window(x, self.Fz_range)
+        y0_idx, y1_idx = self.find_window(y, self.alpha_range)
+        z0_idx, z1_idx = self.find_window(z, self.gamma_range)
+
+        x0 = self.Fz_range[x0_idx]
+        x1 = self.Fz_range[x1_idx]
+        y0 = self.alpha_range[y0_idx]
+        y1 = self.alpha_range[y1_idx]
+        z0 = self.gamma_range[z0_idx]
+        z1 = self.gamma_range[z1_idx]
+
+        x_denom = None
+        if(abs(x1 - x0) < 1e-6):
+            x_denom = 1e-6 * np.sign(x1 - x0)
+        else:
+            x_denom = x1 - x0
+
+        xd = (x - x0)/x_denom
+        yd = (y - y0)/(y1 - y0)
+        zd = (z - z0)/(z1 - z0)
+
+        F_000 = self.lat_rs[x0_idx][y0_idx][z0_idx]
+        F_001 = self.lat_rs[x0_idx][y0_idx][z1_idx]
+        F_010 = self.lat_rs[x0_idx][y1_idx][z0_idx]
+        F_011 = self.lat_rs[x0_idx][y1_idx][z1_idx]
+        F_100 = self.lat_rs[x1_idx][y0_idx][z0_idx]
+        F_101 = self.lat_rs[x1_idx][y0_idx][z1_idx]
+        F_110 = self.lat_rs[x1_idx][y1_idx][z0_idx]
+        F_111 = self.lat_rs[x1_idx][y1_idx][z1_idx]
+
+        F_00 = F_000 * (1 - xd) + F_100 * xd
+        F_01 = F_001 * (1 - xd) + F_101 * xd
+        F_10 = F_010 * (1 - xd) + F_110 * xd
+        F_11 = F_011 * (1 - xd) + F_111 * xd
+
+        F_0 = F_00 * (1 - yd) + F_10 * yd
+        F_1 = F_01 * (1 - yd) + F_11 * yd
+
+        F_y = F_0 * (1 - zd) + F_1 * zd
+
+        return F_y
+        '''
         SL = math.degrees(SL)
         IA = math.degrees(IA)
 
@@ -116,10 +184,13 @@ class MF52:
         Bx1 = B * (SL + H)
         
         return (D * math.sin(C * math.atan(Bx1 - E * (Bx1 - math.atan(Bx1)))) + V) * -1
-    
+        
 
 if __name__ == '__main__':
-    tm = MF52()
+    lat_rs = scipy.io.loadmat('./LateralResponseSurface.mat')
+
+    lat_rs = lat_rs["LateralResponseSurface"]
+    print(lat_rs)
     '''
     wr = np.linspace(-2000, 0, 2000)
     IA_r = np.linspace(-5, 5, 50)
