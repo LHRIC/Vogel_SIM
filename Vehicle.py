@@ -16,7 +16,7 @@ class Vehicle:
         '''Max Achievable Velocity, assuming RPM never exceeds shiftpoint'''
         self.v_max = self.PTN.shiftpoint / (self.gear_tot/self.DYN.tire_radius*60/(2 * math.pi))
         self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max)
-        
+
         self.trajectory = Trajectory.Trajectory(trajectory_path, self.GGV.radii_range[0], self.GGV.radii_range[-1])
         self._interval = mesh_resolution
 

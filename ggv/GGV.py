@@ -202,6 +202,9 @@ class GGV:
         IA_0r = self.DYN.static_camber_r - sus_drop_r * self.DYN.camber_gain_r
 
         Ax = 0.99
+        A_x_diff = 1 # Initial condition to start the iteration
+        FXF = -1
+        FXR = -1
         while A_x_diff > 0:
             Ax += 0.01
             pitch = Ax * self.DYN.pitch_grad
@@ -226,6 +229,7 @@ class GGV:
                 Fx_r = self._MF52.Fx(-wr, -IA_r, sl) * self.DYN.friction_scaling_x
                 fx_f.append(Fx_f)
                 fx_r.append(Fx_r)
+            
 
             FXF = min(fx_f)
             FXR = min(fx_r)
@@ -292,7 +296,7 @@ class GGV:
         braking_g = np.empty((len(self.velocity_range),))
         for idx, v in enumerate(self.velocity_range):
             print(f"Calculating: Long. braking capability for {v} m/s")
-            Ax = self.calc_grip_lim_max_accel(v)
+            Ax = self.calc_decel(v)
             braking_g[idx] = (Ax)
         self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
 
