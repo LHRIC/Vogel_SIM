@@ -128,28 +128,15 @@ class Engine:
 
         sweep_range = np.linspace(self._sweep_bounds[0][0], self._sweep_bounds[0][1], num=num_steps)
         
-        DYN = models.DYN()
-        AERO = models.AERO()
-        PTN = models.PTN()
-
-        DYN_params = list(DYN.__dict__.keys())
-        AERO_params = list(AERO.__dict__.keys())
-        PTN_params = list(PTN.__dict__.keys())
         payloads = []
         times = []
 
         for param_val in sweep_range:
-            if self._sweep_params[0] in DYN_params:
-                DYN = models.DYN(overrides={self._sweep_params[0]: param_val})
-            elif self._sweep_params[0] in AERO_params:
-                AERO = models.AERO(overrides={self._sweep_params[0]: param_val})
-            elif self._sweep_params[0] in PTN_params:
-                PTN = models.PTN(overrides={self._sweep_params[0]: param_val})
+            vehicle_params = setups.VehicleSetup(overrides={self._sweep_params[0]: param_val})
+
 
             payloads.append({
-                'AERO': AERO,
-                'DYN': DYN,
-                'PTN': PTN
+                'PARAMS': vehicle_params
             })
 
 
@@ -166,11 +153,9 @@ class Engine:
 
 
     def compute_task_authoritative(self, p):
-        AERO = p["AERO"]
-        DYN = p["DYN"]
-        PTN = p["PTN"]
+        params = p["PARAMS"]
 
-        vehicle = Vehicle(AERO=AERO, DYN=DYN, PTN=PTN, trajectory_path=self._trajectory_path)
+        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path)
         
         vehicle.GGV.generate()
 

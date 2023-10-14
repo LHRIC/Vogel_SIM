@@ -14,9 +14,6 @@ v = state_models.VehicleState(DYN=DYN, AERO=AERO, PTN=PTN, Ax=-1, Ay=1.5)
 v.eval()
 
 
-
-
-
 '''
 with open('CharlesGundlachV.csv', 'w', newline='') as f:
     writer = csv.writer(f)
