@@ -5,6 +5,7 @@ from matplotlib import cm
 from multiprocessing import Pool, cpu_count
 import scipy.interpolate as interp
 import models
+import setups
 
 class Engine:
 
@@ -18,11 +19,9 @@ class Engine:
         self._run_mode = "ENDURANCE"
 
     def single_run(self, run_mode="ENDURANCE", plot=False):
-        DYN = models.DYN()
-        AERO = models.AERO()
-        PTN = models.PTN()
+        params = setups.VehicleSetup()
 
-        vehicle = Vehicle(AERO=AERO, DYN=DYN, PTN=PTN, trajectory_path=self._trajectory_path)
+        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path)
         vehicle.GGV.generate()
         laptime = 0
 
@@ -115,7 +114,7 @@ class Engine:
                 ax.plot(vehicle.dist, vehicle.ax)
                 plt.show()
 
-    def sweep(self, num_steps, run_mode="ENDURANCE", **kwargs) -> None:
+    def sweep(self, num_steps, run_mode="ENDURANCE", xlabel="", **kwargs) -> None:
         self._run_mode = run_mode.upper()
 
         self._sweep_params = list(kwargs.keys())
@@ -161,7 +160,7 @@ class Engine:
         
         fig, ax = plt.subplots()
         ax.plot(sweep_range, list(times), "o-")
-        plt.xlabel("Trackwidth (in)")
+        plt.xlabel(xlabel)
         plt.ylabel("Laptime (s)")
         plt.show()
 

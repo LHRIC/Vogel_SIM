@@ -4,6 +4,8 @@ import pickle
 import scipy
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 class MF52:
     def __init__(self):
         self.FZ0 = 800  # Nominal tire load: newtons
@@ -187,54 +189,10 @@ class MF52:
         
 
 if __name__ == '__main__':
-    lat_rs = scipy.io.loadmat('./LateralResponseSurface.mat')
-
-    lat_rs = lat_rs["LateralResponseSurface"]
-    print(lat_rs)
-    '''
-    wr = np.linspace(-2000, 0, 2000)
-    IA_r = np.linspace(-5, 5, 50)
-    sl = np.linspace(-0.1, 1, 100)
-
-
-    engine = matlab.engine.start_matlab()
-    tm = MF52()
-    
-    Fx_arr = np.zeros((2000, 50, 100))
-
-    for i in range(len(wr)):
-        print(wr[i])
-        for j in range(len(IA_r)):
-            for k in range(len(sl)):
-                Fx_arr[i, j, k] = tm.Fx_old(wr[i], IA_r[j], sl[k])
-    
-    fn = RegularGridInterpolator((wr, IA_r, sl), Fx_arr)
-
-    with open('./utilities/FxInterpolator.pickle', 'wb') as pickle_file:
-        pickle.dump(fn, pickle_file, pickle.HIGHEST_PROTOCOL)
-    
-    
-    
-    a_r = np.linspace(-0.5, 0.5, 50)
-    wr = np.linspace(-300, 1500, 200)
-    IA_r = np.linspace(-0.01, 0.2, 50)
-
-    engine = matlab.engine.start_matlab()
-    s = engine.genpath('./utilities')
-    engine.addpath(s, nargout=0)
     tm = MF52()
 
-    Fy_arr = np.zeros((50, 200, 50))
-
-    
-    for i in range(len(a_r)):
-        print(a_r[i])
-        for j in range(len(wr)):
-            for k in range(len(IA_r)):
-                Fy_arr[i, j, k] = tm.Fy_old(a_r[i], wr[j], IA_r[k], engine=engine)
-    
-    fn = RegularGridInterpolator((a_r, wr, IA_r), Fy_arr)
-
-    with open('./utilities/FyInterpolator.pickle', 'wb') as pickle_file:
-        pickle.dump(fn, pickle_file, pickle.HIGHEST_PROTOCOL)
-    '''
+    Fx = []
+    for i in np.linspace(-0.5, 0.5):
+        #i = math.degrees(i)
+        Fx.append(tm.Fx(500, i, 0.15))
+    print(Fx)

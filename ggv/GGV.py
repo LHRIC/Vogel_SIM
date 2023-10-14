@@ -5,12 +5,12 @@ from statistics import mean
 import models
 from fitting import csaps, polyfit
 from utilities import MF52
+import setups
 
 class GGV:
-    def __init__(self, AERO: models.AERO, DYN: models.DYN, PTN: models.PTN, gear_tot, v_max):
-        self.AERO = AERO
-        self.DYN = DYN
-        self.PTN = PTN
+    def __init__(self, params: setups.VehicleSetup, gear_tot, v_max):
+        self.params = params
+
         self._MF52 = MF52()
 
         self.gear_tot = gear_tot
@@ -61,35 +61,35 @@ class GGV:
 
 
     def calc_grip_lim_max_accel(self, v):
-        downforce = self.AERO.Cl * v**2  # Downforce: Newtons
+        downforce = self.params.Cl * v**2  # Downforce: Newtons
         # dxr
-        rear_sus_drop = downforce * (1 - self.AERO.CoP) / 2 / self.DYN.ride_rate_r
+        rear_sus_drop = downforce * (1 - self.params.CoP) / 2 / self.params.ride_rate_r
         # IA_0r
-        IA_0r = self.DYN.static_camber_r - rear_sus_drop * self.DYN.camber_gain_r
+        IA_0r = self.params.static_camber_r - rear_sus_drop * self.params.camber_gain_r
 
         A_x_diff = 1
         Ax = 0
 
         while A_x_diff > 0:
             Ax += 0.01
-            pitch = -Ax * self.DYN.pitch_grad
+            pitch = -Ax * self.params.pitch_grad
             # Calc load on each tire from static load and downforce
-            wr = (self.DYN.total_weight_r + downforce * (1 - self.AERO.CoP)) / 2
+            wr = (self.params.total_weight_r + downforce * (1 - self.params.CoP)) / 2
             
             # Add on the effects of longitudinal weight transfer
             wr += (
-                Ax * self.DYN.cg_height * self.DYN.total_weight / self.DYN.wheelbase / 2
+                Ax * self.params.cg_height * self.params.total_weight / self.params.wheelbase / 2
             )
 
             #Calculate new camber from camber gain
             IA_r = (
-                self.DYN.wheelbase * math.sin(pitch) / 2 * self.DYN.camber_gain_r
+                self.params.wheelbase * math.sin(pitch) / 2 * self.params.camber_gain_r
                 + IA_0r
             )
 
             fxr = []
             for sl in np.arange(0, 1.01, 0.01):
-                Fx = self._MF52.Fx(-wr, -IA_r, sl) * self.DYN.friction_scaling_x
+                Fx = self._MF52.Fx(-wr, -IA_r, sl) * self.params.friction_scaling_x
                 fxr.append(Fx)
             
             # Get the maximum possible force experienced by the tire 
@@ -97,7 +97,7 @@ class GGV:
             FX = abs(2 * FXR)
 
             # Calculate potential acceleration if the force was generated at both rear contact patches
-            AX = FX / self.DYN.total_weight  # THIS IS IN G'S, SEE ABOVE
+            AX = FX / self.params.total_weight  # THIS IS IN G'S, SEE ABOVE
 
             #Iterate until acceleration converges
             A_x_diff = AX - Ax
@@ -107,30 +107,30 @@ class GGV:
     def calc_power_lim_max_accel(self, v):
         
         gear_idx = 0
-        rpm = self.PTN.shiftpoint
+        rpm = self.params.shiftpoint
         rpm_diff = 1000
 
         # Short little accel simulation, determine what gear the car will be in
         # if it had to accelerate to this velocity
 
         #TODO: Revisit this calculation, not entirely sure that it is accurate
-        while rpm >= self.PTN.shiftpoint and rpm_diff > 1e-6:
+        while rpm >= self.params.shiftpoint and rpm_diff > 1e-6:
             total_red = (
-                self.PTN.gear_ratios[gear_idx]
-                * self.PTN.final_drive
-                * self.PTN.primary_reduction
+                self.params.gear_ratios[gear_idx]
+                * self.params.final_drive
+                * self.params.primary_reduction
             )
             gear_idx += 1
-            gear_idx = min(self.PTN.num_gears - 1, gear_idx)
+            gear_idx = min(self.params.num_gears - 1, gear_idx)
 
-            rpm_diff = abs(rpm -  v * total_red / self.DYN.tire_radius * 60 / (2 * math.pi))
+            rpm_diff = abs(rpm -  v * total_red / self.params.tire_radius * 60 / (2 * math.pi))
 
-            rpm = v * total_red / self.DYN.tire_radius * 60 / (2 * math.pi)
+            rpm = v * total_red / self.params.tire_radius * 60 / (2 * math.pi)
 
         # Determine torque at the crankshaft
-        crankshaft_torque = np.interp(rpm, self.PTN.rpm_range, self.PTN.torque_curve)
-        wheel_torque = crankshaft_torque * total_red * self.PTN.drivetrain_losses
-        Fx = wheel_torque / self.DYN.tire_radius
+        crankshaft_torque = np.interp(rpm, self.params.rpm_range, self.params.torque_curve)
+        wheel_torque = crankshaft_torque * total_red * self.params.drivetrain_losses
+        Fx = wheel_torque / self.params.tire_radius
 
         # gear_idx is what gear we are in after acceling to the input velocity
         return (Fx, gear_idx)
@@ -139,30 +139,30 @@ class GGV:
         # Almost like an estimation of the over/understeer balance of the car
         AYP = 0.5
 
-        self.a = self.DYN.wheelbase * (1 - self.DYN.weight_dist_f)
-        self.b = self.DYN.wheelbase * self.DYN.weight_dist_f
+        self.a = self.params.wheelbase * (1 - self.params.weight_dist_f)
+        self.b = self.params.wheelbase * self.params.weight_dist_f
         self.R = R
         
         # Initial guess for velocity from radii and lateral acceleration guess 
         V = math.sqrt(R * 9.81 * AYP)
 
         # Down (Lift) Force calculated from velo guess
-        LF = self.AERO.Cl * V**2
+        LF = self.params.Cl * V**2
 
         # Update suspension travel
-        dxf = LF * self.AERO.CoP / 2 / self.DYN.ride_rate_f
-        dxr = LF * (1 - self.AERO.CoP) / 2 / self.DYN.ride_rate_r
+        dxf = LF * self.params.CoP / 2 / self.params.ride_rate_f
+        dxr = LF * (1 - self.params.CoP) / 2 / self.params.ride_rate_r
 
         # Get static camber from suspension heave
-        self.IA_0f = self.DYN.static_camber_f - dxf * self.DYN.camber_gain_f
-        self.IA_0r = self.DYN.static_camber_r - dxr * self.DYN.camber_gain_r
+        self.IA_0f = self.params.static_camber_f - dxf * self.params.camber_gain_f
+        self.IA_0r = self.params.static_camber_r - dxr * self.params.camber_gain_r
 
         # Get loads on each wheel
-        self.wf = (self.DYN.total_weight_f + LF * self.AERO.CoP) / 2
-        self.wr = (self.DYN.total_weight_r + LF * (1 - self.AERO.CoP)) / 2
+        self.wf = (self.params.total_weight_f + LF * self.params.CoP) / 2
+        self.wr = (self.params.total_weight_r + LF * (1 - self.params.CoP)) / 2
 
         # Guess initial ackermann steer angle
-        delta = self.DYN.wheelbase / R
+        delta = self.params.wheelbase / R
 
         # Assume sideslip starts at 0
         beta = 0
@@ -192,14 +192,14 @@ class GGV:
         return eval_vogel[0]
     
     def calc_decel(self, v):
-        downforce = self.AERO.Cl * v**2  # Downforce: Newtons
+        downforce = self.params.Cl * v**2  # Downforce: Newtons
         # dxf, dxr
-        sus_drop_f = downforce * (self.AERO.CoP) / 2 / self.DYN.ride_rate_f
-        sus_drop_r = downforce * (1 - self.AERO.CoP) / 2 / self.DYN.ride_rate_r
+        sus_drop_f = downforce * (self.params.CoP) / 2 / self.params.ride_rate_f
+        sus_drop_r = downforce * (1 - self.params.CoP) / 2 / self.params.ride_rate_r
 
         # IA_0r, IA_0f
-        IA_0f = self.DYN.static_camber_f - sus_drop_f * self.DYN.camber_gain_f
-        IA_0r = self.DYN.static_camber_r - sus_drop_r * self.DYN.camber_gain_r
+        IA_0f = self.params.static_camber_f - sus_drop_f * self.params.camber_gain_f
+        IA_0r = self.params.static_camber_r - sus_drop_r * self.params.camber_gain_r
 
         Ax = 0.99
         A_x_diff = 1 # Initial condition to start the iteration
@@ -207,26 +207,26 @@ class GGV:
         FXR = -1
         while A_x_diff > 0:
             Ax += 0.01
-            pitch = Ax * self.DYN.pitch_grad
+            pitch = Ax * self.params.pitch_grad
 
-            wf = (self.DYN.total_weight_f + downforce * (self.AERO.CoP)) / 2
-            wr = (self.DYN.total_weight_r + downforce * (1 - self.AERO.CoP)) / 2
+            wf = (self.params.total_weight_f + downforce * (self.params.CoP)) / 2
+            wr = (self.params.total_weight_r + downforce * (1 - self.params.CoP)) / 2
             wf += (
-                Ax * self.DYN.cg_height * self.DYN.total_weight / self.DYN.wheelbase / 2
+                Ax * self.params.cg_height * self.params.total_weight / self.params.wheelbase / 2
             )
             wr -= (
-                Ax * self.DYN.cg_height * self.DYN.total_weight / self.DYN.wheelbase / 2
+                Ax * self.params.cg_height * self.params.total_weight / self.params.wheelbase / 2
             )
 
-            IA_f = (-self.DYN.wheelbase * 12 * math.sin(pitch) / 2 * self.DYN.camber_gain_f) + IA_0f
-            IA_r = (self.DYN.wheelbase * 12 * math.sin(pitch) / 2 * self.DYN.camber_gain_r) + IA_0r
+            IA_f = (-self.params.wheelbase * 12 * math.sin(pitch) / 2 * self.params.camber_gain_f) + IA_0f
+            IA_r = (self.params.wheelbase * 12 * math.sin(pitch) / 2 * self.params.camber_gain_r) + IA_0r
 
             fx_f = []
             fx_r = []
 
             for sl in np.arange(-0.23, 0.01, 0.01):
-                Fx_f = self._MF52.Fx(-wf, -IA_f, sl) * self.DYN.friction_scaling_x
-                Fx_r = self._MF52.Fx(-wr, -IA_r, sl) * self.DYN.friction_scaling_x
+                Fx_f = self._MF52.Fx(-wf, -IA_f, sl) * self.params.friction_scaling_x
+                Fx_r = self._MF52.Fx(-wr, -IA_r, sl) * self.params.friction_scaling_x
                 fx_f.append(Fx_f)
                 fx_r.append(Fx_r)
             
@@ -235,11 +235,10 @@ class GGV:
             FXR = min(fx_r)
 
             FX = abs(2 * FXF + 2 * FXR)
-            AX = FX / self.DYN.total_weight  # THIS IS IN G'S, SEE ABOVE
+            AX = FX / self.params.total_weight  # THIS IS IN G'S, SEE ABOVE
             A_x_diff = AX - Ax
         return Ax
 
-    
     def generate(self):
         power_lim_a = np.empty((len(self.velocity_range),))
         grip_lim_a = np.empty((len(self.velocity_range),))
@@ -255,8 +254,8 @@ class GGV:
             self.expected_gears.append(gear_idx)
 
             # TODO: Investigate whether or not the grip limited case should subtract drag as well.
-            FX_r -= self.AERO.Cd * v**2  #Take drag into account
-            AX_r = FX_r / self.DYN.total_weight
+            FX_r -= self.params.Cd * v**2  #Take drag into account
+            AX_r = FX_r / self.params.total_weight
             power_lim_a[idx] = (AX_r)
 
             accel_cap[idx] = (min(Ax_r, AX_r))
@@ -318,17 +317,17 @@ class GGV:
         '''Calculate the Lateral Load Transfer from cornering in Newtons'''
         WT = (
             A_y
-            * self.DYN.cg_height
-            * self.DYN.total_weight
-            / mean([self.DYN.trackwidth_f, self.DYN.trackwidth_r])
+            * self.params.cg_height
+            * self.params.total_weight
+            / mean([self.params.trackwidth_f, self.params.trackwidth_r])
         )
 
         '''Distribute the Load Transfer to the F/R based on LLTD'''
-        WTF = WT * self.DYN.LLTD
-        WTR = WT * (1 - self.DYN.LLTD)
+        WTF = WT * self.params.LLTD
+        WTR = WT * (1 - self.params.LLTD)
         
-        phif = A_y * self.DYN.roll_grad_f
-        phir = A_y * self.DYN.roll_grad_f
+        phif = A_y * self.params.roll_grad_f
+        phir = A_y * self.params.roll_grad_f
 
 
         '''Apply weight transfer to each tire accordingly'''
@@ -338,31 +337,31 @@ class GGV:
         wrout = self.wr + WTR
 
         IA_f_in = (
-            -self.DYN.trackwidth_f * math.sin(phif) / 2 * self.DYN.camber_gain_f
+            -self.params.trackwidth_f * math.sin(phif) / 2 * self.params.camber_gain_f
             - self.IA_0f
-            - self.DYN.KPI_f * (1 - math.cos(delta))
-            - self.DYN.caster_f * math.sin(delta)
+            - self.params.KPI_f * (1 - math.cos(delta))
+            - self.params.caster_f * math.sin(delta)
             + phif
         )
         IA_f_out = (
-            -self.DYN.trackwidth_f * math.sin(phif) / 2 * self.DYN.camber_gain_f
+            -self.params.trackwidth_f * math.sin(phif) / 2 * self.params.camber_gain_f
             + self.IA_0f
-            + self.DYN.KPI_f * (1 - math.cos(delta))
-            - self.DYN.caster_f * math.sin(delta)
+            + self.params.KPI_f * (1 - math.cos(delta))
+            - self.params.caster_f * math.sin(delta)
             + phif
         )
         IA_r_in = (
-            -self.DYN.trackwidth_r * math.sin(phir) / 2 * self.DYN.camber_gain_r
+            -self.params.trackwidth_r * math.sin(phir) / 2 * self.params.camber_gain_r
             - self.IA_0r
-            - self.DYN.KPI_r * (1 - math.cos(deltar))
-            - self.DYN.caster_f * math.sin(deltar)
+            - self.params.KPI_r * (1 - math.cos(deltar))
+            - self.params.caster_f * math.sin(deltar)
             + phir
         )
         IA_r_out = (
-            -self.DYN.trackwidth_r * math.sin(phir) / 2 * self.DYN.camber_gain_r
+            -self.params.trackwidth_r * math.sin(phir) / 2 * self.params.camber_gain_r
             + self.IA_0r
-            + self.DYN.KPI_r * (1 - math.cos(deltar))
-            - self.DYN.caster_f * math.sin(deltar)
+            + self.params.KPI_r * (1 - math.cos(deltar))
+            - self.params.caster_f * math.sin(deltar)
             + phir
         )
 
@@ -375,16 +374,16 @@ class GGV:
 
         F_fin = (
             self._MF52.Fy(a_f, wfin, -IA_f_in)
-            * self.DYN.friction_scaling_y
+            * self.params.friction_scaling_y
             * math.cos(delta)
         )  # inputs = (rad Newtons rad)
         F_fout = (
             self._MF52.Fy(a_f, wfout, -IA_f_out)
-            * self.DYN.friction_scaling_y
+            * self.params.friction_scaling_y
             * math.cos(delta)
         )
 
-        F_xDrag = self.AERO.Cd * V**2 + (F_fin + F_fout) * math.sin(delta) / math.cos(
+        F_xDrag = self.params.Cd * V**2 + (F_fin + F_fout) * math.sin(delta) / math.cos(
             delta
         )
 
@@ -393,25 +392,25 @@ class GGV:
 
 
         '''Calculate the grip cost of overcoming vehicle drag'''
-        rscale = 1 - (F_xDrag / self.DYN.total_weight / (grip_lim_accel)) ** 2
+        rscale = 1 - (F_xDrag / self.params.total_weight / (grip_lim_accel)) ** 2
 
         F_rin = (
-            self._MF52.Fy(a_r, wrin, -IA_r_in) * self.DYN.friction_scaling_y * rscale
+            self._MF52.Fy(a_r, wrin, -IA_r_in) * self.params.friction_scaling_y * rscale
         )
         F_rout = (
-            self._MF52.Fy(a_r, wrout, -IA_r_out) * self.DYN.friction_scaling_y * rscale
+            self._MF52.Fy(a_r, wrout, -IA_r_out) * self.params.friction_scaling_y * rscale
         )
 
         F_y = F_fin + F_fout + F_rin + F_rout
         f_xplt = (F_fin + F_fout) * math.sin(delta) / math.cos(delta) / 400
 
         # This is the moment generated by the diff
-        M_z_diff = F_xDrag * self.PTN.diff_locked * self.DYN.trackwidth_r / 2
+        M_z_diff = F_xDrag * self.params.diff_locked * self.params.trackwidth_r / 2
         
         # This is the moment acting on the CG (causing under/oversteer)
         M_z = (F_fin + F_fout) * self.a - (F_rin + F_rout) * self.b - M_z_diff
 
-        AY = F_y / self.DYN.total_weight
+        AY = F_y / self.params.total_weight
 
         # Tries to minimize the objective function such that slip angle is kept at 12 degrees (bounds of tire model)
         slipAngle = a_f - math.radians(-12)

@@ -44,7 +44,7 @@ class Trajectory:
 
 
 if __name__ == "__main__":
-    t = Trajectory("./track/17_lincoln_endurance_track_highres.xls", 4.5, 36)
-    plt.scatter(t.trajectory[0], t.trajectory[1], c=t.radii)
+    t = Trajectory("./trajectory/17_lincoln_endurance_track_highres.xls", 4.5, 36)
+    plt.scatter(t.points[0], t.points[1], c=t.radii)
     plt.colorbar()
     plt.show()

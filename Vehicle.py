@@ -6,16 +6,14 @@ import math
 
 
 class Vehicle:
-    def __init__(self, trajectory_path, AERO, DYN, PTN, mesh_resolution=10):
-        self.AERO = AERO
-        self.DYN = DYN
-        self.PTN = PTN        
+    def __init__(self, trajectory_path, params, mesh_resolution=10):
+        self.params = params
 
         '''Total Reduction'''
-        self.gear_tot = self.PTN.gear_ratios[-1] * self.PTN.final_drive * self.PTN.primary_reduction
+        self.gear_tot = self.params.gear_ratios[-1] * self.params.final_drive * self.params.primary_reduction
         '''Max Achievable Velocity, assuming RPM never exceeds shiftpoint'''
-        self.v_max = self.PTN.shiftpoint / (self.gear_tot/self.DYN.tire_radius*60/(2 * math.pi))
-        self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max)
+        self.v_max = self.params.shiftpoint / (self.gear_tot/self.params.tire_radius*60/(2 * math.pi))
+        self.GGV = GGV.GGV(self.params, self.gear_tot, self.v_max)
 
         self.trajectory = Trajectory.Trajectory(trajectory_path, self.GGV.radii_range[0], self.GGV.radii_range[-1])
         self._interval = mesh_resolution
@@ -55,7 +53,7 @@ class Vehicle:
 
 
     def reset_ggv(self):
-        self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.gear_tot, self.v_max, self._matlab_engine)
+        self.GGV = GGV.GGV(self.AERO, self.DYN, self.PTN, self.params, self.gear_tot, self.v_max, self._matlab_engine)
 
     def simulate_accel(self):
         vel = 1e-6
@@ -274,7 +272,7 @@ class Vehicle:
 
                 
 
-                if time_shifting >= self.PTN.shift_time:
+                if time_shifting >= self.params.shift_time:
                     is_shifting = False
                     time_shifting = 0
                     gear = required_gear
