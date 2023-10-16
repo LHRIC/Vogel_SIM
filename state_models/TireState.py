@@ -1,8 +1,11 @@
 from utilities import MF52
+import setups
+import numpy as np
 
 class TireState():
-    def __init__(self):
+    def __init__(self, params: setups.VehicleSetup):
         self._MF52 = MF52()
+        self.params = params
 
         #Slip angle
         self.alpha = 0
@@ -18,13 +21,19 @@ class TireState():
 
         #Longitudinal slip
         self.kappa = 0
+
+        self.Fx = 0 #N
+        self.Fy = 0 #N
     
     '''Returns the unscaled longitudinal force in the tire frame'''
-    def Fx(self):
-        return self._MF52.Fx(self.Fz, self.epsilon, self.kappa)
+    def eval_Fx(self):
+        fx_range = []
+        for sl in np.arange(0, 1.01, 0.01):
+            fx_range.append(self._MF52.Fx(self.Fz, self.epsilon, sl) * self.params.friction_scaling_x)
+        self.Fx = max(fx_range)
     
     '''Returns the unscaled lateral force in the tire frame'''
-    def Fy(self):
-        return self._MF52.Fy(self.alpha, self.Fz, self.epsilon)
+    def eval_Fy(self):
+        self.Fy = self._MF52.Fy(self.alpha, self.Fz, self.epsilon) * self.params.friction_scaling_y
 
     

@@ -1,17 +1,15 @@
 import state_models
-import models
+import setups
 import numpy as np
 import matplotlib.pyplot as plt
 
-import csv
+state_in = state_models.StateInput(Ax=1, Ay=0.5, v=20, r=15, delta=0, beta=0)
+setup = setups.VehicleSetup()
 
-DYN = models.DYN()
-AERO = models.AERO()
-PTN = models.PTN()
+v = state_models.VehicleState(params=setup)
+v.eval(state_in=state_in)
 
-
-v = state_models.VehicleState(DYN=DYN, AERO=AERO, PTN=PTN, Ax=-1, Ay=1.5)
-v.eval()
+print(v.fl_tire.Fx, v.fr_tire.Fx, v.rl_tire.Fx, v.rr_tire.Fx)
 
 
 '''
