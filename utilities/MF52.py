@@ -192,7 +192,9 @@ if __name__ == '__main__':
     tm = MF52()
 
     Fx = []
-    for i in np.linspace(-0.5, 0.5):
+    for i in np.linspace(-1, 1):
         #i = math.degrees(i)
-        Fx.append(tm.Fx(500, i, 0.15))
+        Fx.append(tm.Fx(800, 0, i))
     print(Fx)
+    plt.plot(np.linspace(-1, 1), Fx)
+    plt.show()

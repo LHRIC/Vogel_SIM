@@ -18,8 +18,6 @@ class StateInput():
         self.beta = beta
 
 
-
-
 class VehicleState():
     def __init__(self, params: setups.VehicleSetup):
         self.params = params
@@ -143,8 +141,12 @@ class VehicleState():
         w_fr = w_ftire + lat_wt_f
         w_rr = w_rtire + lat_wt_r
         
-        self.alpha_f = self.beta + a * 1/self.r - self.delta
-        self.alpha_r = self.beta - b * 1/self.r
+        if(self.r == 0):
+            self.alpha_f = 0
+            self.alpha_r = 0
+        else:
+            self.alpha_f = self.beta + a * 1/self.r - self.delta
+            self.alpha_r = self.beta - b * 1/self.r
 
         self.fl_tire.Fz = w_fl
         self.rl_tire.Fz = w_rl

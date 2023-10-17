@@ -2,10 +2,10 @@ import numpy as np
 import math
 from scipy.optimize import least_squares
 from statistics import mean
-import models
 from fitting import csaps, polyfit
 from utilities import MF52
 import setups
+import state_models
 
 class GGV:
     def __init__(self, params: setups.VehicleSetup, gear_tot, v_max):
@@ -59,7 +59,23 @@ class GGV:
             1.62583858287551,
         ])
 
+    def calc_grip_lin_max_accel_stateful(self, v):
+        vehicle_state = state_models.VehicleState(params=self.params)
+        A_x_diff = 1
+        Ax = 0
+        AX = 0
+        while A_x_diff > 1e-6:
+            Ax += 0.01
+            state_in = state_models.StateInput(Ax=Ax, Ay=0, v=v, r=0, delta=0, beta=0)
+            vehicle_state.eval(state_in=state_in)
 
+            FX_rear = vehicle_state.rl_tire.Fx + vehicle_state.rr_tire.Fx
+            AX = FX_rear / self.params.total_weight
+
+            A_x_diff = AX - Ax
+    
+        return AX
+    
     def calc_grip_lim_max_accel(self, v):
         downforce = self.params.Cl * v**2  # Downforce: Newtons
         # dxr
@@ -136,7 +152,6 @@ class GGV:
         return (Fx, gear_idx)
 
     def calc_lateral_accel(self, R):
-        # Almost like an estimation of the over/understeer balance of the car
         AYP = 0.5
 
         self.a = self.params.wheelbase * (1 - self.params.weight_dist_f)
@@ -190,6 +205,26 @@ class GGV:
         # AYP_l.append(AYP)
 
         return eval_vogel[0]
+    
+    def calc_decel_stateful(self, v):
+        vehicle_state = state_models.VehicleState(params=self.params)
+        A_x_diff = 1 # Initial condition to start the iteration
+        Ax = 0
+        AX = 0
+        while A_x_diff > 0:
+            Ax -= 0.01
+            state_in = state_models.StateInput(Ax=Ax, Ay=0, v=v, r=0, delta=0, beta=0)
+            vehicle_state.eval(state_in=state_in)
+
+            FX_front = vehicle_state.fl_tire.Fx + vehicle_state.fr_tire.Fx
+            FX_rear = vehicle_state.rl_tire.Fx + vehicle_state.rr_tire.Fx
+
+            FX = -1 * (FX_front + FX_rear)
+            AX = FX / self.params.total_weight
+
+            A_x_diff = AX - Ax
+        return AX
+
     
     def calc_decel(self, v):
         downforce = self.params.Cl * v**2  # Downforce: Newtons
@@ -246,8 +281,10 @@ class GGV:
 
         '''The gear that you start each velocity iteration in'''
         for idx, v in enumerate(self.velocity_range):
-            print(f"Calculating: Long. accel capability for {v} m/s")
-            Ax_r = self.calc_grip_lim_max_accel(v)
+            #print(f"Calculating: Long. accel capability for {v} m/s")
+            #Ax_r = self.calc_grip_lim_max_accel(v)
+            Ax_r = self.calc_grip_lin_max_accel_stateful(v)
+            
             grip_lim_a[idx] = (Ax_r)
 
             FX_r, gear_idx = self.calc_power_lim_max_accel(max(7.5, v))
@@ -259,11 +296,11 @@ class GGV:
             power_lim_a[idx] = (AX_r)
 
             accel_cap[idx] = (min(Ax_r, AX_r))
-        
-
+            
         self._grip_lim_accel = polyfit(self.velocity_range, grip_lim_a, 3)
         self._power_lim_accel = csaps(self.velocity_range, power_lim_a)
         self.accel_capability = csaps(self.velocity_range, accel_cap)
+        self.accel_capability.plot()
 
 
         lateral_g = np.empty((len(self.radii_range),))
@@ -297,9 +334,12 @@ class GGV:
         braking_g = np.empty((len(self.velocity_range),))
         for idx, v in enumerate(self.velocity_range):
             print(f"Calculating: Long. braking capability for {v} m/s")
-            Ax = self.calc_decel(v)
+            Ax = self.calc_decel_stateful(v)
+            print(Ax)
             braking_g[idx] = (Ax)
         self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
+        self.braking_capability.plot()
+        exit()
 
 
 

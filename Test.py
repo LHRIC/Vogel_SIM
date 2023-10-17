@@ -3,7 +3,7 @@ import setups
 import numpy as np
 import matplotlib.pyplot as plt
 
-state_in = state_models.StateInput(Ax=1, Ay=0.5, v=20, r=15, delta=0, beta=0)
+state_in = state_models.StateInput(Ax=-1, Ay=0, v=20, r=15, delta=0, beta=0)
 setup = setups.VehicleSetup()
 
 v = state_models.VehicleState(params=setup)
