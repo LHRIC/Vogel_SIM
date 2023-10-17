@@ -300,7 +300,7 @@ class Vehicle:
             '''Max Achievable Cornering Velocity through this segment'''
             v_max = min(self.v_max, self.GGV.cornering_capability.evaluate(r))
 
-            AX_cap = self.GGV.accel_capability.evaluate(vel)
+            AX_cap = -1 * self.GGV.braking_capability.evaluate(vel)
             AY_cap = self.GGV.lateral_capability.evaluate(vel)
             AY_actual = vel ** 2 / (r * 9.81)
 
