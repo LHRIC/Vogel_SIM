@@ -141,6 +141,7 @@ class VehicleState():
         w_fr = w_ftire + lat_wt_f
         w_rr = w_rtire + lat_wt_r
         
+        # Lazy zero-protection go crazy
         if(self.r == 0):
             self.alpha_f = 0
             self.alpha_r = 0
