@@ -30,6 +30,8 @@ class VehicleSetup():
         self.camber_comp_f = 0
         self.camber_comp_r = 0
 
+        self.camber_gain_p = 1
+
         self.caster_f = 0
         self.caster_r = 4.1568
 

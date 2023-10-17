@@ -318,8 +318,6 @@ class GGV:
 
             self.lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
 
-            #self.lateral_capability.plot()
-
         else:
             print("WARNING: Loading precalculated lateral envelope")
             lateral_g = self.lateral_capability

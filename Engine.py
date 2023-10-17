@@ -7,6 +7,8 @@ import scipy.interpolate as interp
 import models
 import setups
 
+plt.style.use('fivethirtyeight')
+
 class Engine:
 
     def __init__(self, trajectory) -> None:

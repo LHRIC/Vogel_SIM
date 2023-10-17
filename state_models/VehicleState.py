@@ -101,11 +101,18 @@ class VehicleState():
         self.fr_sus_dz = self.fr_sus_dz * 1000
         self.rr_sus_dz = self.rr_sus_dz * 1000
 
-        IA_fl = (0.000012) + (-0.061096 * self.fl_sus_dz) + (-0.000128 * self.fl_sus_dz**2) + (0.000000 * self.fl_sus_dz**3)
-        IA_rl = (0.000012) + (-0.065525 * self.rl_sus_dz) + (-0.000119 * self.rl_sus_dz**2) + ( 0.000000 * self.rl_sus_dz**3)
+        camber_gain = self.params.camber_gain_p
 
-        IA_fr = (0.000012) + (-0.061096 *  self.fr_sus_dz) + (-0.000128 *  self.fr_sus_dz**2) + (0.000000 * self.fr_sus_dz**3)
-        IA_rr = (0.000012) + (-0.065525 *  self.rr_sus_dz) + (-0.000119 *  self.rr_sus_dz**2) + ( 0.000000 * self.rr_sus_dz**3)
+        IA_fl = (-0.032006) + (-0.061177 * camber_gain * self.fl_sus_dz)
+        IA_rl = (-0.029791) + (-0.065569 * camber_gain * self.rl_sus_dz)
+        IA_fr = (-0.032006) + (-0.061177 * camber_gain * self.fr_sus_dz)
+        IA_rr = (-0.029791) + (-0.065569 * camber_gain * self.rr_sus_dz)
+
+        #IA_fl = (0.000012) + (-0.061096 * self.fl_sus_dz) + (-0.000128 * self.fl_sus_dz**2) + (0.000000 * self.fl_sus_dz**3)
+        #IA_rl = (0.000012) + (-0.065525 * self.rl_sus_dz) + (-0.000119 * self.rl_sus_dz**2) + ( 0.000000 * self.rl_sus_dz**3)
+
+        #IA_fr = (0.000012) + (-0.061096 *  self.fr_sus_dz) + (-0.000128 *  self.fr_sus_dz**2) + (0.000000 * self.fr_sus_dz**3)
+        #IA_rr = (0.000012) + (-0.065525 *  self.rr_sus_dz) + (-0.000119 *  self.rr_sus_dz**2) + ( 0.000000 * self.rr_sus_dz**3)
                 
         IA_fl = math.radians(IA_fl)
         IA_rl = math.radians(IA_rl)
