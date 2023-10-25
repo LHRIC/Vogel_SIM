@@ -5,23 +5,23 @@ import numpy as np
 class VehicleSetup():
     def __init__(self, overrides={}):
         self.LLTD = 0.5
-        self.total_weight = 496
+        self.total_weight = 650
 
         # This means that 45% of the weight is on the fronts
         # Drill that into your head you fucking idiot
-        self.weight_dist_f = 0.45
+        self.weight_dist_f = 0.48
 
-        self.cg_height = 12.5  # inches
+        self.cg_height = 12.68  # inches
         self.wheelbase = 1.535  # meters
-        self.trackwidth_f = 48  # inches
+        self.trackwidth_f = 48.875  # inches
         self.trackwidth_r = self.trackwidth_f # inches
 
         self.roll_grad_f = math.radians(0.75) #(rad/g)
         self.roll_grad_r = math.radians(0.75)
         self.pitch_grad = math.radians(0.5)
 
-        self.ride_rate_f = 31522.8303 # N/m
-        self.ride_rate_r = 31522.8303
+        self.ride_rate_f = 33887.043 # N/m
+        self.ride_rate_r = 33887.043
 
         self.tire_radius = 0.2032 # meters
 
@@ -41,9 +41,10 @@ class VehicleSetup():
         self.friction_scaling_x = 0.6
         self.friction_scaling_y = 0.6
 
-        self.Cl = 1.77 #ClA
-        self.Cd = 0.8
-        self.CoP = 0.48
+        self.Cl = 4 #ClA
+        self.Cd = 1.5
+        #That mean x% of df on the fronts
+        self.CoP = self.weight_dist_f + 0.05
 
         self.torque_mod = 1
         self.rpm_range = np.array([*range(6200, 14100 + 100, 100)])

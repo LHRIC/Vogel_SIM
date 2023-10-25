@@ -105,8 +105,11 @@ class Engine:
                 ax4.set_xlabel('Lateral Accel. (g)')
                 ax4.set_ylabel('Longitudinal Accel (g)')
                 ax4.set_zlabel('Velocity (m/s)')
-                plt.xlim([-1.5, 1.5])
-                plt.ylim([-1.5, 1.5])
+                plt.xlim([-2.5, 2.5])
+                plt.ylim([-2.5, 2.5])
+
+                fig5, ax5 = plt.subplots()
+                ax5.plot(vehicle.dist, vehicle.velocity)
                 plt.show()
             elif(self._run_mode == "ACCEL"):
                 fig, ax = plt.subplots()
