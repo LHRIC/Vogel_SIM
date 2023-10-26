@@ -61,7 +61,7 @@ class GGV:
             1.62583858287551,
         ])
 
-    def calc_grip_lin_max_accel_stateful(self, v):
+    def calc_grip_lin_max_accel(self, v):
         vehicle_state = self.vehicle_state
         A_x_diff = 1
         Ax = 0
@@ -78,50 +78,6 @@ class GGV:
     
         return AX
     
-    def calc_grip_lim_max_accel(self, v):
-        downforce = self.params.Cl * v**2  # Downforce: Newtons
-        # dxr
-        rear_sus_drop = downforce * (1 - self.params.CoP) / 2 / self.params.ride_rate_r
-        # IA_0r
-        IA_0r = self.params.static_camber_r - rear_sus_drop * self.params.camber_gain_r
-
-        A_x_diff = 1
-        Ax = 0
-
-        while A_x_diff > 0:
-            Ax += 0.01
-            pitch = -Ax * self.params.pitch_grad
-            # Calc load on each tire from static load and downforce
-            wr = (self.params.total_weight_r + downforce * (1 - self.params.CoP)) / 2
-            
-            # Add on the effects of longitudinal weight transfer
-            wr += (
-                Ax * self.params.cg_height * self.params.total_weight / self.params.wheelbase / 2
-            )
-
-            #Calculate new camber from camber gain
-            IA_r = (
-                self.params.wheelbase * math.sin(pitch) / 2 * self.params.camber_gain_r
-                + IA_0r
-            )
-
-            fxr = []
-            for sl in np.arange(0, 1.01, 0.01):
-                Fx = self._MF52.Fx(-wr, -IA_r, sl) * self.params.friction_scaling_x
-                fxr.append(Fx)
-            
-            # Get the maximum possible force experienced by the tire 
-            FXR = max(fxr)
-            FX = abs(2 * FXR)
-
-            # Calculate potential acceleration if the force was generated at both rear contact patches
-            AX = FX / self.params.total_weight  # THIS IS IN G'S, SEE ABOVE
-
-            #Iterate until acceleration converges
-            A_x_diff = AX - Ax
-
-        return AX
-
     def calc_power_lim_max_accel(self, v):
         
         gear_idx = 0
@@ -193,7 +149,7 @@ class GGV:
         # print(self.vogel(ub))
 
         self._vogel_selector = 1
-        x = least_squares(self.vogel_stateful, x0, bounds=(lb, ub), method="trf", verbose=1)
+        x = least_squares(self.vogel, x0, bounds=(lb, ub), method="trf", verbose=1)
 
         delta = x.x[0]
         beta = x.x[1]
@@ -208,7 +164,7 @@ class GGV:
 
         return eval_vogel[0]
     
-    def calc_decel_stateful(self, v):
+    def calc_decel(self, v):
         vehicle_state = self.vehicle_state
         A_x_diff = 1 # Initial condition to start the iteration
         Ax = 0
@@ -227,55 +183,6 @@ class GGV:
             A_x_diff = AX - Ax
         return AX
 
-    
-    def calc_decel(self, v):
-        downforce = self.params.Cl * v**2  # Downforce: Newtons
-        # dxf, dxr
-        sus_drop_f = downforce * (self.params.CoP) / 2 / self.params.ride_rate_f
-        sus_drop_r = downforce * (1 - self.params.CoP) / 2 / self.params.ride_rate_r
-
-        # IA_0r, IA_0f
-        IA_0f = self.params.static_camber_f - sus_drop_f * self.params.camber_gain_f
-        IA_0r = self.params.static_camber_r - sus_drop_r * self.params.camber_gain_r
-
-        Ax = 0.99
-        A_x_diff = 1 # Initial condition to start the iteration
-        FXF = -1
-        FXR = -1
-        while A_x_diff > 0:
-            Ax += 0.01
-            pitch = Ax * self.params.pitch_grad
-
-            wf = (self.params.total_weight_f + downforce * (self.params.CoP)) / 2
-            wr = (self.params.total_weight_r + downforce * (1 - self.params.CoP)) / 2
-            wf += (
-                Ax * self.params.cg_height * self.params.total_weight / self.params.wheelbase / 2
-            )
-            wr -= (
-                Ax * self.params.cg_height * self.params.total_weight / self.params.wheelbase / 2
-            )
-
-            IA_f = (-self.params.wheelbase * 12 * math.sin(pitch) / 2 * self.params.camber_gain_f) + IA_0f
-            IA_r = (self.params.wheelbase * 12 * math.sin(pitch) / 2 * self.params.camber_gain_r) + IA_0r
-
-            fx_f = []
-            fx_r = []
-
-            for sl in np.arange(-0.23, 0.01, 0.01):
-                Fx_f = self._MF52.Fx(-wf, -IA_f, sl) * self.params.friction_scaling_x
-                Fx_r = self._MF52.Fx(-wr, -IA_r, sl) * self.params.friction_scaling_x
-                fx_f.append(Fx_f)
-                fx_r.append(Fx_r)
-            
-
-            FXF = min(fx_f)
-            FXR = min(fx_r)
-
-            FX = abs(2 * FXF + 2 * FXR)
-            AX = FX / self.params.total_weight  # THIS IS IN G'S, SEE ABOVE
-            A_x_diff = AX - Ax
-        return Ax
-
     def generate(self):
         
         power_lim_a = np.empty((len(self.velocity_range),))
@@ -286,7 +193,7 @@ class GGV:
         for idx, v in enumerate(self.velocity_range):
             print(f"Calculating: Long. accel capability for {v} m/s")
             #Ax_r = self.calc_grip_lim_max_accel(v)
-            Ax_r = self.calc_grip_lin_max_accel_stateful(v)
+            Ax_r = self.calc_grip_lin_max_accel(v)
             
             grip_lim_a[idx] = (Ax_r)
 
@@ -334,12 +241,13 @@ class GGV:
         braking_g = np.empty((len(self.velocity_range),))
         for idx, v in enumerate(self.velocity_range):
             print(f"Calculating: Long. braking capability for {v} m/s")
-            Ax = self.calc_decel_stateful(v)
-            print(Ax)
+            Ax = self.calc_decel(v)
             braking_g[idx] = (Ax)
         self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
 
-    def vogel_stateful(self, x):
+    
+    '''Calculates the maximum lateral acceleration for a neural steer car, given a predetermined turn radius'''
+    def vogel(self, x):
         vehicle_state = self.vehicle_state
 
         a = self.params.wheelbase * (1 - self.params.weight_dist_f)
@@ -387,125 +295,4 @@ class GGV:
         if self._vogel_selector == 1:
             return [M_z, slipAngle, diff_AY]
         else:
-            return [A_y, f_xplt, vehicle_state.alpha_f, vehicle_state.a_r]
-
-
-
-
-    '''Calculates the maximum lateral acceleration for a neural steer car, given a predetermined turn radius'''
-    def vogel(self, x):
-        deltar = 0
-
-        delta = x[0]
-        beta = x[1]
-        AYP = x[2]
-
-        V = math.sqrt(self.R * 9.81 * AYP)
-        A_y = AYP
-
-        '''Calculate the Lateral Load Transfer from cornering in Newtons'''
-        WT = (
-            A_y
-            * self.params.cg_height
-            * self.params.total_weight
-            / mean([self.params.trackwidth_f, self.params.trackwidth_r])
-        )
-
-        '''Distribute the Load Transfer to the F/R based on LLTD'''
-        WTF = WT * self.params.LLTD
-        WTR = WT * (1 - self.params.LLTD)
-        
-        phif = A_y * self.params.roll_grad_f
-        phir = A_y * self.params.roll_grad_f
-
-
-        '''Apply weight transfer to each tire accordingly'''
-        wfin = self.wf - WTF
-        wfout = self.wf + WTF
-        wrin = self.wr - WTR
-        wrout = self.wr + WTR
-
-        IA_f_in = (
-            -self.params.trackwidth_f * math.sin(phif) / 2 * self.params.camber_gain_f
-            - self.IA_0f
-            - self.params.KPI_f * (1 - math.cos(delta))
-            - self.params.caster_f * math.sin(delta)
-            + phif
-        )
-        IA_f_out = (
-            -self.params.trackwidth_f * math.sin(phif) / 2 * self.params.camber_gain_f
-            + self.IA_0f
-            + self.params.KPI_f * (1 - math.cos(delta))
-            - self.params.caster_f * math.sin(delta)
-            + phif
-        )
-        IA_r_in = (
-            -self.params.trackwidth_r * math.sin(phir) / 2 * self.params.camber_gain_r
-            - self.IA_0r
-            - self.params.KPI_r * (1 - math.cos(deltar))
-            - self.params.caster_f * math.sin(deltar)
-            + phir
-        )
-        IA_r_out = (
-            -self.params.trackwidth_r * math.sin(phir) / 2 * self.params.camber_gain_r
-            + self.IA_0r
-            + self.params.KPI_r * (1 - math.cos(deltar))
-            - self.params.caster_f * math.sin(deltar)
-            + phir
-        )
-
-        omega = V / self.R
-
-        # Using guesses for sideslip and Ackermann steer angle
-        # Try and calculate tire slip angles in the front and the rear
-        a_f = beta + self.a * omega / V - delta
-        a_r = beta - self.b * omega / V
-
-        F_fin = (
-            self._MF52.Fy(a_f, wfin, -IA_f_in)
-            * self.params.friction_scaling_y
-            * math.cos(delta)
-        )  # inputs = (rad Newtons rad)
-        F_fout = (
-            self._MF52.Fy(a_f, wfout, -IA_f_out)
-            * self.params.friction_scaling_y
-            * math.cos(delta)
-        )
-
-        F_xDrag = self.params.Cd * V**2 + (F_fin + F_fout) * math.sin(delta) / math.cos(
-            delta
-        )
-
-        grip_lim_accel = self._grip_lim_accel.evaluate(V)
-        #np.interp(V, self.velocity_fit_x, self.grip_cap_fit_y)
-
-
-        '''Calculate the grip cost of overcoming vehicle drag'''
-        rscale = 1 - (F_xDrag / self.params.total_weight / (grip_lim_accel)) ** 2
-
-        F_rin = (
-            self._MF52.Fy(a_r, wrin, -IA_r_in) * self.params.friction_scaling_y * rscale
-        )
-        F_rout = (
-            self._MF52.Fy(a_r, wrout, -IA_r_out) * self.params.friction_scaling_y * rscale
-        )
-
-        F_y = F_fin + F_fout + F_rin + F_rout
-        f_xplt = (F_fin + F_fout) * math.sin(delta) / math.cos(delta) / 400
-
-        # This is the moment generated by the diff
-        M_z_diff = F_xDrag * self.params.diff_locked * self.params.trackwidth_r / 2
-        
-        # This is the moment acting on the CG (causing under/oversteer)
-        M_z = (F_fin + F_fout) * self.a - (F_rin + F_rout) * self.b - M_z_diff
-
-        AY = F_y / self.params.total_weight
-
-        # Tries to minimize the objective function such that slip angle is kept at 12 degrees (bounds of tire model)
-        slipAngle = a_f - math.radians(-12)
-        diff_AY = A_y - AY
-
-        if self._vogel_selector == 1:
-            return [M_z, slipAngle, diff_AY]
-        else:
-            return [A_y, f_xplt, a_f, a_r]
+            return [A_y, f_xplt, vehicle_state.alpha_f, vehicle_state.alpha_r]

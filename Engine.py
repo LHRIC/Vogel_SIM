@@ -7,7 +7,7 @@ import scipy.interpolate as interp
 import models
 import setups
 
-plt.style.use('fivethirtyeight')
+plt.style.use('seaborn-v0_8-white')
 
 class Engine:
 
@@ -36,7 +36,7 @@ class Engine:
         else:
             print(f"Invalid run mode: {self._run_mode}, please select either ENDURANCE or ACCEL.")
             return
-        print(laptime)
+        print("Laptime:", laptime)
         
         if plot:
             if(self._run_mode == "ENDURANCE"):
@@ -110,6 +110,10 @@ class Engine:
 
                 fig5, ax5 = plt.subplots()
                 ax5.plot(vehicle.dist, vehicle.velocity)
+                plt.xlabel("Distance (m)")
+                plt.ylabel("Velocity (m/s)")
+
+                print("Avg vel:", sum(vehicle.velocity)/len(vehicle.velocity))
                 plt.show()
             elif(self._run_mode == "ACCEL"):
                 fig, ax = plt.subplots()
