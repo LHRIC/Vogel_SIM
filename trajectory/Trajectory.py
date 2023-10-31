@@ -44,7 +44,9 @@ class Trajectory:
 
 
 if __name__ == "__main__":
+    import itertools
     t = Trajectory("./trajectory/17_lincoln_endurance_track_highres.xls", 4.5, 36)
     plt.scatter(t.points[0], t.points[1], c=t.radii)
     plt.colorbar()
     plt.show()
+    print(len(list(itertools.groupby(t._curvature, lambda x: x > 0))))
