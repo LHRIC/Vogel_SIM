@@ -1,5 +1,4 @@
 import math
-import matlab.engine
 import pickle
 import scipy
 import numpy as np
@@ -8,193 +7,137 @@ import matplotlib.pyplot as plt
 
 class MF52:
     def __init__(self):
-        self.FZ0 = 800  # Nominal tire load: newtons
-        self.long_coeff = [1.32384487892880, 2.14482184949554, -0.100000000000000, 0.00116791584176700, -3.47327118568818, -4.08922340024882, 0.374047785439375, -1.56483287414258e-18, 25, 0.100000000000000, -
-                          0.784633274177115, -0.00421824086612800, -0.00312988012049700, -0.0166570654892410, -0.100000000000000, -0.601337395748281, 0.0144461947641190, -0.262573151301394, 0.0266010058725470, 0, 0, 0, 0, 0, 0, 0]
-        
-        # NOTE: These lateral fits all assumed slip angle was in DEGREES, not RADIANS
-        self.lat_coeff = [0.349, -0.00115, 8.760, 730.300, 1745.322, 0.0139, -0.000277, 1.02025435, 0, 0, 0, 0, 0, 0, 0, 0.00362, -0.0143, -0.0116]
-        self.c_Fx = None
-        self.c_Fy = None
+        self.Fx_params = np.transpose(scipy.io.loadmat("./utilities/18.0x6.0-10_R20_DriveBrakeComb.mat")["x0"])
+        self.Fy_params = np.transpose(scipy.io.loadmat("./utilities/16x7.5-10_R20_Cornering.mat")["x0"])
 
-        lat_rs = scipy.io.loadmat('./utilities/LateralResponseSurface.mat')
+        self.Fx_params = list(map(lambda x: x[0], self.Fx_params))
+        self.Fy_params = list(map(lambda x: x[0], self.Fy_params))
 
-        self.lat_rs = lat_rs["LateralResponseSurface"]
+        self.Fz0 = 800
+    def Fx(self, Fz, Kappa, Gamma):
+        lambdaFz0 = 1
+        lambdaVx = 1
+        lambdaMux = 1
+        lambdaHx = 1
+        lambdaGammax = 1
+        lambdaCx = 1
+        lambdaEx = 1
+        lambdaKx = 1
 
-        res = 50
+        PCX1	=  self.Fx_params[0]
+        PDX1	=  self.Fx_params[1]     
+        PDX2	=  self.Fx_params[2]     
+        PDX3	=  self.Fx_params[3]  	
+        PEX1	=  self.Fx_params[4]  	
+        PEX2	=  self.Fx_params[5]   	
+        PEX3	=  self.Fx_params[6]   	
+        PEX4	=  self.Fx_params[7]  	
+        PKX1	=  self.Fx_params[8]     
+        PKX2	=  self.Fx_params[9] 	
+        PKX3	=  self.Fx_params[10]   	
+        PHX1	=  self.Fx_params[11]  	
+        PHX2	=  self.Fx_params[12]   	
+        PVX1	=  self.Fx_params[13]  	
+        PVX2	=  self.Fx_params[14]
 
-        self.Fz_range = np.linspace(0, 1400, res)
-        self.alpha_range = np.linspace(-0.5, 0.5, res)
-        self.gamma_range = np.linspace(-0.05, 0.05, res)
+        Fz0 = self.Fz0 * lambdaFz0
+
+        dfz = (Fz - Fz0) / Fz0
+        SVx  = Fz * (PVX1 + PVX2 * dfz) * lambdaVx * lambdaMux
+        SHx = (PHX1 + PHX2 * dfz) * lambdaHx
+
+        KappaX = Kappa + SHx
+        GammaX = Gamma * lambdaGammax
+        Mux = (PDX1 + PDX2 * dfz) * (1 - PDX3 * GammaX**2) * lambdaMux
+
+        Cx = PCX1 * lambdaCx
+        Dx = Mux * Fz
+        Ex = (PEX1 + PEX2 * dfz + PEX3 * dfz**2) * (1 - PEX4 * np.sign(KappaX) * lambdaEx)
+        Kx = Fz * (PKX1 + PKX2 * dfz) * math.exp(PKX3 * dfz) * lambdaKx
+        Bx = Kx/(Cx * Dx)
+        Fx0 = Dx * math.sin(Cx * math.atan(Bx * KappaX - Ex * (Bx * KappaX - math.atan(Bx * KappaX)))) + SVx
+
+        Fx = Fx0
+
+        return Fx * -1
     
-    def find_window(self, val, arr):
-        if(val < min(arr)):
-            print(f'{val} less than {min(arr)}')
-            return (0, 0)
-        elif(val > max(arr)):
-            print(f'{val} greater than {max(arr)}')
-            l = len(arr) - 1
-            return (l, l)
+    def Fy(self, Fz, Alpha, Gamma):
+        """Return the lateral force (N) felt by a tire given a normal load (N), slip angle (rad), and camber angle (rad)"""
+        
+        # MF 5.2 equations require slip angle to be in degrees
+        Alpha = math.degrees(Alpha)
 
-        for i in range(len(arr)):
-            if(arr[i] >= val):
-                return (i-1, i)
+        lambdaFz0 = 1
+        lambdaVy = 1
+        lambdaMuy = 1
+        lambdaHy = 1
+        lambdaGammay = 1
+        lambdaCy = 1
+        lambdaEy = 1
+        lambdaKy = 1
 
-    def Fx_interp(self, Fz, GammaX, SL):
-        Fx = self.c_Fx((Fz, GammaX, SL))
-        if(math.isnan(Fx)):
-            raise RuntimeError(f"Requested parameter ({Fz}, {GammaX}, {SL}) outside of Fx tire model bounds") 
-        else:
-            return Fx
+        PCY1	=  self.Fy_params[0]
+        PDY1	=  self.Fy_params[1]
+        PDY2	=  self.Fy_params[2]
+        PDY3	=  self.Fy_params[3]
+        PEY1	=  self.Fy_params[4]
+        PEY2	=  self.Fy_params[5]
+        PEY3	=  self.Fy_params[6]
+        PEY4	=  self.Fy_params[7]
+        PEY5	=  self.Fy_params[8]
+        PKY1	=  self.Fy_params[9]
+        PKY2	=  self.Fy_params[10]
+        PKY3	=  self.Fy_params[11]
+        PKY4	=  self.Fy_params[12]
+        PKY5	=  self.Fy_params[13]
+        PKY6	=  self.Fy_params[14]
+        PKY7	=  self.Fy_params[15]
+        PHY1	=  self.Fy_params[16]
+        PHY2	=  self.Fy_params[17]
+        PVY1	=  self.Fy_params[18]
+        PVY2	=  self.Fy_params[19]
+        PVY3	=  self.Fy_params[20]
+        PVY4	=  self.Fy_params[21]
+        PPY1	=  self.Fy_params[22]
+        PPY2	=  self.Fy_params[23]
+        PPY3	=  self.Fy_params[24] 
+        PPY4	=  self.Fy_params[25]
+        PPY5	=  self.Fy_params[26]
 
-    def Fx(self, Fz, GammaX, SL):
-        Fz = abs(Fz)
-        Fz0PR = abs(self.FZ0)
-        DFz = (Fz - Fz0PR) / Fz0PR
+        Fz0 = self.Fz0 * lambdaFz0
 
-        # Setting initial parameters
-        PCx1 = self.long_coeff[0]
-        PDx1 = self.long_coeff[1]
-        PDx2 = self.long_coeff[2]
-        PDx3 = self.long_coeff[3]
-        PEx1 = self.long_coeff[4]
-        PEx2 = self.long_coeff[5]
-        PEx3 = self.long_coeff[6]
-        PEx4 = self.long_coeff[7]
-        PKx1 = self.long_coeff[8]
-        PKx2 = self.long_coeff[9]
-        PKx3 = self.long_coeff[10]
-        PHx1 = self.long_coeff[11]
-        PHx2 = self.long_coeff[12]
-        PVx1 = self.long_coeff[13]
-        PVx2 = self.long_coeff[14]
-        PPx1 = self.long_coeff[15]
-        PPx2 = self.long_coeff[16]
-        PPx3 = self.long_coeff[17]
-        PPx4 = self.long_coeff[18]
-        RBx1 = self.long_coeff[19]
-        RBx2 = self.long_coeff[20]
-        RBx3 = self.long_coeff[21]
-        RCx1 = self.long_coeff[22]
-        REx1 = self.long_coeff[23]
-        REx2 = self.long_coeff[24]
-        RHx1 = self.long_coeff[25]
+        dfz = (Fz - Fz0) / Fz0
+        GammaY = Gamma * lambdaGammay
 
-        SHx = RHx1
-        Ex = REx1+REx2*DFz
-        Cx = RCx1
-        GAMMAstar = math.sin(GammaX)
-        Bxa = (RBx1+RBx3*GAMMAstar)*math.cos(math.atan(RBx2*SL))
-        ALPHA = 0  # Slip angle is defined as zero since this function is only used for straight line, can be revised later to include complete combined slip
-        Gxao = math.cos(Cx*math.atan(Bxa*SHx-Ex*(Bxa*SHx-math.atan(Bxa*SHx))))
-        # % Gxa should actually have a bunch of stuff in the cos(x), see above comment
-        Gxa = math.cos(ALPHA)/Gxao
+        SVy = Fz * ((PVY1 + PVY2 * dfz) * lambdaVy + (PVY3 + PVY4 * dfz) * GammaY) * lambdaMuy
+        #SHy = (PHY1 + PHY2 * dfz) * lambdaHy + PHY3 * GammaY
+        SHy = (PHY1 + PHY2 * dfz) * lambdaHy
 
-        # Pure longitudinal
-        SHx = (PHx1 + PHx2 * DFz)
-        Cx = PCx1
-        MUx = (PDx1 + PDx2 * DFz)
-        Dx = MUx * Fz
-        Kx = Fz * (PKx1 + PKx2 * DFz) * math.exp(PKx3 * DFz)
-        Bxa = Kx / (Cx * Dx)
-        SLx = SL + SHx
-        Ex = (PEx1 + PEx2 * DFz + PEx3 * (DFz) ** 2) * (1 - PEx4*(SLx/abs(SLx)))
-        SVx = Fz * (PVx1 + PVx2 * DFz)
-        Fx0 = Dx * math.sin(Cx * math.atan(Bxa * SLx - Ex *
-                            (Bxa * SLx - math.atan(Bxa * SLx)))) + SVx
+        AlphaY = Alpha + SHy
+        Muy = (PDY1 + PDY2 * dfz) * (1 - PDY3 * GammaY ** 2) * lambdaMuy
 
-        # Combined Slip
-        Fx = Fx0*Gxa
+        Cy = PCY1 * lambdaCy
+        Dy = Muy * Fz
+        Ey = (PEY1 + PEY2 * dfz) * (1 - (PEY3 + PEY4 * GammaY) * np.sign(AlphaY)) * lambdaEy
+        Ky = PKY1 * Fz0 * math.sin(2 * math.atan(Fz / (PKY2 * Fz0 * lambdaFz0))) * (1 - PKY3 * abs(GammaY)) * lambdaFz0 * lambdaKy
+        By = Ky / (Cy * Dy)
 
-        return Fx
+        Fy0 = Dy * math.sin(Cy * math.atan(By * AlphaY - Ey * (By * AlphaY - math.atan(By * AlphaY)))) + SVy
 
-    def Fy_old(self, ALPHA, Fz, GAMMA, engine=None):
-        X = matlab.double([ALPHA, Fz, GAMMA])
-        if engine is None:
-            Fy = self.__matlab_engine.mfeval_wrapper(X)
-        else:
-            Fy = engine.mfeval_wrapper(X)
+        Fy = Fy0
+
         return Fy
-    
-    def Fy(self, SL, Fz, IA):
 
-        if(Fz <= 0):
-            return 0
-        
-        '''
-        
-        x = Fz
-        y = SL
-        z = IA
-        #x, y, z = SL, IA, Fz
-
-        x0_idx, x1_idx = self.find_window(x, self.Fz_range)
-        y0_idx, y1_idx = self.find_window(y, self.alpha_range)
-        z0_idx, z1_idx = self.find_window(z, self.gamma_range)
-
-        x0 = self.Fz_range[x0_idx]
-        x1 = self.Fz_range[x1_idx]
-        y0 = self.alpha_range[y0_idx]
-        y1 = self.alpha_range[y1_idx]
-        z0 = self.gamma_range[z0_idx]
-        z1 = self.gamma_range[z1_idx]
-
-        x_denom = None
-        if(abs(x1 - x0) < 1e-6):
-            x_denom = 1e-6 * np.sign(x1 - x0)
-        else:
-            x_denom = x1 - x0
-
-        xd = (x - x0)/x_denom
-        yd = (y - y0)/(y1 - y0)
-        zd = (z - z0)/(z1 - z0)
-
-        F_000 = self.lat_rs[x0_idx][y0_idx][z0_idx]
-        F_001 = self.lat_rs[x0_idx][y0_idx][z1_idx]
-        F_010 = self.lat_rs[x0_idx][y1_idx][z0_idx]
-        F_011 = self.lat_rs[x0_idx][y1_idx][z1_idx]
-        F_100 = self.lat_rs[x1_idx][y0_idx][z0_idx]
-        F_101 = self.lat_rs[x1_idx][y0_idx][z1_idx]
-        F_110 = self.lat_rs[x1_idx][y1_idx][z0_idx]
-        F_111 = self.lat_rs[x1_idx][y1_idx][z1_idx]
-
-        F_00 = F_000 * (1 - xd) + F_100 * xd
-        F_01 = F_001 * (1 - xd) + F_101 * xd
-        F_10 = F_010 * (1 - xd) + F_110 * xd
-        F_11 = F_011 * (1 - xd) + F_111 * xd
-
-        F_0 = F_00 * (1 - yd) + F_10 * yd
-        F_1 = F_01 * (1 - yd) + F_11 * yd
-
-        F_y = F_0 * (1 - zd) + F_1 * zd
-
-        return F_y
-        '''
-        SL = math.degrees(SL)
-        IA = math.degrees(IA)
-
-        [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17] = self.lat_coeff
-        C = a0
-        D = Fz * (a1 * Fz + a2) * (1 - a15 * IA ** 2)
-
-        BCD = a3 * math.sin(math.atan(Fz / a4) * 2) * (1 - a5 * abs(IA))
-        B = BCD / (C * D)
-
-        H = a8 * Fz + a9 + a10 * IA
-        E = (a6 * Fz + a7) * (1 - (a16 * IA + a17) * math.copysign(1, SL + H))
-        V = a11 * Fz + a12 + (a13 * Fz + a14) * IA * Fz
-        Bx1 = B * (SL + H)
-        
-        return (D * math.sin(C * math.atan(Bx1 - E * (Bx1 - math.atan(Bx1)))) + V) * -1
         
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     tm = MF52()
 
-    Fx = []
-    for i in np.linspace(-1, 1):
-        #i = math.degrees(i)
-        Fx.append(tm.Fx(800, 0, i))
-    print(Fx)
-    plt.plot(np.linspace(-1, 1), Fx)
+    Fy = []
+    for i in np.linspace(-0.23, 0.23, 100):
+        Fy.append(tm.Fy(1600, i, 0))
+
+    fig, ax = plt.subplots()
+    ax.plot(np.linspace(-0.23, 0.23, 100), Fy)
     plt.show()
+
