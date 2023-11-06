@@ -23,7 +23,7 @@ print(Fz_r)
 
 '''
 
-state_in = state_models.StateInput(Ax=0, Ay=1.5, v=0, r=0, delta=0, beta=0)
+state_in = state_models.StateInput(Ax=1.0, Ay=0, v=0, r=0, delta=0, beta=0)
 setup = setups.VehicleSetup()
 
 v = state_models.VehicleState(params=setup)
@@ -32,7 +32,6 @@ v.eval(state_in=state_in)
 print(v.fl_tire.Fz, v.fr_tire.Fz)
 print(v.rl_tire.Fz, v.rr_tire.Fz)
 
-print(math.degrees(v.phi_f), math.degrees(v.phi_r))
 print(v.fl_sus_dz, v.fr_sus_dz)
 print(v.rl_sus_dz, v.rr_sus_dz)
 

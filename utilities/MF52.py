@@ -14,6 +14,7 @@ class MF52:
         self.Fy_params = list(map(lambda x: x[0], self.Fy_params))
 
         self.Fz0 = 800
+
     def Fx(self, Fz, Kappa, Gamma):
         lambdaFz0 = 1
         lambdaVx = 1
@@ -59,7 +60,7 @@ class MF52:
 
         Fx = Fx0
 
-        return Fx * -1
+        return Fx
     
     def Fy(self, Fz, Alpha, Gamma):
         """Return the lateral force (N) felt by a tire given a normal load (N), slip angle (rad), and camber angle (rad)"""
@@ -133,11 +134,11 @@ class MF52:
 if __name__ == "__main__":
     tm = MF52()
 
-    Fy = []
-    for i in np.linspace(-0.23, 0.23, 100):
-        Fy.append(tm.Fy(1600, i, 0))
+    Fx = []
+    for i in np.linspace(-0.2, 0.2):
+        Fx.append(tm.Fx(1400, i, 0))
 
     fig, ax = plt.subplots()
-    ax.plot(np.linspace(-0.23, 0.23, 100), Fy)
+    ax.plot(np.linspace(-0.2, 0.2), Fx)
     plt.show()
 
