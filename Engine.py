@@ -114,14 +114,20 @@ class Engine:
                 plt.ylabel("Velocity (m/s)")
 
                 print("Avg vel:", sum(vehicle.velocity)/len(vehicle.velocity))
-                plt.show()
+                plt.show(block=False)
+                plt.pause(0.001) # Pause for interval seconds.
+                input("hit[enter] to end.")
+                plt.close('all') # all open plots are correctly closed after each run
             elif(self._run_mode == "ACCEL"):
                 fig, ax = plt.subplots()
                 ax.scatter(vehicle.x, vehicle.y, c=vehicle.velocity)
 
                 fig, ax = plt.subplots()
                 ax.plot(vehicle.dist, vehicle.ax)
-                plt.show()
+                plt.show(block=False)
+                plt.pause(0.001) # Pause for interval seconds.
+                input("hit[enter] to end.")
+                plt.close('all') # all open plots are correctly closed after each run
 
     def sweep(self, num_steps, run_mode="ENDURANCE", xlabel="", **kwargs) -> None:
         self._run_mode = run_mode.upper()
@@ -145,7 +151,8 @@ class Engine:
 
 
             payloads.append({
-                'PARAMS': vehicle_params
+                'PARAMS': vehicle_params,
+                'COUNT': param_val
             })
 
 
@@ -163,6 +170,7 @@ class Engine:
 
     def compute_task_authoritative(self, p):
         params = p["PARAMS"]
+        count = p["COUNT"]
 
         vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path)
         
@@ -173,6 +181,12 @@ class Engine:
             laptime = vehicle.simulate_endurance()
         elif(self._run_mode == "ACCEL"):
             laptime = vehicle.simulate_accel()
+
+        fig2, ax2 = plt.subplots()
+        ax2.axis('equal')
+        ax2.plot(vehicle.ay, vehicle.ax, "o")
+        save_location = './sweeps/' + str("%.2f" % round(count,2)).replace(".", "_") + ".jpg"
+        plt.savefig(save_location)
         return laptime
 
         

@@ -23,7 +23,7 @@ print(Fz_r)
 
 '''
 
-state_in = state_models.StateInput(Ax=1.0, Ay=0, v=0, r=0, delta=0, beta=0)
+state_in = state_models.StateInput(Ax=0, Ay=1.7, v=20, r=0, delta=0, beta=0)
 setup = setups.VehicleSetup()
 
 v = state_models.VehicleState(params=setup)

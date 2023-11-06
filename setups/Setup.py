@@ -16,6 +16,9 @@ class VehicleSetup():
         self.trackwidth_f = 48.875  # inches
         self.trackwidth_r = self.trackwidth_f # inches
 
+        self.torsional_rigidity = 1300 #Nm/deg
+        self.tr_nom = 1184 #Nm/deg
+
         self.roll_grad_f = math.radians(0.75) #(rad/g)
         self.roll_grad_r = math.radians(0.75)
         self.pitch_grad = math.radians(0.5)
@@ -70,7 +73,8 @@ class VehicleSetup():
         self.convert_units()
     
     def convert_units(self):
-        self.total_weight = self.total_weight * 4.4482216153  # N
+        w_mod = (self.tr_nom - self.torsional_rigidity) / 47.5 * 9.81 #N
+        self.total_weight = self.total_weight * 4.4482216153 + w_mod# N
         self.total_weight_f = self.total_weight * self.weight_dist_f
         self.total_weight_r = self.total_weight * (1 - self.weight_dist_f)
 

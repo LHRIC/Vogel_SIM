@@ -36,7 +36,7 @@ class GGV:
         self.cornering_capability = None
         self.braking_capability = None
 
-        self.lateral_capability = np.array([
+        self.lateral_capability = [
             1.38195832278988,
             1.42938584362690,
             1.46626343925345,
@@ -59,7 +59,7 @@ class GGV:
             1.64521365471666,
             1.63619883252664,
             1.62583858287551,
-        ])
+        ]
 
     def calc_grip_lin_max_accel(self, v):
         vehicle_state = self.vehicle_state
@@ -110,7 +110,8 @@ class GGV:
         return (Fx, gear_idx)
 
     def calc_lateral_accel(self, R):
-        AYP = 0.5
+        AYP = self.lateral_capability[np.where(self.radii_range==R)[0][0]]
+        
 
         self.a = self.params.wheelbase * (1 - self.params.weight_dist_f)
         self.b = self.params.wheelbase * self.params.weight_dist_f
@@ -118,21 +119,6 @@ class GGV:
         
         # Initial guess for velocity from radii and lateral acceleration guess 
         V = math.sqrt(R * 9.81 * AYP)
-
-        # Down (Lift) Force calculated from velo guess
-        LF = self.params.Cl * V**2
-
-        # Update suspension travel
-        dxf = LF * self.params.CoP / 2 / self.params.ride_rate_f
-        dxr = LF * (1 - self.params.CoP) / 2 / self.params.ride_rate_r
-
-        # Get static camber from suspension heave
-        self.IA_0f = self.params.static_camber_f - dxf * self.params.camber_gain_f
-        self.IA_0r = self.params.static_camber_r - dxr * self.params.camber_gain_r
-
-        # Get loads on each wheel
-        self.wf = (self.params.total_weight_f + LF * self.params.CoP) / 2
-        self.wr = (self.params.total_weight_r + LF * (1 - self.params.CoP)) / 2
 
         # Guess initial ackermann steer angle
         delta = self.params.wheelbase / R
@@ -157,6 +143,8 @@ class GGV:
 
         self._vogel_selector = 0
         eval_vogel = self.vogel([delta, beta, AYP])
+
+        print(eval_vogel)
 
         # delta_l.append(delta)
         # beta_l.append(beta)
@@ -216,6 +204,7 @@ class GGV:
         if(self._calc_lateral):
             for idx, R in enumerate(self.radii_range):
                 print(f"Calculating: Lat. accel capability for {R}/{self.radii_range[-1]} m")
+                #Stupid naming, idk why i called it g when it's clearly m/s^2 #TODO fix.
                 lateral_g[idx] = (self.calc_lateral_accel(R))
 
             lateral_g = np.array(lateral_g)
@@ -224,6 +213,7 @@ class GGV:
             velocity_y = np.sqrt(velocity_y)
 
             self.lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
+            self.lateral_capability.plot()
 
         else:
             print("WARNING: Loading precalculated lateral envelope")
@@ -266,6 +256,7 @@ class GGV:
 
         F_f_in = vehicle_state.fl_tire.Fy * math.cos(delta)
         F_f_out = vehicle_state.fr_tire.Fy * math.cos(delta)
+       
         F_xDrag = self.params.Cd * V**2 + (F_f_in + F_f_out) * math.sin(delta) / math.cos(
             delta
         )
@@ -295,4 +286,4 @@ class GGV:
         if self._vogel_selector == 1:
             return [M_z, slipAngle, diff_AY]
         else:
-            return [A_y, f_xplt, vehicle_state.alpha_f, vehicle_state.alpha_r]
+            return [A_y, f_xplt, vehicle_state.alpha_f, vehicle_state.alpha_r, rscale]

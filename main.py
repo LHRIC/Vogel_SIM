@@ -6,7 +6,7 @@ def main():
 
     simulator = Engine(trajectory="./trajectory/17_lincoln_endurance_track_highres.xls")
     
-    #simulator.sweep(num_steps=20, trackwidth_f=(47.224, 53.15))
+    #simulator.sweep(num_steps=20, torsional_rigidity=(1100, 1400), xlabel="Total Weight (lbs.)")
     #simulator.sweep(num_steps = 15, Cd=(0.5, 1.2), xlabel="CDA")
     #simulator.sweep(num_steps = 30, trackwidth_f=(1.2, 1.35))
     #simulator.sweep(num_steps = 30, xlabel="Final Drive", final_drive=(2, 5))
