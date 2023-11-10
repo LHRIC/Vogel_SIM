@@ -128,7 +128,7 @@ class GGV:
 
         # a, b, R, wf, wr, IA_0f, IA_0r, 0, velocity_fit_x, grip_cap_fit_y
         x0 = [delta, beta, AYP]
-        lb = [0.01, -0.3, 0.1]
+        lb = [0.04, -0.3, 0.1]
         ub = [0.5, 0.3, 3]
 
         # print(self.vogel(lb), end=", ")
@@ -137,6 +137,11 @@ class GGV:
         self._vogel_selector = 1
         x = least_squares(self.vogel, x0, bounds=(lb, ub), method="trf", verbose=1)
 
+        delta = x.x[0]
+        beta = x.x[1]
+        AYP = x.x[2]
+
+        x = least_squares(self.vogel, [delta, beta, AYP], bounds=(lb, ub), method="trf", verbose=1)
         delta = x.x[0]
         beta = x.x[1]
         AYP = x.x[2]
@@ -213,7 +218,7 @@ class GGV:
             velocity_y = np.sqrt(velocity_y)
 
             self.lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
-            self.lateral_capability.plot()
+            #self.lateral_capability.plot()
 
         else:
             print("WARNING: Loading precalculated lateral envelope")

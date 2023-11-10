@@ -4,10 +4,9 @@ import numpy as np
 
 class VehicleSetup():
     def __init__(self, overrides={}):
-        self.LLTD = 0.5
         self.total_weight = 650
 
-        # This means that 45% of the weight is on the fronts
+        # This means that 48% of the weight is on the fronts
         # Drill that into your head you fucking idiot
         self.weight_dist_f = 0.48
 
@@ -71,9 +70,10 @@ class VehicleSetup():
                 exit("Text 508-333-3888, this error should not be thrown.")
         self.compute_deriv_params()
         self.convert_units()
+        self.LLTD = self.calc_lltd(self.torsional_rigidity)
     
     def convert_units(self):
-        w_mod = (self.tr_nom - self.torsional_rigidity) / 47.5 * 9.81 #N
+        w_mod = (self.torsional_rigidity - self.tr_nom) / 47.5 * 9.81 #N
         self.total_weight = self.total_weight * 4.4482216153 + w_mod# N
         self.total_weight_f = self.total_weight * self.weight_dist_f
         self.total_weight_r = self.total_weight * (1 - self.weight_dist_f)
@@ -91,4 +91,32 @@ class VehicleSetup():
     
     def compute_deriv_params(self):
         self.camber_roll_induced_f = math.asin(2 / self.trackwidth_f)
-        self.camber_roll_induced_r = math.asin(2 / self.trackwidth_r) 
+        self.camber_roll_induced_r = math.asin(2 / self.trackwidth_r)
+    
+    def calc_lltd(self, k_ch):
+        k_phi_f = 486 # nm/deg
+        k_phi_r = 650 #nm/deg
+
+        Z_f = 0.02785
+        Z_r = 0.03556
+
+        ds_f = self.cg_height - Z_f
+        ds_r = self.cg_height - Z_r
+
+        m_s_f = self.total_weight_f / 9.81 - 10
+        m_s_r = self.total_weight_r / 9.81 - 10
+
+        _lambda = k_phi_f / (k_phi_f + k_phi_r)
+        mu = k_ch / (k_phi_f + k_phi_r)
+
+        A1 = (_lambda**2 - (mu + 1) * _lambda) / (_lambda**2 - _lambda - mu)
+        A2 = (ds_f * m_s_f) / (self.cg_height * self.total_weight / 9.81)
+        B1 = (mu*_lambda)/(_lambda**2 - _lambda - mu)
+        B2 = (ds_r * m_s_r) / (self.cg_height * self.total_weight / 9.81)
+        C1 = (Z_f * m_s_f) / (self.cg_height * self.total_weight / 9.81)
+        D1 = (0.205 * 10) / (self.cg_height * self.total_weight / 9.81)
+
+        return A1*A2 - B1*B2 + C1+ D1
+
+if __name__ == "__main__":
+    v = VehicleSetup()

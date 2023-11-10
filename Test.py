@@ -24,8 +24,11 @@ print(Fz_r)
 '''
 
 state_in = state_models.StateInput(Ax=0, Ay=1.7, v=20, r=0, delta=0, beta=0)
-setup = setups.VehicleSetup()
+setup = setups.VehicleSetup(overrides={"torsional_rigidity": 1300})
+print(setup.LLTD)
 
+
+'''
 v = state_models.VehicleState(params=setup)
 v.eval(state_in=state_in)
 
@@ -37,3 +40,4 @@ print(v.rl_sus_dz, v.rr_sus_dz)
 
 print(math.degrees(v.fl_tire.epsilon), math.degrees(v.fr_tire.epsilon))
 print(math.degrees(v.rl_tire.epsilon), math.degrees(v.rr_tire.epsilon))
+'''

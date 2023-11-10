@@ -182,11 +182,12 @@ class Engine:
         elif(self._run_mode == "ACCEL"):
             laptime = vehicle.simulate_accel()
 
-        fig2, ax2 = plt.subplots()
-        ax2.axis('equal')
-        ax2.plot(vehicle.ay, vehicle.ax, "o")
-        save_location = './sweeps/' + str("%.2f" % round(count,2)).replace(".", "_") + ".jpg"
-        plt.savefig(save_location)
+        #fig2, ax2 = plt.subplots()
+        #ax2.axis('equal')
+        #ax2.plot(vehicle.ay, vehicle.ax, "o")
+        #save_location = './sweeps/' + str("%.2f" % round(count,2)).replace(".", "_") + ".jpg"
+        #plt.savefig(save_location)
+        
         return laptime
 
         
