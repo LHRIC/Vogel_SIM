@@ -7,7 +7,7 @@ import scipy.interpolate as interp
 import models
 import setups
 
-plt.style.use('seaborn-v0_8-white')
+#plt.style.use('seaborn-v0_8-white')
 
 class Engine:
 
@@ -97,7 +97,23 @@ class Engine:
                 fig3, ax3 = plt.subplots()
                 sc = ax3.scatter(vehicle.x, vehicle.y, c=vehicle.velocity)
                 cbar = plt.colorbar(sc)
-                #cbar.set_label('Velocity [m/s]', rotation=270)
+
+                fig6, ax6 = plt.subplots()
+                grip_lim_x = []
+                grip_lim_y = []
+                vel_cb = []
+                for i in range(len(vehicle.velocity)):
+                    if vehicle.velocity[i] < 13:
+                        grip_lim_x.append(vehicle.x[i])
+                        grip_lim_y.append(vehicle.y[i])
+                        vel_cb.append(vehicle.velocity[i])
+
+
+                sc = ax6.scatter(grip_lim_x, grip_lim_y, c=vel_cb)
+                cbar = plt.colorbar(sc)
+
+                print("%% Grip Limited: ", len(vel_cb) / len(vehicle.velocity))
+
 
                 fig4 = plt.figure()
                 ax4 = fig4.add_subplot(projection='3d')
@@ -160,6 +176,8 @@ class Engine:
         num_processes = cpu_count() * 2
         with Pool(num_processes) as p:
             times = p.map(self.compute_task_authoritative, payloads)
+        
+        print("Sensitivity: ", (max(times) - min(times)) / (max(sweep_range) - min(sweep_range)))
         
         fig, ax = plt.subplots()
         ax.plot(sweep_range, list(times), "o-")

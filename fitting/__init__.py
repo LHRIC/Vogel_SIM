@@ -35,6 +35,7 @@ class FitFunction():
         fig, ax = plt.subplots()
         ax.plot(self.__x, self.__y, "o")
         ax.plot(self.__fit_x, self.__fit_y)
+        plt.grid()
         if show:
             plt.show()
         if save != "":

@@ -1,21 +1,26 @@
 import models
 import math
 import numpy as np
+import csv
+import pathlib
+import os
 
 class VehicleSetup():
     def __init__(self, overrides={}):
+        cur_path = pathlib.Path(__file__).parent.resolve()
+
         self.total_weight = 650
 
         # This means that 48% of the weight is on the fronts
         # Drill that into your head you fucking idiot
-        self.weight_dist_f = 0.48
+        self.weight_dist_f = 0.46
 
-        self.cg_height = 12.68  # inches
+        self.cg_height = 12.1 # inches
         self.wheelbase = 1.535  # meters
         self.trackwidth_f = 48.875  # inches
         self.trackwidth_r = self.trackwidth_f # inches
 
-        self.torsional_rigidity = 1300 #Nm/deg
+        self.torsional_rigidity = 1184 #Nm/deg
         self.tr_nom = 1184 #Nm/deg
 
         self.roll_grad_f = math.radians(0.75) #(rad/g)
@@ -49,9 +54,19 @@ class VehicleSetup():
         self.CoP = self.weight_dist_f + 0.05
 
         self.torque_mod = 1
-        self.rpm_range = np.array([*range(6200, 14100 + 100, 100)])
-        self.torque_curve = self.torque_mod * np.array([41.57, 42.98, 44.43, 45.65, 46.44, 47.09, 47.52, 48.58, 49.57, 50.41, 51.43, 51.48, 51, 49.311, 48.94, 48.66, 49.62, 49.60, 47.89, 47.91, 48.09, 48.57, 49.07, 49.31, 49.58, 49.56, 49.84, 50.10, 50.00, 50.00, 50.75, 51.25, 52.01, 52.44, 52.59, 52.73, 53.34, 53.72,
-                             52.11, 52.25, 51.66, 50.5, 50.34, 50.50, 50.50, 50.55, 50.63, 50.17, 50.80, 49.73, 49.35, 49.11, 48.65, 48.28, 48.28, 47.99, 47.68, 47.43, 47.07, 46.67, 45.49, 45.37, 44.67, 43.8, 43.0, 42.3, 42.00, 41.96, 41.70, 40.43, 39.83, 38.60, 38.46, 37.56, 36.34, 35.35, 33.75, 33.54, 32.63, 31.63])
+
+
+        self.rpm_range = []
+        self.torque_curve = []
+        with open(os.path.join(cur_path, "23_torque_curve.csv")) as torque_curve_infile:
+            spamreader = csv.reader(torque_curve_infile)
+            for row in spamreader:
+                self.rpm_range.append(float(row[0]))
+                self.torque_curve.append(float(row[1]))
+
+        self.rpm_range = np.array(self.rpm_range)
+        self.torque_curve = np.array(self.torque_curve)        
+        
         self.primary_reduction = 76/36
         self.gear_ratios = [33/12, 32/16, 30/18, 26/18, 30/23, 29/24]
         self.num_gears = len(self.gear_ratios)

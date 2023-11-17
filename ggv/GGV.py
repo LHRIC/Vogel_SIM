@@ -204,6 +204,10 @@ class GGV:
         self._power_lim_accel = csaps(self.velocity_range, power_lim_a)
         self.accel_capability = csaps(self.velocity_range, accel_cap)
 
+        self._grip_lim_accel.plot(show=False)
+        self._power_lim_accel.plot(show=False)
+        self.accel_capability.plot()
+
 
         lateral_g = np.empty((len(self.radii_range),))
         if(self._calc_lateral):
