@@ -44,7 +44,22 @@ class Trajectory:
 
 
 if __name__ == "__main__":
-    t = Trajectory("./track/17_lincoln_endurance_track_highres.xls", 4.5, 36)
-    plt.scatter(t.trajectory[0], t.trajectory[1], c=t.radii)
+    import itertools
+    t = Trajectory("./trajectory/17_lincoln_endurance_track_highres.xls", 4.5, 36)
+    #plt.scatter(t.points[0], t.points[1], c=abs(t._curvature))
+    x = []
+    y = []
+    curv = []
+    for i in range(len(t.points[0])):
+        if abs(t._curvature[i]) > 1e-12:
+            x.append(t.points[0][i])
+            y.append(t.points[1][i])
+            curv.append(t._curvature[i])
+    plt.scatter(x, y, c=list(map(lambda x: abs(x), curv)))
     plt.colorbar()
     plt.show()
+
+    curv = list(map(lambda x: abs(x), curv))
+    print(len(curv) / sum(curv))
+    print(len(t._curvature) / sum(abs(t._curvature)))
+    #print(len(list(itertools.groupby(t._curvature, lambda x: x > 0))))

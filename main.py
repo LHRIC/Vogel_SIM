@@ -2,17 +2,17 @@ from Engine import Engine
 import models
 
 def main():
-    aero_model = models.AERO()
-    dyn_model = models.DYN_2()
-    ptn_model = models.PTN()
 
-    simulator = Engine(AERO=aero_model, DYN=dyn_model, PTN=ptn_model, trajectory="./trajectory/17_lincoln_endurance_track_highres.xls")
-    #simulator.sweep(num_steps=10, total_weight=(300, 600))
-    #simulator.sweep(num_steps = 15, cg_height=(10, 15))
+
+    simulator = Engine(trajectory="./trajectory/17_lincoln_endurance_track_highres.xls")
+    
+    #simulator.sweep(num_steps=20, torsional_rigidity=(850, 2000), xlabel="Torsional Rigidity (Nm/deg)")
+    #simulator.sweep(num_steps=20, total_weight=(650, 660), xlabel="Total Weight (lbs.)")
+    #simulator.sweep(num_steps=20, cg_height=(12.0, 12.2), xlabel="Cg Height (in.)")
+    #simulator.sweep(num_steps = 15, Cd=(0.5, 1.2), xlabel="CDA")
     #simulator.sweep(num_steps = 30, trackwidth_f=(1.2, 1.35))
-    #simulator.sweep(num_steps = 30, run_mode="ACCEL", final_drive=(1, 5))
-    #simulator.sweep(num_steps = 15, run_mode="ENDURANCE", LLTD=(0.25, 0.75))
-    #simulator.sweep(num_steps = 15, run_mode="ENDURANCE", ideal_slip=(-8, -12))
+    #simulator.sweep(num_steps = 30, xlabel="Final Drive", final_drive=(2, 5))
+    #simulator.sweep(num_steps = 20, camber_gain_p=(1, 2), xlabel="Camber Gain (p)")
     simulator.single_run(run_mode="ENDURANCE", plot=True)
     #simulator.test_ggv()
 

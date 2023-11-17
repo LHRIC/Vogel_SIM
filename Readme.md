@@ -35,8 +35,7 @@ def main():
     dyn_model = models.DYN()
     ptn_model = models.PTN()
 
-    simulator = Engine(AERO=aero_model, DYN=dyn_model, PTN=ptn_model, 
-    trajectory="./trajectory/17_lincoln_endurance_track_highres.xls")
+    simulator = Engine(trajectory="./trajectory/17_lincoln_endurance_track_highres.xls")
 ```
 
 The Lapsim Engine class implements a `.sweep()` method. This method takes in two arguments, `num_steps` and `**kwargs`. `num_steps` is used to determine the resolution of the sweep domain and **kwargs is used to determine the upper and lower bounds of the sweep_interval.

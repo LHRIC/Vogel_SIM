@@ -4,14 +4,15 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from multiprocessing import Pool, cpu_count
 import scipy.interpolate as interp
+import models
+import setups
+
+#plt.style.use('seaborn-v0_8-white')
 
 class Engine:
 
-    def __init__(self, AERO, DYN, PTN, trajectory) -> None:
+    def __init__(self, trajectory) -> None:
         self._trajectory_path = trajectory
-        self._AERO = AERO
-        self._DYN = DYN
-        self._PTN = PTN
         
         self._sweep_params = []
         self._sweep_classes = []
@@ -20,7 +21,9 @@ class Engine:
         self._run_mode = "ENDURANCE"
 
     def single_run(self, run_mode="ENDURANCE", plot=False):
-        vehicle = Vehicle(AERO=self._AERO, DYN=self._DYN, PTN=self._PTN, trajectory_path=self._trajectory_path)
+        params = setups.VehicleSetup()
+
+        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path)
         vehicle.GGV.generate()
         laptime = 0
 
@@ -33,7 +36,7 @@ class Engine:
         else:
             print(f"Invalid run mode: {self._run_mode}, please select either ENDURANCE or ACCEL.")
             return
-        print(laptime)
+        print("Laptime:", laptime)
         
         if plot:
             if(self._run_mode == "ENDURANCE"):
@@ -94,7 +97,23 @@ class Engine:
                 fig3, ax3 = plt.subplots()
                 sc = ax3.scatter(vehicle.x, vehicle.y, c=vehicle.velocity)
                 cbar = plt.colorbar(sc)
-                #cbar.set_label('Velocity [m/s]', rotation=270)
+
+                fig6, ax6 = plt.subplots()
+                grip_lim_x = []
+                grip_lim_y = []
+                vel_cb = []
+                for i in range(len(vehicle.velocity)):
+                    if vehicle.velocity[i] < 13:
+                        grip_lim_x.append(vehicle.x[i])
+                        grip_lim_y.append(vehicle.y[i])
+                        vel_cb.append(vehicle.velocity[i])
+
+
+                sc = ax6.scatter(grip_lim_x, grip_lim_y, c=vel_cb)
+                cbar = plt.colorbar(sc)
+
+                print("%% Grip Limited: ", len(vel_cb) / len(vehicle.velocity))
+
 
                 fig4 = plt.figure()
                 ax4 = fig4.add_subplot(projection='3d')
@@ -102,99 +121,94 @@ class Engine:
                 ax4.set_xlabel('Lateral Accel. (g)')
                 ax4.set_ylabel('Longitudinal Accel (g)')
                 ax4.set_zlabel('Velocity (m/s)')
-                plt.xlim([-1.5, 1.5])
-                plt.ylim([-1.5, 1.5])
-                plt.show()
+                plt.xlim([-2.5, 2.5])
+                plt.ylim([-2.5, 2.5])
+
+                fig5, ax5 = plt.subplots()
+                ax5.plot(vehicle.dist, vehicle.velocity)
+                plt.xlabel("Distance (m)")
+                plt.ylabel("Velocity (m/s)")
+
+                print("Avg vel:", sum(vehicle.velocity)/len(vehicle.velocity))
+                plt.show(block=False)
+                plt.pause(0.001) # Pause for interval seconds.
+                input("hit[enter] to end.")
+                plt.close('all') # all open plots are correctly closed after each run
             elif(self._run_mode == "ACCEL"):
                 fig, ax = plt.subplots()
                 ax.scatter(vehicle.x, vehicle.y, c=vehicle.velocity)
 
                 fig, ax = plt.subplots()
                 ax.plot(vehicle.dist, vehicle.ax)
-                plt.show()
+                plt.show(block=False)
+                plt.pause(0.001) # Pause for interval seconds.
+                input("hit[enter] to end.")
+                plt.close('all') # all open plots are correctly closed after each run
 
-    def sweep(self, num_steps, run_mode="ENDURANCE", **kwargs) -> None:
+    def sweep(self, num_steps, run_mode="ENDURANCE", xlabel="", **kwargs) -> None:
         self._run_mode = run_mode.upper()
-        
+
         self._sweep_params = list(kwargs.keys())
+
+        if(len(kwargs) > 1):
+            print("ERROR: Coupled parameter sweeps are not yet supported")
+            return
+
         for param in self._sweep_params:
             self._sweep_bounds.append(kwargs[param])
-            if getattr(self._AERO, param, None) is not None:
-                self._sweep_classes.append("AERO")
-            elif getattr(self._DYN, param, None) is not None:
-                self._sweep_classes.append("DYN")
-            elif getattr(self._PTN, param, None) is not None:
-                self._sweep_classes.append("PTN")
-            else:
-                print(f'ERROR: Parameter "{param}" not found')
-                return
+
+        sweep_range = np.linspace(self._sweep_bounds[0][0], self._sweep_bounds[0][1], num=num_steps)
         
-        if(len(kwargs) == 1):
-            # Single variable sweep
-            sweep_range = np.linspace(self._sweep_bounds[0][0], self._sweep_bounds[0][1], num=num_steps)
-            times = []
+        payloads = []
+        times = []
 
-            num_processes = cpu_count() * 2
-            with Pool(num_processes) as p:
-                times = p.map(self.compute_task, sweep_range)
-                        
-
-            fig, ax = plt.subplots()
-            ax.plot(sweep_range, list(times), "o-")
-            plt.show()
-        elif(len(kwargs) == 2):
-            sweep_range_x = np.linspace(self._sweep_bounds[0][0], self._sweep_bounds[0][1], num=num_steps)
-            sweep_range_y = np.linspace(self._sweep_bounds[1][0], self._sweep_bounds[1][1], num=num_steps)
-            xx, yy = np.meshgrid(sweep_range_x, sweep_range_y)
-            R = np.sin(np.sqrt(xx**2 + yy**2))
-
-            Z = np.zeros_like(xx)
-
-            comb_params = []
-            for i in range(num_steps):
-                for j in range(num_steps):
-                    x = xx[i][j]
-                    y = yy[i][j]
-                    comb_params.append((x, y))
-            
-            num_processes = cpu_count() * 2
-            with Pool(num_processes) as p:
-                times = p.map(self.compute_task, comb_params)
-
-            c = 0
-            for i in range(num_steps):
-                for j in range(num_steps):
-                    Z[i][j] = times[c]
-                    c += 1
+        for param_val in sweep_range:
+            vehicle_params = setups.VehicleSetup(overrides={self._sweep_params[0]: param_val})
 
 
-            # Plot the surface.
-            fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-            surf = ax.plot_surface(xx, yy, Z, cmap="coolwarm",
-                       linewidth=0, antialiased=False)
-            fig.colorbar(surf, shrink=0.5, aspect=5)
+            payloads.append({
+                'PARAMS': vehicle_params,
+                'COUNT': param_val
+            })
 
-            plt.show()
-        else:
-            print(f"WARN: Parameter sweeps with {len(kwargs)} variables are not supported.")
-            return
-        '''
-        if(len(kwargs) > 1):
-            
-        else:
-            sweep_range = kwargs[self._sweep_param]
-            sweep_range = np.linspace(sweep_range[0], sweep_range[1], num=num_steps)
-            times = []
 
-            num_processes = cpu_count() * 2
-            with Pool(num_processes) as p:
-                times = p.map(self.compute_task, sweep_range)
-                        
+        
+        num_processes = cpu_count() * 2
+        with Pool(num_processes) as p:
+            times = p.map(self.compute_task_authoritative, payloads)
+        
+        print("Sensitivity: ", (max(times) - min(times)) / (max(sweep_range) - min(sweep_range)))
+        
+        fig, ax = plt.subplots()
+        ax.plot(sweep_range, list(times), "o-")
+        plt.xlabel(xlabel)
+        plt.ylabel("Laptime (s)")
+        plt.show()
 
-            fig, ax = plt.subplots()
-            ax.plot(sweep_range, list(times), "o-")
-            plt.show()
-        '''
+
+    def compute_task_authoritative(self, p):
+        params = p["PARAMS"]
+        count = p["COUNT"]
+
+        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path)
+        
+        vehicle.GGV.generate()
+
+        laptime = 0
+        if(self._run_mode == "ENDURANCE"):
+            laptime = vehicle.simulate_endurance()
+        elif(self._run_mode == "ACCEL"):
+            laptime = vehicle.simulate_accel()
+
+        #fig2, ax2 = plt.subplots()
+        #ax2.axis('equal')
+        #ax2.plot(vehicle.ay, vehicle.ax, "o")
+        #save_location = './sweeps/' + str("%.2f" % round(count,2)).replace(".", "_") + ".jpg"
+        #plt.savefig(save_location)
+        
+        return laptime
+
+        
     
         
     def compute_task(self, p):

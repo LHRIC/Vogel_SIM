@@ -31,12 +31,15 @@ class FitFunction():
     def evaluate(self, x_val):
         return np.interp(x_val, self.__fit_x, self.__fit_y)
     
-    def plot(self, show=True):
+    def plot(self, show=True, save=""):
         fig, ax = plt.subplots()
         ax.plot(self.__x, self.__y, "o")
         ax.plot(self.__fit_x, self.__fit_y)
+        plt.grid()
         if show:
             plt.show()
+        if save != "":
+            plt.savefig(save)
     
     def __str__(self) -> str:
         s = self.__type + "\n"

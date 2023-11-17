@@ -1,8 +1,9 @@
 import numpy as np
-from .SystemModel import SystemModel
+import matplotlib.pyplot as plt
+from models.system_model import SystemModel
 
 class PTN(SystemModel):
-    def __init__(self):
+    def __init__(self, overrides={}):
         # 6200:100:14100
         self.torque_mod = 1
         self.rpm_range = np.array([*range(6200, 14100 + 100, 100)])
@@ -17,7 +18,25 @@ class PTN(SystemModel):
         self.shift_time = 0.25 #seconds
         self.diff_locked = False; #False - open, True - closed
 
+        for key in overrides.keys():
+            val = overrides[key]
+
+            try:
+                setattr(self, key, val)
+            except:
+                exit("Ahhhh")
+        self.compute_deriv_params()
+        self.convert_units()
+    
+    def compute_deriv_params(self):
+        pass
+
+    def convert_units(self):
+        pass
+
 if __name__ == "__main__":
     a = PTN()
-    print(len(a.rpm_range))
-    print(len(a.torque_curve))
+    fig, ax = plt.subplots()
+
+    ax.plot(a.rpm_range, a.torque_curve)
+    plt.show()
