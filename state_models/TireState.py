@@ -3,7 +3,8 @@ import setups
 import numpy as np
 
 class TireState():
-    def __init__(self, params: setups.VehicleSetup):
+    # TODO: setups thing here
+    def __init__(self, params: setups.Goose):
         self._MF52 = MF52()
         self.params = params
 
@@ -18,9 +19,6 @@ class TireState():
         
         #Normal Load
         self.Fz = 0
-
-        #Longitudinal slip
-        self.kappa = 0
 
         self.Fx = 0 #N
         self.Fy = 0 #N

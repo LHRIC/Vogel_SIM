@@ -8,7 +8,8 @@ import setups
 import state_models
 
 class GGV:
-    def __init__(self, params: setups.VehicleSetup, gear_tot, v_max):
+    # TODO: setups thing here
+    def __init__(self, params: setups.Goose, gear_tot, v_max):
         self.params = params
 
         self._MF52 = MF52()
@@ -61,7 +62,7 @@ class GGV:
             1.62583858287551,
         ]
 
-    def calc_grip_lin_max_accel(self, v):
+    def calc_grip_lim_max_accel(self, v):
         vehicle_state = self.vehicle_state
         A_x_diff = 1
         Ax = 0
@@ -186,7 +187,7 @@ class GGV:
         for idx, v in enumerate(self.velocity_range):
             print(f"Calculating: Long. accel capability for {v} m/s")
             #Ax_r = self.calc_grip_lim_max_accel(v)
-            Ax_r = self.calc_grip_lin_max_accel(v)
+            Ax_r = self.calc_grip_lim_max_accel(v)
             
             grip_lim_a[idx] = (Ax_r)
 
@@ -203,10 +204,6 @@ class GGV:
         self._grip_lim_accel = polyfit(self.velocity_range, grip_lim_a, 3)
         self._power_lim_accel = csaps(self.velocity_range, power_lim_a)
         self.accel_capability = csaps(self.velocity_range, accel_cap)
-
-        self._grip_lim_accel.plot(show=False)
-        self._power_lim_accel.plot(show=False)
-        self.accel_capability.plot()
 
 
         lateral_g = np.empty((len(self.radii_range),))
@@ -226,12 +223,13 @@ class GGV:
 
         else:
             print("WARNING: Loading precalculated lateral envelope")
-            lateral_g = self.lateral_capability
+            lateral_g = np.array(self.lateral_capability)
             velocity_y = lateral_g * 9.81
             velocity_y = np.multiply(velocity_y, self.radii_range)
             velocity_y = np.sqrt(velocity_y)
 
             self.lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
+            #self.lateral_capability.plot()
             
         # Defines the max cornering velocity vs radii *based on lateral acceleration capacity*
         # Not based on steady-state cornering acceleration

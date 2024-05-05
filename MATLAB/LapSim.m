@@ -194,10 +194,10 @@ grip = polyfit(velocity,A_xr,3);
 AYP = .5;
 disp('Lateral Acceleration Envelope')
 
-%load('lateralg.mat')
-%disp("////////////////////////////////////WARNING////////////////////" + ...
-%    "LOADING PRECALCULATED LATERALG")
-
+load('lateralg.mat')
+disp("////////////////////////////////////WARNING////////////////////" + ...
+    "LOADING PRECALCULATED LATERALG")
+%{
 
 lateralg = zeros(1,length(radii));
 p = zeros(3, length(radii));
@@ -262,6 +262,8 @@ for turn = 1:1:length(radii)
         
 
 end
+%}
+
 velocity_y = lateralg.*9.81.*radii;
 velocity_y = sqrt(velocity_y);
 range = linspace(4.5,velocity_y(end));

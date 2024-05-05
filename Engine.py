@@ -6,13 +6,16 @@ from multiprocessing import Pool, cpu_count
 import scipy.interpolate as interp
 import models
 import setups
+import csv
+import math
 
 #plt.style.use('seaborn-v0_8-white')
 
 class Engine:
 
-    def __init__(self, trajectory) -> None:
+    def __init__(self, trajectory, is_closed) -> None:
         self._trajectory_path = trajectory
+        self._is_closed = is_closed
         
         self._sweep_params = []
         self._sweep_classes = []
@@ -21,9 +24,9 @@ class Engine:
         self._run_mode = "ENDURANCE"
 
     def single_run(self, run_mode="ENDURANCE", plot=False):
-        params = setups.VehicleSetup()
+        params = setups.Goose()
 
-        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path)
+        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path, is_closed=self._is_closed)
         vehicle.GGV.generate()
         laptime = 0
 
@@ -31,15 +34,46 @@ class Engine:
 
         if(self._run_mode == "ENDURANCE"):
             laptime = vehicle.simulate_endurance()
+            laptime *= 10
+            Tmax = 1973.419
+            Tmin = 1360.978
+            score = 250 * ((Tmax / laptime) - 1)/((Tmax / Tmin) - 1) + 25
+            print("Laptime (10 laps):", laptime)
+            print(f"Score: {score}")
         elif(self._run_mode == "ACCEL"):
             laptime = vehicle.simulate_accel()
+
+            Tmax = 4.174
+            Tmin = 6.262
+            score = 95.5 * ((Tmax / laptime) - 1)/((Tmax / Tmin) - 1) + 4.5
+            print("Accel Time:", laptime)
+            print(f"Score: {score}")
+        elif(self._run_mode == "SKIDPAD"):
+            path_radius = 18.25/2
+            skidpad_vel = vehicle.GGV.cornering_capability.evaluate(path_radius)
+            
+            Tmax = 6.135
+            Tmin = 4.908
+            laptime = path_radius*2*math.pi/skidpad_vel + 0.125 # Assume one cone because the lateral accel calc is a bit overzelous :(
+            score = 71.5 * ((Tmax / laptime)**2 - 1)/((Tmax / Tmin)**2 - 1) + 3.5
+
+            print("Laptime:", laptime)
+            print(f"Score: {score}")
+        elif(self._run_mode == "AUTOX"):
+            laptime = vehicle.simulate_endurance()
+
+            Tmax = 66.534
+            Tmin = 45.886
+            score = 118.5 * ((Tmax / laptime) - 1)/((Tmax / Tmin) - 1) + 6.5
+            print("Laptime:", laptime)
+            print(f"Score: {score}")
         else:
             print(f"Invalid run mode: {self._run_mode}, please select either ENDURANCE or ACCEL.")
             return
-        print("Laptime:", laptime)
         
         if plot:
-            if(self._run_mode == "ENDURANCE"):
+            if(self._run_mode == "ENDURANCE" \
+               or self._run_mode == "AUTOX"):
                 Ax_f = np.zeros(len(vehicle.ax_f))
                 Ay_f = np.zeros(len(vehicle.ay_f))
 
@@ -51,6 +85,7 @@ class Engine:
                         Ax_f[i]  = vehicle.ax_f[i]
                         Ay_f[i]  = vehicle.ay_f[i]
                         V_f[i]  = vehicle.velocity_f[i]
+                '''
 
                 ploty1, plotz1 = np.meshgrid(np.linspace(np.min(Ay_f), np.max(Ay_f), 60),
                                             np.linspace(np.min(V_f), np.max(V_f), 60))
@@ -88,7 +123,7 @@ class Engine:
                 plt.ylabel('Ay [g]')
                 ax1.set_zlabel('Velocity [m/s]')
 
-                
+                '''
 
                 fig2, ax2 = plt.subplots()
                 ax2.axis('equal')
@@ -96,7 +131,9 @@ class Engine:
 
                 fig3, ax3 = plt.subplots()
                 sc = ax3.scatter(vehicle.x, vehicle.y, c=vehicle.velocity)
+                ax3.axis("equal")
                 cbar = plt.colorbar(sc)
+                cbar.set_label("Velocity (m/s)")
 
                 fig6, ax6 = plt.subplots()
                 grip_lim_x = []
@@ -125,9 +162,24 @@ class Engine:
                 plt.ylim([-2.5, 2.5])
 
                 fig5, ax5 = plt.subplots()
-                ax5.plot(vehicle.dist, vehicle.velocity)
+                #ax5.plot(np.arange(0, len(vehicle.velocity)), vehicle.velocity, "o--", markersize=2)
+                ax5.plot(vehicle.time, vehicle.velocity_f)
+                ax5.plot(vehicle.time, vehicle.velocity_r, "r")
+                ax5_1 = ax5.twinx()
+                ax5_1.scatter(vehicle.time, vehicle.is_shifting)
                 plt.xlabel("Distance (m)")
+                plt.ylabel("Time (s)")
+
+                fig, ax6 = plt.subplots()
+                ax6.plot(vehicle.time, vehicle.velocity)
+                plt.xlabel("Time (s)")
                 plt.ylabel("Velocity (m/s)")
+
+                with open("./CharlesVvT.csv", "w") as outfile:
+                    csv_writer = csv.writer(outfile, delimiter=',')
+                    csv_writer.writerow(["Time (s)", "Velocity (m/s)"])
+                    for i in range(len(vehicle.time)):
+                        csv_writer.writerow([vehicle.time[i], vehicle.velocity[i]])
 
                 print("Avg vel:", sum(vehicle.velocity)/len(vehicle.velocity))
                 plt.show(block=False)

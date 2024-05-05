@@ -2,7 +2,7 @@ from models.system_model import SystemModel
 
 class AERO(SystemModel):
     def __init__(self, overrides={}):
-        self.Cl = -15000 #ClA
+        self.Cl = -4 #ClA
         self.Cd = 0.8
         self.CoP = 0.48
 

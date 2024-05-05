@@ -6,7 +6,7 @@ import math
 
 
 class Vehicle:
-    def __init__(self, trajectory_path, params, mesh_resolution=10):
+    def __init__(self, trajectory_path, params, is_closed, mesh_resolution=10):
         self.params = params
 
         '''Total Reduction'''
@@ -15,10 +15,10 @@ class Vehicle:
         self.v_max = self.params.shiftpoint / (self.gear_tot/self.params.tire_radius*60/(2 * math.pi))
         self.GGV = GGV.GGV(self.params, self.gear_tot, self.v_max)
 
-        self.trajectory = Trajectory.Trajectory(trajectory_path, self.GGV.radii_range[0], self.GGV.radii_range[-1])
+        self.trajectory = Trajectory.Trajectory(trajectory_path, is_closed, self.GGV.radii_range[0], self.GGV.radii_range[-1])
         self._interval = mesh_resolution
 
-        self._mesh_size = (self.trajectory.num_points) * self._interval
+        self._mesh_size = (self.trajectory.num_points - 1) * self._interval
         self.count = np.zeros(self._mesh_size)
 
         self.time = np.zeros(self._mesh_size)
@@ -134,7 +134,7 @@ class Vehicle:
 
                 
 
-                if time_shifting >= self.PTN.shift_time:
+                if time_shifting >= self.params.shift_time:
                     is_shifting = False
                     time_shifting = 0
                     gear = required_gear
@@ -152,6 +152,10 @@ class Vehicle:
         self.simulate_reverse()
         self.simulate_forwards(self.velocity_r[0])
 
+        start_vel = []
+        end_vel = []
+        in_brake = False
+
         for i in self.count:
             i = int(i)
             self.dist[i] = self.dist_f[i]
@@ -163,6 +167,16 @@ class Vehicle:
                 self.velocity[i] = self.velocity_r[i]
                 self.ax[i] = -1 * self.ax_r[i]
                 self.ay[i] = self.ay_r[i]
+            
+            '''Snippet for Little Liam I think, some brakes stuff idr'''
+            if(i > 0):
+                if self.ax[i] < 0 and self.ax[i-1] > 0:
+                    start_vel.append(self.velocity[i-1])
+                    in_brake = True
+                elif (in_brake) and (self.ax[i] > 0 and self.ax[i-1] <= 0):
+                    end_vel.append(self.velocity[i-1])
+                    in_brake = False
+        
 
         '''Determine turn handedness and remove outliers'''
         self.ay[self.ay > self.GGV.lateral_capability.evaluate(self.v_max + 1)] = self.GGV.lateral_capability.evaluate(self.v_max + 1)
@@ -194,12 +208,11 @@ class Vehicle:
         count = 0
         distance= 0
         time = 0
-        for point_idx in range(self.trajectory.num_points):
+        for point_idx in (range(self.trajectory.num_points - 1)):
             x_1 = self.trajectory.points[0][point_idx]
             y_1 = self.trajectory.points[1][point_idx]
-            x_2 = self.trajectory.points[0][(point_idx + 1) % self.trajectory.num_points]
-            y_2 = self.trajectory.points[1][(point_idx + 1) % self.trajectory.num_points]
-
+            x_2 = self.trajectory.points[0][(point_idx + 1)]
+            y_2 = self.trajectory.points[1][(point_idx + 1)]
             '''Distance of trajectory interval in meters'''
             dist = math.sqrt((x_1-x_2)**2 + (y_2-y_1)**2)
 
@@ -233,7 +246,7 @@ class Vehicle:
                 self.velocity_f[count] = vel
                 self.gear[count] = gear
                 self.dist_f[count] =  distance + delta_d * j
-
+ 
                 dt = delta_d / vel
                 self.time[count] = time + dt * j
                 if is_shifting and vel < v_max:
@@ -289,8 +302,8 @@ class Vehicle:
         for point_idx in range(self.trajectory.num_points - 1, -1, -1):
             x_1 = self.trajectory.points[0][point_idx]
             y_1 = self.trajectory.points[1][point_idx]
-            x_2 = self.trajectory.points[0][(point_idx - 1) % self.trajectory.num_points]
-            y_2 = self.trajectory.points[1][(point_idx - 1) % self.trajectory.num_points]
+            x_2 = self.trajectory.points[0][(point_idx - 1)]
+            y_2 = self.trajectory.points[1][(point_idx - 1)]
 
             '''Distance of trajectory interval in meters'''
             dist = math.sqrt((x_1-x_2)**2 + (y_2-y_1)**2)

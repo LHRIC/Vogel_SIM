@@ -19,7 +19,8 @@ class StateInput():
 
 
 class VehicleState():
-    def __init__(self, params: setups.VehicleSetup):
+    # TODO: Make a generic super class for setups
+    def __init__(self, params: setups.Goose):
         self.params = params
 
         # Vehicle velocity

@@ -1,1 +1,2 @@
-from setups.Setup import VehicleSetup
+from setups.Panda import Panda
+from setups.Goose import Goose

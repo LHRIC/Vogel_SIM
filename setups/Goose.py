@@ -5,7 +5,7 @@ import csv
 import pathlib
 import os
 
-class VehicleSetup():
+class Goose():
     def __init__(self, overrides={}):
         cur_path = pathlib.Path(__file__).parent.resolve()
 
@@ -15,9 +15,9 @@ class VehicleSetup():
         # Drill that into your head you fucking idiot
         self.weight_dist_f = 0.46
 
-        self.cg_height = 12.1 # inches
+        self.cg_height = 11.6535 # inches
         self.wheelbase = 1.535  # meters
-        self.trackwidth_f = 48.875  # inches
+        self.trackwidth_f = 49.2126  # inches
         self.trackwidth_r = self.trackwidth_f # inches
 
         self.torsional_rigidity = 1184 #Nm/deg
@@ -27,8 +27,8 @@ class VehicleSetup():
         self.roll_grad_r = math.radians(0.75)
         self.pitch_grad = math.radians(0.5)
 
-        self.ride_rate_f = 33887.043 # N/m
-        self.ride_rate_r = 33887.043
+        self.ride_rate_f = 33887.043  # N/m
+        self.ride_rate_r = 33887.043 
 
         self.tire_radius = 0.2032 # meters
 
@@ -48,8 +48,8 @@ class VehicleSetup():
         self.friction_scaling_x = 0.6
         self.friction_scaling_y = 0.6
 
-        self.Cl = 4 #ClA
-        self.Cd = 1.5
+        self.Cl = 2.9 #ClA
+        self.Cd = 1.36
         #That mean x% of df on the fronts
         self.CoP = self.weight_dist_f + 0.05
 
