@@ -136,13 +136,13 @@ class GGV:
         # print(self.vogel(ub))
 
         self._vogel_selector = 1
-        x = least_squares(self.vogel, x0, bounds=(lb, ub), method="trf", verbose=1)
+        x = least_squares(self.vogel, x0, bounds=(lb, ub), method="trf", verbose=1,max_nfev=1000)
 
-        delta = x.x[0]
-        beta = x.x[1]
-        AYP = x.x[2]
+        # Because we are operating the vogel solver in mode 1, it returns the following as residuals
+        # Yaw moment around the CG
+        # Difference between sideslip angle and 12 degrees
+        # Difference in lateral acceleration
 
-        x = least_squares(self.vogel, [delta, beta, AYP], bounds=(lb, ub), method="trf", verbose=1)
         delta = x.x[0]
         beta = x.x[1]
         AYP = x.x[2]
@@ -210,7 +210,6 @@ class GGV:
         if(self._calc_lateral):
             for idx, R in enumerate(self.radii_range):
                 print(f"Calculating: Lat. accel capability for {R}/{self.radii_range[-1]} m")
-                #Stupid naming, idk why i called it g when it's clearly m/s^2 #TODO fix.
                 lateral_g[idx] = (self.calc_lateral_accel(R))
 
             lateral_g = np.array(lateral_g)
@@ -241,9 +240,8 @@ class GGV:
             Ax = self.calc_decel(v)
             braking_g[idx] = (Ax)
         self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
-
-    
-    '''Calculates the maximum lateral acceleration for a neural steer car, given a predetermined turn radius'''
+   
+    '''Calculates the maximum lateral acceleration for a neutral steer car, given a predetermined turn radius'''
     def vogel(self, x):
         vehicle_state = self.vehicle_state
 
@@ -256,17 +254,14 @@ class GGV:
         R = self.R
 
         V = math.sqrt(R * 9.81 * AYP)
-        A_y = AYP
 
-        state_in = state_models.StateInput(Ax=0, Ay=A_y, v=V, r=R, delta=delta, beta=beta)
+        state_in = state_models.StateInput(Ax=0, Ay=AYP, v=V, r=R, delta=delta, beta=beta)
         vehicle_state.eval(state_in=state_in)
 
         F_f_in = vehicle_state.fl_tire.Fy * math.cos(delta)
         F_f_out = vehicle_state.fr_tire.Fy * math.cos(delta)
        
-        F_xDrag = self.params.Cd * V**2 + (F_f_in + F_f_out) * math.sin(delta) / math.cos(
-            delta
-        )
+        F_xDrag = self.params.Cd * V**2 + (F_f_in + F_f_out) * math.sin(delta) / math.cos(delta)
 
         grip_lim_accel = self._grip_lim_accel.evaluate(V)
 
@@ -284,13 +279,14 @@ class GGV:
         # This is the moment acting on the CG (causing under/oversteer)
         M_z = (F_f_in + F_f_out) * a - (F_r_in + F_r_out) * b - M_z_diff
 
+        # Lateral acceleration in g's, since divided by weight in Newtons
         AY = F_y / self.params.total_weight
 
         # Tries to minimize the objective function such that slip angle is kept at 12 degrees (bounds of tire model)
         slipAngle = vehicle_state.alpha_f - math.radians(-12)
-        diff_AY = A_y - AY
+        diff_AY = AYP -  AY
 
         if self._vogel_selector == 1:
             return [M_z, slipAngle, diff_AY]
         else:
-            return [A_y, f_xplt, vehicle_state.alpha_f, vehicle_state.alpha_r, rscale]
+            return [AY, f_xplt, vehicle_state.alpha_f, vehicle_state.alpha_r, rscale]
