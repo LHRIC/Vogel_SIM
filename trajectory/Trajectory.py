@@ -36,9 +36,9 @@ class Trajectory:
         self.points[1] = np.multiply(df["Y"].to_numpy(), 0.3048)
 
         #TODO dont hardcode, fix later, time crunch
-        curv_df = pd.read_csv("./trajectory/23_michigan_autox_curvature_m.csv")
+        curv_df = pd.read_csv("./trajectory/trackmaps/23_michigan_autox_curvature_m.csv")
         self._curvature = curv_df["curvature"].to_numpy()
-        radii_df = pd.read_csv("./trajectory/23_michigan_autox_radii_m.csv")
+        radii_df = pd.read_csv("./trajectory/trackmaps/23_michigan_autox_radii_m.csv")
         self.radii = radii_df["radii"].to_numpy()
 
     def filter_outliers(self):
@@ -69,7 +69,7 @@ class Trajectory:
 
 if __name__ == "__main__":
     import itertools
-    t = Trajectory("./trajectory/23_michigan_autox_ft.csv", False, 4.5, 36)
+    t = Trajectory("./trajectory/trackmaps/23_michigan_autox_ft.csv", False, 4.5, 36)
     #plt.scatter(t.points[0], t.points[1], c=abs(t._curvature))
     x = []
     y = []
