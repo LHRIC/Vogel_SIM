@@ -215,7 +215,7 @@ class Engine:
         times = []
 
         for param_val in sweep_range:
-            vehicle_params = setups.VehicleSetup(overrides={self._sweep_params[0]: param_val})
+            vehicle_params = setups.Panda(overrides={self._sweep_params[0]: param_val})
 
 
             payloads.append({
@@ -242,7 +242,7 @@ class Engine:
         params = p["PARAMS"]
         count = p["COUNT"]
 
-        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path)
+        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path, is_closed=self._is_closed)
         
         vehicle.GGV.generate()
 
