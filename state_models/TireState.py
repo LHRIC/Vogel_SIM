@@ -4,7 +4,7 @@ import numpy as np
 
 class TireState():
     # TODO: setups thing here
-    def __init__(self, params: setups.Goose):
+    def __init__(self, params: setups.Panda):
         self._MF52 = MF52()
         self.params = params
 
@@ -22,6 +22,8 @@ class TireState():
 
         self.Fx = 0 #N
         self.Fy = 0 #N
+        self.fx_log = []  # To store Fx values
+        self.time_log = []  # To store corresponding times
     
     '''Returns the unscaled longitudinal force in the tire frame'''
     def eval_Fx(self):
@@ -29,9 +31,13 @@ class TireState():
         for sl in np.linspace(0, 0.2, 100):
             fx_range.append(self._MF52.Fx(self.Fz, sl, self.epsilon) * self.params.friction_scaling_x)
         self.Fx = max(fx_range)
+       
     
     '''Returns the unscaled lateral force in the tire frame'''
     def eval_Fy(self):
         self.Fy = self._MF52.Fy(self.Fz, self.alpha, self.epsilon) * self.params.friction_scaling_y
+        self.fx_log.append(self.Fy)
+        # self.time_log.append(current_time)
+         
 
     

@@ -7,6 +7,8 @@ import numpy as np
 from utilities import MF52
 
 class StateInput():
+    #max ay and max az and then itirate that through friction elipse
+    
     def __init__(self, Ax=0, Ay=0, v=0, r=0, delta=0, beta=0):
         self.Ax = Ax
         self.Ay = Ay
@@ -20,7 +22,7 @@ class StateInput():
 
 class VehicleState():
     # TODO: Make a generic super class for setups
-    def __init__(self, params: setups.Goose):
+    def __init__(self, params: setups.Panda):
         self.params = params
 
         # Vehicle velocity
@@ -112,10 +114,10 @@ class VehicleState():
         camber_rl = bump_induced_camber_gain_r * self.rl_sus_dz
         camber_rr = bump_induced_camber_gain_r * self.rr_sus_dz
 
-        IA_fl = (-0.032006) + bump_induced_camber_gain_f * self.fl_sus_dz
-        IA_rl = (-0.029791) + bump_induced_camber_gain_r * self.rl_sus_dz
-        IA_fr = (-0.032006) + bump_induced_camber_gain_f * self.fr_sus_dz
-        IA_rr = (-0.029791) + bump_induced_camber_gain_r * self.rr_sus_dz
+        IA_fl = (-0.032006) + bump_induced_camber_gain_f * self.fl_sus_dz + (-1)*self.phi_f
+        IA_rl = (-0.029791) + bump_induced_camber_gain_r * self.rl_sus_dz + (-1)*self.phi_r
+        IA_fr = (-0.032006) + bump_induced_camber_gain_f * self.fr_sus_dz + self.phi_f
+        IA_rr = (-0.029791) + bump_induced_camber_gain_r * self.rr_sus_dz + self.phi_r
 
         #IA_fl = (0.000012) + (-0.061096 * self.fl_sus_dz) + (-0.000128 * self.fl_sus_dz**2) + (0.000000 * self.fl_sus_dz**3)
         #IA_rl = (0.000012) + (-0.065525 * self.rl_sus_dz) + (-0.000119 * self.rl_sus_dz**2) + ( 0.000000 * self.rl_sus_dz**3)

@@ -32,7 +32,7 @@ class Panda():
 
         self.tire_radius = 0.2032 # meters
 
-        self.static_camber_f = 0 # radians
+        self.static_camber_f = -0.0873 # radians
         self.static_camber_r = 0
         self.camber_comp_f = 0
         self.camber_comp_r = 0
@@ -48,8 +48,8 @@ class Panda():
         self.friction_scaling_x = 0.6
         self.friction_scaling_y = 0.6
 
-        self.Cl = 4 #ClA
-        self.Cd = 1.5
+        self.Cl = 2.8 #ClA
+        self.Cd = 1.1
         #That mean x% of df on the fronts
         self.CoP = self.weight_dist_f + 0.05
 
@@ -75,7 +75,7 @@ class Panda():
         self.drivetrain_losses = 0.85
         self.shift_time = 0.25 #seconds
         self.diff_locked = False; #False - open, True - closed
-    
+        self.LLTD = 0.5
         for key in overrides.keys():
             val = overrides[key]
 
@@ -83,9 +83,11 @@ class Panda():
                 setattr(self, key, val)
             except:
                 exit("Text 508-333-3888, this error should not be thrown.")
+        # self.trackwidth_r = self.trackwidth_f
         self.compute_deriv_params()
         self.convert_units()
-        self.LLTD = self.calc_lltd(self.torsional_rigidity)
+        # self.LLTD = self.calc_lltd(self.torsional_rigidity)
+        
     
     def convert_units(self):
         w_mod = (self.torsional_rigidity - self.tr_nom) / 47.5 * 9.81 #N
@@ -101,11 +103,11 @@ class Panda():
         self.camber_comp_f = self.camber_comp_f / 100
         self.camber_comp_r = self.camber_comp_r / 100
 
-        self.camber_gain_f = self.camber_roll_induced_f * self.camber_comp_f
+        # self.camber_gain_f = self.camber_roll_induced_f * self.camber_comp_f
         self.camber_gain_r = self.camber_roll_induced_r * self.camber_comp_r
     
     def compute_deriv_params(self):
-        self.camber_roll_induced_f = math.asin(2 / self.trackwidth_f)
+        # self.camber_roll_induced_f = math.asin(2 / self.trackwidth_f)
         self.camber_roll_induced_r = math.asin(2 / self.trackwidth_r)
     
     def calc_lltd(self, k_ch):
@@ -131,7 +133,8 @@ class Panda():
         C1 = (Z_f * m_s_f) / (self.cg_height * self.total_weight / 9.81)
         D1 = (0.205 * 10) / (self.cg_height * self.total_weight / 9.81)
 
-        return A1*A2 - B1*B2 + C1+ D1
+        # return A1*A2 - B1*B2 + C1+ D1
+        return 0.7
 
 if __name__ == "__main__":
     v = VehicleSetup()

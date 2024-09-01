@@ -24,10 +24,11 @@ class Engine:
         self._run_mode = "ENDURANCE"
 
     def single_run(self, run_mode="ENDURANCE", plot=False):
-        params = setups.Goose()
+        params = setups.Panda()
 
         vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path, is_closed=self._is_closed)
         vehicle.GGV.generate()
+        
         laptime = 0
 
         self._run_mode = run_mode.upper()
@@ -38,7 +39,8 @@ class Engine:
             Tmax = 1973.419
             Tmin = 1360.978
             score = 250 * ((Tmax / laptime) - 1)/((Tmax / Tmin) - 1) + 25
-            print("Laptime (10 laps):", laptime)
+            print("laptime: ", laptime)
+            print("ax data: ")
             print(f"Score: {score}")
         elif(self._run_mode == "ACCEL"):
             laptime = vehicle.simulate_accel()
@@ -85,7 +87,36 @@ class Engine:
                         Ax_f[i]  = vehicle.ax_f[i]
                         Ay_f[i]  = vehicle.ay_f[i]
                         V_f[i]  = vehicle.velocity_f[i]
-                '''
+                
+                plt.hist(vehicle.fz_fl, bins=10, alpha=0.75, color='blue', edgecolor='black')
+                plt.title('Histogram of Fz of fl')
+                plt.xlabel('Value')
+                plt.ylabel('Frequency')
+                plt.show()
+
+                plt.hist(vehicle.fz_fr, bins=10, alpha=0.75, color='blue', edgecolor='black')
+                plt.title('Histogram of Fz of fr')
+                plt.xlabel('Value')
+                plt.ylabel('Frequency')
+                plt.show()
+
+                plt.hist(vehicle.fz_rl, bins=10, alpha=0.75, color='blue', edgecolor='black')
+                plt.title('Histogram of Fz of rl')
+                plt.xlabel('Value')
+                plt.ylabel('Frequency')
+                plt.show()
+
+                plt.hist(vehicle.fz_rr, bins=10, alpha=0.75, color='blue', edgecolor='black')
+                plt.title('Histogram of Fz of rr')
+                plt.xlabel('Value')
+                plt.ylabel('Frequency')
+                plt.show()
+
+                plt.hist(vehicle.fz_total, bins=10, alpha=0.75, color='blue', edgecolor='black')
+                plt.title('Histogram of Fz total')
+                plt.xlabel('Value')
+                plt.ylabel('Frequency')
+                plt.show()
 
                 ploty1, plotz1 = np.meshgrid(np.linspace(np.min(Ay_f), np.max(Ay_f), 60),
                                             np.linspace(np.min(V_f), np.max(V_f), 60))
@@ -123,7 +154,7 @@ class Engine:
                 plt.ylabel('Ay [g]')
                 ax1.set_zlabel('Velocity [m/s]')
 
-                '''
+                
 
                 fig2, ax2 = plt.subplots()
                 ax2.axis('equal')
@@ -230,11 +261,21 @@ class Engine:
             times = p.map(self.compute_task_authoritative, payloads)
         
         print("Sensitivity: ", (max(times) - min(times)) / (max(sweep_range) - min(sweep_range)))
+        self.scores  = []
+        # print(list(times))
+        for i in range((len((times)))):
+            i = int(i)
+            Tmax = 1973.419
+            Tmin = 1360.978
+            # score = 250 * ((Tmax / laptime) - 1)/((Tmax / Tmin) - 1) + 25
+            score = 250 * ((Tmax / times[i]) - 1)/((Tmax / Tmin) - 1) + 25
+            self.scores.append(score)
         
+        print("scores: ", self.scores)
         fig, ax = plt.subplots()
         ax.plot(sweep_range, list(times), "o-")
         plt.xlabel(xlabel)
-        plt.ylabel("Laptime (s)")
+        plt.ylabel("Scores ")
         plt.show()
 
 

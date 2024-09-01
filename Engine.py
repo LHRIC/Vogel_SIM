@@ -24,10 +24,11 @@ class Engine:
         self._run_mode = "ENDURANCE"
 
     def single_run(self, run_mode="ENDURANCE", plot=False):
-        params = setups.Goose()
+        params = setups.Panda()
 
         vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path, is_closed=self._is_closed)
         vehicle.GGV.generate()
+        
         laptime = 0
 
         self._run_mode = run_mode.upper()
@@ -38,8 +39,9 @@ class Engine:
             Tmax = 1973.419
             Tmin = 1360.978
             score = 250 * ((Tmax / laptime) - 1)/((Tmax / Tmin) - 1) + 25
-            print("Laptime (10 laps):", laptime)
-            print(f"Score: {score}")
+            # print("am i going crazy")
+            # print("Laptime (10 laps):", laptime)
+            # print(f"Score: {score}")
         elif(self._run_mode == "ACCEL"):
             laptime = vehicle.simulate_accel()
 
@@ -75,6 +77,7 @@ class Engine:
             if(self._run_mode == "ENDURANCE" \
                or self._run_mode == "AUTOX"):
                 Ax_f = np.zeros(len(vehicle.ax_f))
+                print("vehicle stuff: ", vehicle.ax_f)
                 Ay_f = np.zeros(len(vehicle.ay_f))
 
                 V_f = np.zeros(len(vehicle.velocity_f))

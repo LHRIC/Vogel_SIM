@@ -1,4 +1,7 @@
+from matplotlib import pyplot as plt
 import ggv.GGV as GGV
+import setups
+import state_models
 import trajectory.Trajectory as Trajectory
 from numpy.polynomial import Polynomial
 import numpy as np
@@ -14,6 +17,8 @@ class Vehicle:
         '''Max Achievable Velocity, assuming RPM never exceeds shiftpoint'''
         self.v_max = self.params.shiftpoint / (self.gear_tot/self.params.tire_radius*60/(2 * math.pi))
         self.GGV = GGV.GGV(self.params, self.gear_tot, self.v_max)
+        
+        
 
         self.trajectory = Trajectory.Trajectory(trajectory_path, is_closed, self.GGV.radii_range[0], self.GGV.radii_range[-1])
         self._interval = mesh_resolution
@@ -47,6 +52,11 @@ class Vehicle:
         self.ay = np.zeros(self._mesh_size)
         self.ay_f = np.zeros(self._mesh_size)
         self.ay_r = np.zeros(self._mesh_size)
+        self.fz_fr = []
+        self.fz_fl = []
+        self.fz_rr = []
+        self.fz_rl = []
+        self.fz_total = []
     
         def __del__(self):
             self._matlab_engine.quit()
@@ -189,13 +199,29 @@ class Vehicle:
         
         self.ax_r = np.multiply(self.ax_r, -1)
         
-        '''
-        ax.plot(self.dist_f, comb)
-        plt.show()
-        plt.scatter(self.x, self.y, c=comb)
-        plt.colorbar()
-        plt.show()
-        '''
+        
+        # self.ax.plot(self.dist_f, math.comb)
+        # plt.show()
+        # plt.scatter(self.x, self.y, c=math.comb)
+        # plt.colorbar()
+        # plt.show()
+        for i in range(self.trajectory.num_points - 1) :
+            i = int(i)
+            r = self.trajectory.radii[i]
+            state_in = state_models.StateInput(Ax=-self.ax[i], Ay=self.ay[i], v=vel, r=r, delta=0, beta=0)
+            self.setup = setups.Panda
+            v =state_models.VehicleState(params=self.params)
+            v.eval(state_in=state_in)
+            self.fz_rr.append(v.rr_tire.Fz)
+            self.fz_rl.append(v.rl_tire.Fz)
+            self.fz_fr.append(v.fr_tire.Fz)
+            self.fz_fl.append(v.fl_tire.Fz)
+            self.fz_total.append(v.rr_tire.Fz)
+            self.fz_total.append(v.rl_tire.Fz)
+            self.fz_total.append(v.fr_tire.Fz)
+            self.fz_total.append(v.fl_tire.Fz)
+
+            
 
         return max(self.time)  
     

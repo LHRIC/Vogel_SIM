@@ -9,7 +9,7 @@ import state_models
 
 class GGV:
     # TODO: setups thing here
-    def __init__(self, params: setups.Goose, gear_tot, v_max):
+    def __init__(self, params: setups.Panda, gear_tot, v_max):
         self.params = params
 
         self._MF52 = MF52()
@@ -23,6 +23,7 @@ class GGV:
         self.curr_gear = 1
         self.shift_count = 1
         self.expected_gears = []
+        self.fz_data = []
 
         self._vogel_selector = 1
         self._calc_lateral = True
@@ -185,7 +186,12 @@ class GGV:
 
         '''The gear that you start each velocity iteration in'''
         for idx, v in enumerate(self.velocity_range):
+            print("fy data", self.vehicle_state.fr_tire.Fy)
             print(f"Calculating: Long. accel capability for {v} m/s")
+            self.fz_data.append(self.vehicle_state.fr_tire.Fz)
+            self.fz_data.append(self.vehicle_state.fl_tire.Fz)
+            self.fz_data.append(self.vehicle_state.rl_tire.Fz)
+            self.fz_data.append(self.vehicle_state.rr_tire.Fz)
             #Ax_r = self.calc_grip_lim_max_accel(v)
             Ax_r = self.calc_grip_lim_max_accel(v)
             
@@ -210,6 +216,14 @@ class GGV:
         if(self._calc_lateral):
             for idx, R in enumerate(self.radii_range):
                 print(f"Calculating: Lat. accel capability for {R}/{self.radii_range[-1]} m")
+                print("FZ for fr tire", self.vehicle_state.fr_tire.Fz )
+                print("FZ for fl tire", self.vehicle_state.fl_tire.Fz)
+                print("FZ for rr tire", self.vehicle_state.rr_tire.Fz)
+                print("Fz for rl tire", self.vehicle_state.rl_tire.Fz)
+                self.fz_data.append(self.vehicle_state.fr_tire.Fz)
+                self.fz_data.append(self.vehicle_state.fl_tire.Fz)
+                self.fz_data.append(self.vehicle_state.rl_tire.Fz)
+                self.fz_data.append(self.vehicle_state.rr_tire.Fz)
                 lateral_g[idx] = (self.calc_lateral_accel(R))
 
             lateral_g = np.array(lateral_g)
@@ -237,6 +251,10 @@ class GGV:
         braking_g = np.empty((len(self.velocity_range),))
         for idx, v in enumerate(self.velocity_range):
             print(f"Calculating: Long. braking capability for {v} m/s")
+            self.fz_data.append(self.vehicle_state.fr_tire.Fz)
+            self.fz_data.append(self.vehicle_state.fl_tire.Fz)
+            self.fz_data.append(self.vehicle_state.rl_tire.Fz)
+            self.fz_data.append(self.vehicle_state.rr_tire.Fz)
             Ax = self.calc_decel(v)
             braking_g[idx] = (Ax)
         self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)

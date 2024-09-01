@@ -3,7 +3,7 @@ from models.system_model import SystemModel
 
 class DYN(SystemModel):
     def __init__(self, overrides={}):
-        self.LLTD = 0.5
+        self.LLTD = 0.7
         self.total_weight = 496
 
         # This means that 45% of the weight is on the fronts
