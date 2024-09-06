@@ -20,6 +20,15 @@ class Panda():
         self.trackwidth_f = 48.875  # inches
         self.trackwidth_r = self.trackwidth_f # inches
 
+        # roll center heights
+        self.rollc_f = 0.028 # meters
+        self.rollc_r = 0.036 # meters
+        self.pitchc = 0 # meters [not being used rn]
+
+        # antis
+        self.asquat = 0 # [0,1]
+        self.adive = 0 # [0,1]
+
         self.torsional_rigidity = 1184 #Nm/deg
         self.tr_nom = 1184 #Nm/deg
 
@@ -30,14 +39,19 @@ class Panda():
         self.ride_rate_f = 33887.043  # N/m
         self.ride_rate_r = 33887.043 
 
+        self.k_phi_f = 486 # Nm/deg
+        self.k_phi_r = 650 # Nm/deg
+
         self.tire_radius = 0.2032 # meters
 
-        self.static_camber_f = -0.0873 # radians
+        self.static_camber_f = 0 # deg
         self.static_camber_r = 0
-        self.camber_comp_f = 0
-        self.camber_comp_r = 0
+        self.camber_gain_f = 0 # deg/mm
+        self.camber_gain_r = 0 # deg/mm
+        # self.camber_comp_f = 0
+        # self.camber_comp_r = 0
 
-        self.camber_gain_p = 1
+        # self.camber_gain_p = 1
 
         self.caster_f = 0
         self.caster_r = 4.1568
@@ -100,11 +114,14 @@ class Panda():
         self.trackwidth_r = self.trackwidth_r * 0.0254  # meters
         self.trackwidth_max = max(self.trackwidth_f, self.trackwidth_r)
 
-        self.camber_comp_f = self.camber_comp_f / 100
-        self.camber_comp_r = self.camber_comp_r / 100
+        # self.camber_comp_f = self.camber_comp_f / 100
+        # self.camber_comp_r = self.camber_comp_r / 100
 
         # self.camber_gain_f = self.camber_roll_induced_f * self.camber_comp_f
-        self.camber_gain_r = self.camber_roll_induced_r * self.camber_comp_r
+        # self.camber_gain_r = self.camber_roll_induced_r * self.camber_comp_r
+
+        self.k_phi_f = self.k_phi_f * 57.2958 # Nm/rad
+        self.k_phi_r = self.k_phi_r * 57.2958 
     
     def compute_deriv_params(self):
         # self.camber_roll_induced_f = math.asin(2 / self.trackwidth_f)

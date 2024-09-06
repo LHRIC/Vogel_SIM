@@ -220,6 +220,7 @@ class GGV:
                 print("FZ for fl tire", self.vehicle_state.fl_tire.Fz)
                 print("FZ for rr tire", self.vehicle_state.rr_tire.Fz)
                 print("Fz for rl tire", self.vehicle_state.rl_tire.Fz)
+                print("Ay", self.vehicle_state.Ay)
                 self.fz_data.append(self.vehicle_state.fr_tire.Fz)
                 self.fz_data.append(self.vehicle_state.fl_tire.Fz)
                 self.fz_data.append(self.vehicle_state.rl_tire.Fz)

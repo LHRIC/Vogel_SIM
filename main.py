@@ -12,13 +12,12 @@ def main():
     #simulator.sweep(num_steps = 15, Cd=(0.5, 1.2), xlabel="CDA")
     # simulator.sweep(num_steps = 20, trackwidth_f=(45, 70), xlabel = "Track Width")
     # simulator.sweep(num_steps = 30, xlabel="Final Drive", final_drive=(2, 5))
-    # simulator.sweep(num_steps = 40, camber_gain_p=(-5, 5), xlabel="Camber Gain (p)")
+    simulator.sweep(num_steps = 20, camber_gain_r=(-0.2, 0.1), xlabel="Camber Gain (deg/mm)")
     # simulator.sweep(num_steps=10, Cl=(2,5), xlabel = "Cla")
-    simulator.sweep(num_steps=20, LLTD=(0.4,0.7), xlabel = "LLTD")
+    #simulator.sweep(num_steps=20, LLTD=(0.4,0.7), xlabel = "LLTD")
     #simulator.test_ggv() 
-    # simulator.single_run(run_mode="ENDURANCE", plot=True)
+    #simulator.single_run(run_mode="ENDURANCE", plot=False)
       # After loop ends
-
 
 if __name__ == "__main__":
     main()
