@@ -127,11 +127,19 @@ class VehicleState():
         self.phi = (phi_f+phi_r)/2 # They should be the same surely
         print('body roll:')
         print(phi_f, phi_r)
+        
         # Inclination angle
         IA_FL = camber_FL - self.phi
         IA_FR = camber_FR + self.phi
         IA_RL = camber_RL - self.phi
         IA_RR = camber_RR + self.phi
+
+        # Body pitch (degrees)
+        self.theta = math.degrees(math.asin(((dz_FR+dz_FL)/2 - (dz_RR+dz_RL)/2)/(self.params.wheelbase*1000)))
+
+        # CG Position
+        dz_CG = (((dz_FR+dz_FL)/2)-((dz_RR+dz_RL)/2))*self.params.weight_dist_f+((dz_RR+dz_RL)/2) # delta cg (mm)
+        self.cgz = dz_CG/1000 + self.params.cg_height # cg height (m)
 
         ## Pass to tire model
         # Normal loads
