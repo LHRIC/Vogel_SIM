@@ -16,7 +16,7 @@ def main():
     # simulator.sweep(num_steps=10, Cl=(2,5), xlabel = "Cla")
     #simulator.sweep(num_steps=20, LLTD=(0.4,0.7), xlabel = "LLTD")
     #simulator.test_ggv() 
-    simulator.single_run(run_mode="ENDURANCE", plot=False)
+    simulator.single_run(run_mode="ENDURANCE", plot=True)
       # After loop ends
 
 if __name__ == "__main__":

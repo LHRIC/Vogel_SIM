@@ -36,8 +36,8 @@ class Panda():
         self.roll_grad_r = math.radians(0.75)
         self.pitch_grad = math.radians(0.5)
 
-        self.ride_rate_f = 33887.043  # N/m
-        self.ride_rate_r = 33887.043 
+        self.ride_rate_f = 31430  # N/m
+        self.ride_rate_r = 38375
 
         self.k_phi_f = 486 # Nm/deg
         self.k_phi_r = 650 # Nm/deg

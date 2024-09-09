@@ -57,6 +57,8 @@ class Vehicle:
         self.fz_rr = []
         self.fz_rl = []
         self.fz_total = []
+        self.cgz = []
+
     
         def __del__(self):
             self._matlab_engine.quit()
@@ -205,24 +207,45 @@ class Vehicle:
         # plt.scatter(self.x, self.y, c=math.comb)
         # plt.colorbar()
         # plt.show()
+        # fig, ax = plt.subplots()
+        # ax.scatter(self.x,self.y,marker=',')
+        # for i, txt in enumerate(range(len(self.x))):
+        #     ax.annotate(txt,(self.x[i],self.y[i]))
+
+        print('POINTS',len(self.velocity))
+
+        # Gathering data for plots
+        self.cgz=[]
+        self.vtest=[]
+        self.roll=[]
+        self.pitch=[]
+        self.axp=[]
+        self.ayp=[]
+        self.xpos = []
+        self.ypos = []
+
         for i in range(self.trajectory.num_points - 1) :
             i = int(i)
             r = self.trajectory.radii[i]
-            state_in = state_models.StateInput(Ax=-self.ax[i], Ay=self.ay[i], v=vel, r=r, delta=0, beta=0)
+            state_in = state_models.StateInput(Ax=self.ax[i], Ay=self.ay[i], v=self.velocity[i], r=r, delta=0, beta=0)
+            # state_in = state_models.StateInput(Ax=0, Ay=0, v=self.velocity[i], r=r, delta=0, beta=0) # Constant accel variation
             self.setup = setups.Panda
             v =state_models.VehicleState(params=self.params)
             v.eval(state_in=state_in)
-            self.fz_rr.append(v.rr_tire.Fz)
-            self.fz_rl.append(v.rl_tire.Fz)
-            self.fz_fr.append(v.fr_tire.Fz)
-            self.fz_fl.append(v.fl_tire.Fz)
-            self.fz_total.append(v.rr_tire.Fz)
-            self.fz_total.append(v.rl_tire.Fz)
-            self.fz_total.append(v.fr_tire.Fz)
-            self.fz_total.append(v.fl_tire.Fz)
-
-            
-
+            # self.fz_rr.append(v.rr_tire.Fz)
+            # self.fz_rl.append(v.rl_tire.Fz)
+            # self.fz_fr.append(v.fr_tire.Fz)
+            # self.fz_fl.append(v.fl_tire.Fz)
+            # self.fz_total.append(v.rr_tire.Fz)
+            # self.fz_total.append(v.rl_tire.Fz)
+            # self.fz_total.append(v.fr_tire.Fz)
+            # self.fz_total.append(v.fl_tire.Fz)
+            self.cgz.append(v.cgz)
+            self.vtest.append(v.v)
+            self.roll.append(v.phi)
+            self.pitch.append(v.theta)
+            self.axp.append(v.Ax)
+            self.ayp.append(v.Ay)
         return max(self.time)  
     
     def simulate_forwards(self, starting_v):
@@ -318,7 +341,7 @@ class Vehicle:
                 
                 count += 1
                 time += dt
-            
+
             distance += dist
 
     def simulate_reverse(self):
