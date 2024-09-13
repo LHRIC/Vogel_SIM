@@ -138,6 +138,24 @@ class Engine:
                 plt.ylabel('Frequency')
                 plt.show()
 
+                plt.hist(vehicle.cgdz, bins=20, alpha=0.75, color='blue', edgecolor='black')
+                plt.title('Histogram of CG delta Z')
+                plt.xlabel('mm')
+                plt.ylabel('Frequency')
+                plt.show()
+
+                plt.hist(vehicle.dz_R, bins=20, alpha=0.75, color='blue', edgecolor='black')
+                plt.title('Histogram of Rear delta Z')
+                plt.xlabel('mm')
+                plt.ylabel('Frequency')
+                plt.show()
+
+                plt.hist(vehicle.dz_F, bins=20, alpha=0.75, color='blue', edgecolor='black')
+                plt.title('Histogram of Front delta Z')
+                plt.xlabel('mm')
+                plt.ylabel('Frequency')
+                plt.show()
+
                 plt.plot(range(749),vehicle.radi)
                 plt.title('rad vs step')
                 plt.xlabel('step')

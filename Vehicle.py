@@ -6,6 +6,7 @@ import trajectory.Trajectory as Trajectory
 from numpy.polynomial import Polynomial
 import numpy as np
 import math
+import csv
 
 
 class Vehicle:
@@ -223,30 +224,39 @@ class Vehicle:
         self.ayp=[]
         self.xpos = []
         self.ypos = []
-
-        for i in range(self.trajectory.num_points - 1) :
-            i = int(i)
-            r = self.trajectory.radii[i]
-            state_in = state_models.StateInput(Ax=self.ax[i], Ay=self.ay[i], v=self.velocity[i], r=r, delta=0, beta=0)
-            # state_in = state_models.StateInput(Ax=0, Ay=0, v=self.velocity[i], r=r, delta=0, beta=0) # Constant accel variation
-            self.setup = setups.Panda
-            v =state_models.VehicleState(params=self.params)
-            v.eval(state_in=state_in)
-            # self.fz_rr.append(v.rr_tire.Fz)
-            # self.fz_rl.append(v.rl_tire.Fz)
-            # self.fz_fr.append(v.fr_tire.Fz)
-            # self.fz_fl.append(v.fl_tire.Fz)
-            # self.fz_total.append(v.rr_tire.Fz)
-            # self.fz_total.append(v.rl_tire.Fz)
-            # self.fz_total.append(v.fr_tire.Fz)
-            # self.fz_total.append(v.fl_tire.Fz)
-            self.cgz.append(v.cgz)
-            self.vtest.append(v.v)
-            self.roll.append(v.phi)
-            self.pitch.append(v.theta)
-            self.axp.append(v.Ax)
-            self.ayp.append(v.Ay)
-        return max(self.time)  
+        self.cgdz = []
+        self.dz_F = []
+        self.dz_R = []
+        with open("./AeroData.csv", "w") as outfile:
+            csv_writer = csv.writer(outfile, delimiter=',')
+            csv_writer.writerow(["Step", "Velocity (m/s)", "dz_F", "dz_R"])
+            for i in range(self.trajectory.num_points - 1) :
+                i = int(i)
+                r = self.trajectory.radii[i]
+                state_in = state_models.StateInput(Ax=self.ax[i], Ay=self.ay[i], v=self.velocity[i], r=r, delta=0, beta=0)
+                # state_in = state_models.StateInput(Ax=0, Ay=0, v=self.velocity[i], r=r, delta=0, beta=0) # Constant accel variation
+                self.setup = setups.Panda
+                v =state_models.VehicleState(params=self.params)
+                v.eval(state_in=state_in)
+                # self.fz_rr.append(v.rr_tire.Fz)
+                # self.fz_rl.append(v.rl_tire.Fz)
+                # self.fz_fr.append(v.fr_tire.Fz)
+                # self.fz_fl.append(v.fl_tire.Fz)
+                # self.fz_total.append(v.rr_tire.Fz)
+                # self.fz_total.append(v.rl_tire.Fz)
+                # self.fz_total.append(v.fr_tire.Fz)
+                # self.fz_total.append(v.fl_tire.Fz)
+                self.cgz.append(v.cgz)
+                self.vtest.append(v.v)
+                self.roll.append(v.phi)
+                self.pitch.append(v.theta)
+                self.axp.append(v.Ax)
+                self.ayp.append(v.Ay)
+                self.cgdz.append(-1*v.dz_CG)
+                self.dz_F.append(-1*v.dz_F)
+                self.dz_R.append(-1*v.dz_R)            
+                csv_writer.writerow([i, v.v, v.dz_F, v.dz_R])
+            return max(self.time)
     
     def simulate_forwards(self, starting_v):
         vel = starting_v

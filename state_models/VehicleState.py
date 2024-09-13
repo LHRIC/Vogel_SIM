@@ -115,6 +115,8 @@ class VehicleState():
         dz_FR = Fz_elas_FR/(self.params.ride_rate_f/1000)
         dz_RL = Fz_elas_RL/(self.params.ride_rate_r/1000)
         dz_RR = Fz_elas_RR/(self.params.ride_rate_r/1000)
+        self.dz_F = (dz_FL+dz_FR)/2
+        self.dz_R = (dz_RL+dz_RR)/2
 
         # Camber + gain (deg)
         camber_FL = self.params.static_camber_f + dz_FL*self.params.camber_gain_f
