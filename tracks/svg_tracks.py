@@ -6,6 +6,7 @@ class Trajectory:
     def __init__(self,track_id,steps,track_length,ggv_detail):
         self.steps = steps
         self.radii = []
+        self.curvature = []
         self.xpos = []
         self.ypos = []
         self.dL = []
@@ -45,6 +46,7 @@ class Trajectory:
             seg_index, sub_t = self.track.T2t(t)[0],self.track.T2t(t)[1],
             # Find curvature
             kappa=svg.path.segment_curvature(self.track[seg_index],sub_t)
+            self.curvature.append(kappa)
             # Calculate radius
             if kappa==0:
                 self.radii.append(0)

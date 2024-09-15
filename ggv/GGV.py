@@ -11,9 +11,9 @@ from tracks import svg_tracks
 
 class GGV:
     # TODO: setups thing here
-    def __init__(self, params: setups.Panda, gear_tot, v_max):
+    def __init__(self, params: setups.Panda, gear_tot, v_max, track: svg_tracks.Trajectory):
         self.params = params
-
+        
         self._MF52 = MF52()
 
         self.gear_tot = gear_tot
@@ -21,10 +21,11 @@ class GGV:
 
         self.velocity_range = np.arange(4, math.floor(self.v_max) + 1, 1)
         
-        self.track=svg_tracks.Trajectory(track_id='tracks/2019_IC_michigan_endurance.svg',\
-                         steps=1000,track_length=2000,ggv_detail=30)
+        self.track = track
+        # self.track=svg_tracks.Trajectory(track_id='tracks/2019_IC_michigan_endurance.svg',\
+        #                  steps=1000,track_length=2000,ggv_detail=30)
         
-        self.radii_range = self.tra
+        self.radii_range = self.track.r_set
 
         self.curr_gear = 1
         self.shift_count = 1

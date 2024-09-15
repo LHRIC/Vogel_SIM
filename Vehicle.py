@@ -12,15 +12,14 @@ import SimEngine
 
 
 class Vehicle:
-    def __init__(self, trajectory, params, mesh_resolution=10):
+    def __init__(self, trajectory: svg_tracks.Trajectory, params, mesh_resolution=10):
         self.params = params
-        self.trajectory = svg_tracks.Trajectory()
         self.trajectory = trajectory
         '''Total Reduction'''
         self.gear_tot = self.params.gear_ratios[-1] * self.params.final_drive * self.params.primary_reduction
         '''Max Achievable Velocity, assuming RPM never exceeds shiftpoint'''
         self.v_max = self.params.shiftpoint / (self.gear_tot/self.params.tire_radius*60/(2 * math.pi))
-        self.GGV = GGV.GGV(self.params, self.gear_tot, self.v_max)
+        self.GGV = GGV.GGV(self.params, self.gear_tot, self.v_max, track=self.trajectory)
         
         
 
@@ -234,7 +233,7 @@ class Vehicle:
         with open("./DynamicsData.csv", "w") as outfile:
             csv_writer = csv.writer(outfile, delimiter=',')
             csv_writer.writerow(["Step","Time", "Velocity (m/s)", "Ay (g)", "Radius (m)", "Body slip"])
-            for i in range(self.trajectory.num_points - 1) :
+            for i in range(self.trajectory.steps - 1) :
                 i = int(i)
                 r = self.trajectory.radii[i]
                 state_in = state_models.StateInput(Ax=self.ax[i], Ay=self.ay[i], v=self.velocity[i], r=r, delta=0, beta=0)
@@ -273,16 +272,17 @@ class Vehicle:
         distance= 0
         time = 0
         self.step_time=[]
-        for point_idx in (range(self.trajectory.num_points - 1)):
-            x_1 = self.trajectory.points[0][point_idx]
-            y_1 = self.trajectory.points[1][point_idx]
-            x_2 = self.trajectory.points[0][(point_idx + 1)]
-            y_2 = self.trajectory.points[1][(point_idx + 1)]
+        for point_idx in (range(self.trajectory.steps-1)):
+            x_1 = self.trajectory.xpos[point_idx]
+            y_1 = self.trajectory.ypos[point_idx]
+            x_2 = self.trajectory.xpos[(point_idx + 1)]
+            y_2 = self.trajectory.ypos[(point_idx + 1)]
             '''Distance of trajectory interval in meters'''
-            dist = math.sqrt((x_1-x_2)**2 + (y_2-y_1)**2)
+            # dist = math.sqrt((x_1-x_2)**2 + (y_2-y_1)**2)
 
+            # r = self.trajectory.radii[point_idx]
             r = self.trajectory.radii[point_idx]
-
+            dist = self.trajectory.dL[point_idx]
             '''Max Achievable Cornering Velocity through this segment'''
             v_max = min(self.v_max, self.GGV.cornering_capability.evaluate(r))
 
@@ -295,7 +295,7 @@ class Vehicle:
 
             AX_cap = self.GGV.accel_capability.evaluate(vel)
             AY_cap = self.GGV.lateral_capability.evaluate(vel)
-            AY_actual = vel ** 2 / (r * 9.81)
+            AY_actual = vel ** 2 / (r * 9.81) if r != 0 else 0
 
             delta_d = dist / self._interval
 
@@ -305,7 +305,7 @@ class Vehicle:
 
                 self.ay_f[count] = min(AY_cap,AY_actual)
 
-                self.turn_dir[count] = np.sign(self.trajectory._curvature[point_idx])
+                self.turn_dir[count] = np.sign(self.trajectory.curvature[point_idx])
 
                 self.count[count] = count
                 self.velocity_f[count] = vel
@@ -364,15 +364,15 @@ class Vehicle:
         vel = self.velocity_f[-1]
         distance = 0
         count = int(self.count[-1])
-        for point_idx in range(self.trajectory.num_points - 1, -1, -1):
-            x_1 = self.trajectory.points[0][point_idx]
-            y_1 = self.trajectory.points[1][point_idx]
-            x_2 = self.trajectory.points[0][(point_idx - 1)]
-            y_2 = self.trajectory.points[1][(point_idx - 1)]
+        for point_idx in range(self.trajectory.steps - 1, -1, -1):
+            x_1 = self.trajectory.xpos[point_idx]
+            y_1 = self.trajectory.ypos[point_idx]
+            x_2 = self.trajectory.xpos[(point_idx - 1)]
+            y_2 = self.trajectory.ypos[(point_idx - 1)]
 
             '''Distance of trajectory interval in meters'''
-            dist = math.sqrt((x_1-x_2)**2 + (y_2-y_1)**2)
-
+            # dist = math.sqrt((x_1-x_2)**2 + (y_2-y_1)**2)
+            dist = self.trajectory.dL[(point_idx - 1)]
             r = self.trajectory.radii[point_idx]
 
             '''Max Achievable Cornering Velocity through this segment'''
@@ -380,7 +380,7 @@ class Vehicle:
 
             AX_cap = -1 * self.GGV.braking_capability.evaluate(vel)
             AY_cap = self.GGV.lateral_capability.evaluate(vel)
-            AY_actual = vel ** 2 / (r * 9.81)
+            AY_actual = vel ** 2 / (r * 9.81) if r != 0 else 0
 
             delta_d = dist/self._interval
             for j in range(self._interval):
