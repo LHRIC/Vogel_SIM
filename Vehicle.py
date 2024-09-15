@@ -2,17 +2,20 @@ from matplotlib import pyplot as plt
 import ggv.GGV as GGV
 import setups
 import state_models
-import trajectory.Trajectory as Trajectory
+# import trajectory.Trajectory as Trajectory
 from numpy.polynomial import Polynomial
 import numpy as np
 import math
 import csv
+from tracks import svg_tracks
+import SimEngine
 
 
 class Vehicle:
-    def __init__(self, trajectory_path, params, is_closed, mesh_resolution=10):
+    def __init__(self, trajectory, params, mesh_resolution=10):
         self.params = params
-
+        self.trajectory = svg_tracks.Trajectory()
+        self.trajectory = trajectory
         '''Total Reduction'''
         self.gear_tot = self.params.gear_ratios[-1] * self.params.final_drive * self.params.primary_reduction
         '''Max Achievable Velocity, assuming RPM never exceeds shiftpoint'''
@@ -21,10 +24,10 @@ class Vehicle:
         
         
 
-        self.trajectory = Trajectory.Trajectory(trajectory_path, is_closed, self.GGV.radii_range[0], self.GGV.radii_range[-1])
+        # self.trajectory = Trajectory.Trajectory(trajectory_path, is_closed, self.GGV.radii_range[0], self.GGV.radii_range[-1])
         self._interval = mesh_resolution
 
-        self._mesh_size = (self.trajectory.num_points - 1) * self._interval
+        self._mesh_size = (self.trajectory.steps - 1) * self._interval
         self.count = np.zeros(self._mesh_size)
 
         self.time = np.zeros(self._mesh_size)
@@ -227,9 +230,10 @@ class Vehicle:
         self.cgdz = []
         self.dz_F = []
         self.dz_R = []
-        with open("./AeroData.csv", "w") as outfile:
+        self.radii = []
+        with open("./DynamicsData.csv", "w") as outfile:
             csv_writer = csv.writer(outfile, delimiter=',')
-            csv_writer.writerow(["Step", "Velocity (m/s)", "dz_F", "dz_R"])
+            csv_writer.writerow(["Step","Time", "Velocity (m/s)", "Ay (g)", "Radius (m)", "Body slip"])
             for i in range(self.trajectory.num_points - 1) :
                 i = int(i)
                 r = self.trajectory.radii[i]
@@ -255,7 +259,8 @@ class Vehicle:
                 self.cgdz.append(-1*v.dz_CG)
                 self.dz_F.append(-1*v.dz_F)
                 self.dz_R.append(-1*v.dz_R)            
-                csv_writer.writerow([i, v.v, v.dz_F, v.dz_R])
+                self.radii.append(r)
+                csv_writer.writerow([i,self.step_time[i],v.v,v.Ay,r,v.beta])
             return max(self.time)
     
     def simulate_forwards(self, starting_v):
@@ -267,6 +272,7 @@ class Vehicle:
         count = 0
         distance= 0
         time = 0
+        self.step_time=[]
         for point_idx in (range(self.trajectory.num_points - 1)):
             x_1 = self.trajectory.points[0][point_idx]
             y_1 = self.trajectory.points[1][point_idx]
@@ -351,7 +357,7 @@ class Vehicle:
                 
                 count += 1
                 time += dt
-
+            self.step_time.append(time)
             distance += dist
 
     def simulate_reverse(self):

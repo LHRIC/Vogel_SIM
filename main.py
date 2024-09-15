@@ -4,7 +4,7 @@ import models
 def main():
 
 
-    simulator = Engine(trajectory="./trajectory/23_michigan_endurance_ft.csv", is_closed=True)
+    simulator = Engine(track_id="./tracks/2019_IC_michigan_endurance",steps=1000,track_length=2000,GGV_detail=20)
     
     # simulator.sweep(num_steps=20, torsional_rigidity=(850, 2000), xlabel="Torsional Rigidity (Nm/deg)")
     # simulator.sweep(num_steps=10, total_weight=(51.89, 52.79), xlabel="Total Weight (lbs.)")

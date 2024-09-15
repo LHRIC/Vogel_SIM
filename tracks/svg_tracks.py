@@ -11,6 +11,7 @@ class Trajectory:
         self.dL = []
         self.dL_sum = []
         self.r_set = []
+        self.r_min = 10
         self.parse(track_id,track_length)
         self.calc(steps=steps,ggv_detail=ggv_detail)
         
@@ -49,8 +50,8 @@ class Trajectory:
                 self.radii.append(0)
             else:
                 r=(1/kappa)
-                if r>1000:
-                    self.radii.append(1000)
+                if r <= self.r_min:
+                    self.radii.append(self.r_min)
                 else:
                     self.radii.append(1/kappa)
             self.xpos.append(svg.real(self.track.point(t)))

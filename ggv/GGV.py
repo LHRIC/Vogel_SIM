@@ -1,11 +1,13 @@
 import numpy as np
 import math
+import csv
 from scipy.optimize import least_squares
 from statistics import mean
 from fitting import csaps, polyfit
 from utilities import MF52
 import setups
 import state_models
+from tracks import svg_tracks
 
 class GGV:
     # TODO: setups thing here
@@ -18,7 +20,11 @@ class GGV:
         self.v_max = v_max
 
         self.velocity_range = np.arange(4, math.floor(self.v_max) + 1, 1)
-        self.radii_range = np.arange(3.5, 36, 1.5)
+        
+        self.track=svg_tracks.Trajectory(track_id='tracks/2019_IC_michigan_endurance.svg',\
+                         steps=1000,track_length=2000,ggv_detail=30)
+        
+        self.radii_range = self.tra
 
         self.curr_gear = 1
         self.shift_count = 1
@@ -38,30 +44,30 @@ class GGV:
         self.cornering_capability = None
         self.braking_capability = None
 
-        self.lateral_capability = [
-            1.38195832278988,
-            1.42938584362690,
-            1.46626343925345,
-            1.49126646868585,
-            1.51244972228054,
-            1.53029970410364,
-            1.54641562015666,
-            1.56156587853348,
-            1.57629799755505,
-            1.59036217462828,
-            1.60381424225666,
-            1.61660679209661,
-            1.62875493176357,
-            1.64020405391575,
-            1.65090601787886,
-            1.66090586967413,
-            1.66084693559365,
-            1.65788498156999,
-            1.65256859579085,
-            1.64521365471666,
-            1.63619883252664,
-            1.62583858287551,
-        ]
+        # self.lateral_capability = [
+        #     1.38195832278988,
+        #     1.42938584362690,
+        #     1.46626343925345,
+        #     1.49126646868585,
+        #     1.51244972228054,
+        #     1.53029970410364,
+        #     1.54641562015666,
+        #     1.56156587853348,
+        #     1.57629799755505,
+        #     1.59036217462828,
+        #     1.60381424225666,
+        #     1.61660679209661,
+        #     1.62875493176357,
+        #     1.64020405391575,
+        #     1.65090601787886,
+        #     1.66090586967413,
+        #     1.66084693559365,
+        #     1.65788498156999,
+        #     1.65256859579085,
+        #     1.64521365471666,
+        #     1.63619883252664,
+        #     1.62583858287551,
+        # ]
 
     def calc_grip_lim_max_accel(self, v):
         vehicle_state = self.vehicle_state
@@ -112,8 +118,10 @@ class GGV:
         return (Fx, gear_idx)
 
     def calc_lateral_accel(self, R):
-        AYP = self.lateral_capability[np.where(self.radii_range==R)[0][0]]
-        
+        # AYP = self.lateral_capability[np.where(self.radii_range==R)[0][0]]
+        AYP = 1.5
+
+       
 
         self.a = self.params.wheelbase * (1 - self.params.weight_dist_f)
         self.b = self.params.wheelbase * self.params.weight_dist_f
@@ -130,12 +138,13 @@ class GGV:
 
         # a, b, R, wf, wr, IA_0f, IA_0r, 0, velocity_fit_x, grip_cap_fit_y
         x0 = [delta, beta, AYP]
-        lb = [0.04, -0.3, 0.1]
+        lb = [0.00, -0.3, 0.1]
         ub = [0.5, 0.3, 3]
 
         # print(self.vogel(lb), end=", ")
         # print(self.vogel(ub))
-
+        print('least squares time')
+        print(x0)
         self._vogel_selector = 1
         x = least_squares(self.vogel, x0, bounds=(lb, ub), method="trf", verbose=1,max_nfev=1000)
 
@@ -147,11 +156,11 @@ class GGV:
         delta = x.x[0]
         beta = x.x[1]
         AYP = x.x[2]
-
+        print('vogel time')
         self._vogel_selector = 0
         eval_vogel = self.vogel([delta, beta, AYP])
 
-        print(eval_vogel)
+        print('Eval vogel',eval_vogel)
 
         # delta_l.append(delta)
         # beta_l.append(beta)
@@ -210,12 +219,15 @@ class GGV:
         self._grip_lim_accel = polyfit(self.velocity_range, grip_lim_a, 3)
         self._power_lim_accel = csaps(self.velocity_range, power_lim_a)
         self.accel_capability = csaps(self.velocity_range, accel_cap)
+        
+        
 
+        lateral_g = np.empty((len(self.track.r_set),))
 
-        lateral_g = np.empty((len(self.radii_range),))
         if(self._calc_lateral):
-            for idx, R in enumerate(self.radii_range):
-                print(f"Calculating: Lat. accel capability for {R}/{self.radii_range[-1]} m")
+            
+            for idx, R in enumerate(self.track.r_set):
+                print(f"Calculating: Lat. accel capability for {R}/{self.track.r_set[-1]} m")
                 print("FZ for fr tire", self.vehicle_state.fr_tire.Fz )
                 print("FZ for fl tire", self.vehicle_state.fl_tire.Fz)
                 print("FZ for rr tire", self.vehicle_state.rr_tire.Fz)
@@ -249,16 +261,20 @@ class GGV:
         # Not based on steady-state cornering acceleration
         self.cornering_capability = polyfit(self.radii_range, velocity_y, 4)
         
-        braking_g = np.empty((len(self.velocity_range),))
-        for idx, v in enumerate(self.velocity_range):
-            print(f"Calculating: Long. braking capability for {v} m/s")
-            self.fz_data.append(self.vehicle_state.fr_tire.Fz)
-            self.fz_data.append(self.vehicle_state.fl_tire.Fz)
-            self.fz_data.append(self.vehicle_state.rl_tire.Fz)
-            self.fz_data.append(self.vehicle_state.rr_tire.Fz)
-            Ax = self.calc_decel(v)
-            braking_g[idx] = (Ax)
-        self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
+        with open("./BrakeData.csv","w") as outfile:
+            csv_writer = csv.writer(outfile, delimiter=',')
+            csv_writer.writerow(["Velocity (m/s)","Braking Capability (g)"])    
+            braking_g = np.empty((len(self.velocity_range),))
+            for idx, v in enumerate(self.velocity_range):
+                print(f"Calculating: Long. braking capability for {v} m/s")
+                self.fz_data.append(self.vehicle_state.fr_tire.Fz)
+                self.fz_data.append(self.vehicle_state.fl_tire.Fz)
+                self.fz_data.append(self.vehicle_state.rl_tire.Fz)
+                self.fz_data.append(self.vehicle_state.rr_tire.Fz)
+                Ax = self.calc_decel(v)
+                braking_g[idx] = (Ax)
+                csv_writer.writerow([v,braking_g])
+            self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
    
     '''Calculates the maximum lateral acceleration for a neutral steer car, given a predetermined turn radius'''
     def vogel(self, x):

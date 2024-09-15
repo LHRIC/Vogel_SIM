@@ -8,15 +8,14 @@ import models
 import setups
 import csv
 import math
+from tracks import svg_tracks
 
 #plt.style.use('seaborn-v0_8-white')
 
 class Engine:
 
-    def __init__(self, trajectory, is_closed) -> None:
-        self._trajectory_path = trajectory
-        self._is_closed = is_closed
-        
+    def __init__(self, track_id, steps, track_length, ggv_detail) -> None:
+        self.trajectory = svg_tracks.Trajectory(track_id,steps,track_length,ggv_detail)
         self._sweep_params = []
         self._sweep_classes = []
         self._sweep_bounds = []
@@ -26,7 +25,7 @@ class Engine:
     def single_run(self, run_mode="ENDURANCE", plot=False):
         params = setups.Panda()
 
-        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path, is_closed=self._is_closed)
+        vehicle = Vehicle(params=params, trajectory=self.trajectory)
         vehicle.GGV.generate()
         
         laptime = 0
@@ -115,52 +114,68 @@ class Engine:
                 # ax2.plot(range(749),vehicle.ayp,color='b')
                 # fig1.tight_layout()
                 # plt.show()
-                print('Length, Ax, Ay Roll:', len(vehicle.axp), len(vehicle.ayp), len(vehicle.roll))
-                fig, ax1 = plt.subplots()
-                ax1.set_xlabel('step')
-                ax1.set_ylabel('Roll (deg)', color='r')
-                ax1.plot(range(749),vehicle.roll,color='r',marker='x')
-                ax2 = ax1.twinx()
-                ax2.set_ylabel('Ay (g)', color='b')
-                ax2.plot(range(749),vehicle.ayp,color='b')
-                fig.tight_layout()
-                plt.show()
 
-                plt.hist(vehicle.roll, bins=20, alpha=0.75, color='blue', edgecolor='black')
-                plt.title('Histogram of roll')
-                plt.xlabel('deg')
-                plt.ylabel('Frequency')
-                plt.show()
 
-                plt.hist(vehicle.pitch, bins=20, alpha=0.75, color='blue', edgecolor='black')
-                plt.title('Histogram of pitch')
-                plt.xlabel('deg')
-                plt.ylabel('Frequency')
-                plt.show()
+                # print('Length, Ax, Ay Roll:', len(vehicle.axp), len(vehicle.ayp), len(vehicle.roll))
+                # fig, ax1 = plt.subplots()
+                # ax1.set_xlabel('step')
+                # ax1.set_ylabel('Roll (deg)', color='r')
+                # ax1.plot(range(749),vehicle.roll,color='r',marker='x')
+                # ax2 = ax1.twinx()
+                # ax2.set_ylabel('Ay (g)', color='b')
+                # ax2.plot(range(749),vehicle.ayp,color='b')
+                # fig.tight_layout()
+                # plt.show()
 
-                plt.hist(vehicle.cgdz, bins=20, alpha=0.75, color='blue', edgecolor='black')
-                plt.title('Histogram of CG delta Z')
-                plt.xlabel('mm')
-                plt.ylabel('Frequency')
-                plt.show()
+                # plt.hist(vehicle.roll, bins=20, alpha=0.75, color='blue', edgecolor='black')
+                # plt.title('Histogram of roll')
+                # plt.xlabel('deg')
+                # plt.ylabel('Frequency')
+                # plt.show()
 
-                plt.hist(vehicle.dz_R, bins=20, alpha=0.75, color='blue', edgecolor='black')
-                plt.title('Histogram of Rear delta Z')
-                plt.xlabel('mm')
-                plt.ylabel('Frequency')
-                plt.show()
+                # plt.hist(vehicle.pitch, bins=20, alpha=0.75, color='blue', edgecolor='black')
+                # plt.title('Histogram of pitch')
+                # plt.xlabel('deg')
+                # plt.ylabel('Frequency')
+                # plt.show()
 
-                plt.hist(vehicle.dz_F, bins=20, alpha=0.75, color='blue', edgecolor='black')
-                plt.title('Histogram of Front delta Z')
-                plt.xlabel('mm')
-                plt.ylabel('Frequency')
-                plt.show()
+                # plt.hist(vehicle.cgdz, bins=20, alpha=0.75, color='blue', edgecolor='black')
+                # plt.title('Histogram of CG delta Z')
+                # plt.xlabel('mm')
+                # plt.ylabel('Frequency')
+                # plt.show()
 
-                plt.plot(range(749),vehicle.radi)
-                plt.title('rad vs step')
-                plt.xlabel('step')
-                plt.ylabel('m')
-                plt.show()
+                # plt.hist(vehicle.dz_R, bins=20, alpha=0.75, color='blue', edgecolor='black')
+                # plt.title('Histogram of Rear delta Z')
+                # plt.xlabel('mm')
+                # plt.ylabel('Frequency')
+                # plt.show()
+
+                # plt.hist(vehicle.dz_F, bins=20, alpha=0.75, color='blue', edgecolor='black')
+                # plt.title('Histogram of Front delta Z')
+                # plt.xlabel('mm')
+                # plt.ylabel('Frequency')
+                # plt.show()
+
+
+                # Fixing random state for reproducibility
+                np.random.seed(19680801)
+
+                filtered_radii=[]
+                filtered_ayp=[]
+                for i in range(len(vehicle.radii)):
+                    if vehicle.radii[i]<30:
+                        filtered_radii.append(vehicle.radii[i])
+                        filtered_ayp.append(abs(vehicle.ayp[i]))
+            
+                fig = plt.figure()
+
+                hist, xedges, yedges = np.histogram2d(filtered_ayp, filtered_radii, bins=6)
+
+                ax = fig.add_subplot(132, title='pcolormesh: actual edges')
+
+                X, Y = np.meshgrid(xedges, yedges)
+                ax.pcolormesh(X, Y, hist)
 
                 # plt.plot(range(749),vehicle.roll)
                 # plt.title('roll vs step')
