@@ -12,6 +12,7 @@ class Trajectory:
         self.dL = []
         self.dL_sum = []
         self.r_set = []
+        self.norm = []
         self.r_min = 10
         self.parse(track_id,track_length)
         self.calc(steps=steps,ggv_detail=ggv_detail)
@@ -45,8 +46,10 @@ class Trajectory:
             # Find path segment index and sub-position
             seg_index, sub_t = self.track.T2t(t)[0],self.track.T2t(t)[1],
             # Find curvature
-            kappa=svg.path.segment_curvature(self.track[seg_index],sub_t)
-            self.curvature.append(kappa)
+            kappa = svg.path.segment_curvature(self.track[seg_index],sub_t)
+            kappa_signed = kappa*self.turn_dir(t)
+            self.curvature.append(kappa_signed)
+
             # Calculate radius
             if kappa==0:
                 self.radii.append(0)
@@ -73,4 +76,13 @@ class Trajectory:
             for i in range(ggv_detail):
                 n = (int)(i*(len(radii_sorted)/(ggv_detail)))
                 self.r_set.append(radii_sorted[n])
-        print('radii count', len(self.r_set))
+
+    def turn_dir(self,t): #This library doesn't support signed curvature :(
+        dz = self.track.derivative(t)
+        ddz = self.track.derivative(t,2)
+        dx, dy = dz.real, dz.imag
+        ddx, ddy = ddz.real, ddz.imag
+        return np.sign(dx*ddy-dy*ddx)
+
+
+    

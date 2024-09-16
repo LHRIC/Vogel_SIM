@@ -139,16 +139,16 @@ class GGV:
 
         # a, b, R, wf, wr, IA_0f, IA_0r, 0, velocity_fit_x, grip_cap_fit_y
         x0 = [delta, beta, AYP]
-        lb = [0.00, -0.3, 0.1]
-        ub = [0.5, 0.3, 3]
+        lb = [-0.5, -0.6, 0.00]
+        ub = [0.5, 0.6, 4]
 
         # print(self.vogel(lb), end=", ")
         # print(self.vogel(ub))
         print('least squares time')
         print(x0)
         self._vogel_selector = 1
-        x = least_squares(self.vogel, x0, bounds=(lb, ub), method="trf", verbose=1,max_nfev=1000)
-
+        x = least_squares(self.vogel, x0, bounds=(lb, ub), method="trf", verbose=1,max_nfev=5000)
+        print('x:',x)
         # Because we are operating the vogel solver in mode 1, it returns the following as residuals
         # Yaw moment around the CG
         # Difference between sideslip angle and 12 degrees

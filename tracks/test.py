@@ -4,7 +4,7 @@ from matplotlib import cm
 import numpy as np
 # t1=svg_tracks.Trajectory(track_id='2023_IC_michigan_endurance.svg',steps=1000,r_min=0,r_max=100,scalar=0.1,track_length=2000)
 t2=svg_tracks.Trajectory(track_id='2019_IC_michigan_endurance.svg',\
-                         steps=1000,track_length=2000,ggv_detail=100)
+                         steps=200,track_length=2000,ggv_detail=100)
 
 fig3, ax3 = plt.subplots()
 sc = ax3.scatter(t2.xpos, t2.ypos, c=t2.curvature)
