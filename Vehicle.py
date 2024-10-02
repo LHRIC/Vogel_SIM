@@ -1,4 +1,7 @@
+from matplotlib import pyplot as plt
 import ggv.GGV as GGV
+import setups
+import state_models
 import trajectory.Trajectory as Trajectory
 from numpy.polynomial import Polynomial
 import numpy as np
@@ -6,7 +9,7 @@ import math
 
 
 class Vehicle:
-    def __init__(self, trajectory_path, params, mesh_resolution=10):
+    def __init__(self, trajectory_path, params, is_closed, mesh_resolution=10):
         self.params = params
 
         '''Total Reduction'''
@@ -14,11 +17,13 @@ class Vehicle:
         '''Max Achievable Velocity, assuming RPM never exceeds shiftpoint'''
         self.v_max = self.params.shiftpoint / (self.gear_tot/self.params.tire_radius*60/(2 * math.pi))
         self.GGV = GGV.GGV(self.params, self.gear_tot, self.v_max)
+        
+        
 
-        self.trajectory = Trajectory.Trajectory(trajectory_path, self.GGV.radii_range[0], self.GGV.radii_range[-1])
+        self.trajectory = Trajectory.Trajectory(trajectory_path, is_closed, self.GGV.radii_range[0], self.GGV.radii_range[-1])
         self._interval = mesh_resolution
 
-        self._mesh_size = (self.trajectory.num_points) * self._interval
+        self._mesh_size = (self.trajectory.num_points - 1) * self._interval
         self.count = np.zeros(self._mesh_size)
 
         self.time = np.zeros(self._mesh_size)
@@ -47,6 +52,13 @@ class Vehicle:
         self.ay = np.zeros(self._mesh_size)
         self.ay_f = np.zeros(self._mesh_size)
         self.ay_r = np.zeros(self._mesh_size)
+        self.fz_fr = []
+        self.fz_fl = []
+        self.fz_rr = []
+        self.fz_rl = []
+        self.fz_total = []
+        self.cgz = []
+
     
         def __del__(self):
             self._matlab_engine.quit()
@@ -134,7 +146,7 @@ class Vehicle:
 
                 
 
-                if time_shifting >= self.PTN.shift_time:
+                if time_shifting >= self.params.shift_time:
                     is_shifting = False
                     time_shifting = 0
                     gear = required_gear
@@ -152,6 +164,10 @@ class Vehicle:
         self.simulate_reverse()
         self.simulate_forwards(self.velocity_r[0])
 
+        start_vel = []
+        end_vel = []
+        in_brake = False
+
         for i in self.count:
             i = int(i)
             self.dist[i] = self.dist_f[i]
@@ -163,6 +179,16 @@ class Vehicle:
                 self.velocity[i] = self.velocity_r[i]
                 self.ax[i] = -1 * self.ax_r[i]
                 self.ay[i] = self.ay_r[i]
+            
+            '''Snippet for Little Liam I think, some brakes stuff idr'''
+            if(i > 0):
+                if self.ax[i] < 0 and self.ax[i-1] > 0:
+                    start_vel.append(self.velocity[i-1])
+                    in_brake = True
+                elif (in_brake) and (self.ax[i] > 0 and self.ax[i-1] <= 0):
+                    end_vel.append(self.velocity[i-1])
+                    in_brake = False
+        
 
         '''Determine turn handedness and remove outliers'''
         self.ay[self.ay > self.GGV.lateral_capability.evaluate(self.v_max + 1)] = self.GGV.lateral_capability.evaluate(self.v_max + 1)
@@ -175,14 +201,51 @@ class Vehicle:
         
         self.ax_r = np.multiply(self.ax_r, -1)
         
-        '''
-        ax.plot(self.dist_f, comb)
-        plt.show()
-        plt.scatter(self.x, self.y, c=comb)
-        plt.colorbar()
-        plt.show()
-        '''
+        
+        # self.ax.plot(self.dist_f, math.comb)
+        # plt.show()
+        # plt.scatter(self.x, self.y, c=math.comb)
+        # plt.colorbar()
+        # plt.show()
+        # fig, ax = plt.subplots()
+        # ax.scatter(self.x,self.y,marker=',')
+        # for i, txt in enumerate(range(len(self.x))):
+        #     ax.annotate(txt,(self.x[i],self.y[i]))
 
+        print('POINTS',len(self.velocity))
+
+        # Gathering data for plots
+        self.cgz=[]
+        self.vtest=[]
+        self.roll=[]
+        self.pitch=[]
+        self.axp=[]
+        self.ayp=[]
+        self.xpos = []
+        self.ypos = []
+
+        for i in range(self.trajectory.num_points - 1) :
+            i = int(i)
+            r = self.trajectory.radii[i]
+            state_in = state_models.StateInput(Ax=self.ax[i], Ay=self.ay[i], v=self.velocity[i], r=r, delta=0, beta=0)
+            # state_in = state_models.StateInput(Ax=0, Ay=0, v=self.velocity[i], r=r, delta=0, beta=0) # Constant accel variation
+            self.setup = setups.Panda
+            v =state_models.VehicleState(params=self.params)
+            v.eval(state_in=state_in)
+            # self.fz_rr.append(v.rr_tire.Fz)
+            # self.fz_rl.append(v.rl_tire.Fz)
+            # self.fz_fr.append(v.fr_tire.Fz)
+            # self.fz_fl.append(v.fl_tire.Fz)
+            # self.fz_total.append(v.rr_tire.Fz)
+            # self.fz_total.append(v.rl_tire.Fz)
+            # self.fz_total.append(v.fr_tire.Fz)
+            # self.fz_total.append(v.fl_tire.Fz)
+            self.cgz.append(v.cgz)
+            self.vtest.append(v.v)
+            self.roll.append(v.phi)
+            self.pitch.append(v.theta)
+            self.axp.append(v.Ax)
+            self.ayp.append(v.Ay)
         return max(self.time)  
     
     def simulate_forwards(self, starting_v):
@@ -194,12 +257,11 @@ class Vehicle:
         count = 0
         distance= 0
         time = 0
-        for point_idx in range(self.trajectory.num_points):
+        for point_idx in (range(self.trajectory.num_points - 1)):
             x_1 = self.trajectory.points[0][point_idx]
             y_1 = self.trajectory.points[1][point_idx]
-            x_2 = self.trajectory.points[0][(point_idx + 1) % self.trajectory.num_points]
-            y_2 = self.trajectory.points[1][(point_idx + 1) % self.trajectory.num_points]
-
+            x_2 = self.trajectory.points[0][(point_idx + 1)]
+            y_2 = self.trajectory.points[1][(point_idx + 1)]
             '''Distance of trajectory interval in meters'''
             dist = math.sqrt((x_1-x_2)**2 + (y_2-y_1)**2)
 
@@ -233,7 +295,7 @@ class Vehicle:
                 self.velocity_f[count] = vel
                 self.gear[count] = gear
                 self.dist_f[count] =  distance + delta_d * j
-
+ 
                 dt = delta_d / vel
                 self.time[count] = time + dt * j
                 if is_shifting and vel < v_max:
@@ -279,7 +341,7 @@ class Vehicle:
                 
                 count += 1
                 time += dt
-            
+
             distance += dist
 
     def simulate_reverse(self):
@@ -289,8 +351,8 @@ class Vehicle:
         for point_idx in range(self.trajectory.num_points - 1, -1, -1):
             x_1 = self.trajectory.points[0][point_idx]
             y_1 = self.trajectory.points[1][point_idx]
-            x_2 = self.trajectory.points[0][(point_idx - 1) % self.trajectory.num_points]
-            y_2 = self.trajectory.points[1][(point_idx - 1) % self.trajectory.num_points]
+            x_2 = self.trajectory.points[0][(point_idx - 1)]
+            y_2 = self.trajectory.points[1][(point_idx - 1)]
 
             '''Distance of trajectory interval in meters'''
             dist = math.sqrt((x_1-x_2)**2 + (y_2-y_1)**2)

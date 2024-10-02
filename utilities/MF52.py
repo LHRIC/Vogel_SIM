@@ -135,10 +135,10 @@ if __name__ == "__main__":
     tm = MF52()
 
     Fx = []
-    for i in np.linspace(-0.2, 0.2):
-        Fx.append(tm.Fx(1400, i, 0))
+    for i in np.linspace(-0.23, 0.23):
+        Fx.append(tm.Fy(800, i, 0))
 
     fig, ax = plt.subplots()
-    ax.plot(np.linspace(-0.2, 0.2), Fx)
+    ax.plot(np.linspace(-0.23, 0.23), Fx)
     plt.show()
 

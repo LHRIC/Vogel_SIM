@@ -8,7 +8,8 @@ import setups
 import state_models
 
 class GGV:
-    def __init__(self, params: setups.VehicleSetup, gear_tot, v_max):
+    # TODO: setups thing here
+    def __init__(self, params: setups.Panda, gear_tot, v_max):
         self.params = params
 
         self._MF52 = MF52()
@@ -22,6 +23,7 @@ class GGV:
         self.curr_gear = 1
         self.shift_count = 1
         self.expected_gears = []
+        self.fz_data = []
 
         self._vogel_selector = 1
         self._calc_lateral = True
@@ -61,7 +63,7 @@ class GGV:
             1.62583858287551,
         ]
 
-    def calc_grip_lin_max_accel(self, v):
+    def calc_grip_lim_max_accel(self, v):
         vehicle_state = self.vehicle_state
         A_x_diff = 1
         Ax = 0
@@ -135,13 +137,13 @@ class GGV:
         # print(self.vogel(ub))
 
         self._vogel_selector = 1
-        x = least_squares(self.vogel, x0, bounds=(lb, ub), method="trf", verbose=1)
+        x = least_squares(self.vogel, x0, bounds=(lb, ub), method="trf", verbose=1,max_nfev=1000)
 
-        delta = x.x[0]
-        beta = x.x[1]
-        AYP = x.x[2]
+        # Because we are operating the vogel solver in mode 1, it returns the following as residuals
+        # Yaw moment around the CG
+        # Difference between sideslip angle and 12 degrees
+        # Difference in lateral acceleration
 
-        x = least_squares(self.vogel, [delta, beta, AYP], bounds=(lb, ub), method="trf", verbose=1)
         delta = x.x[0]
         beta = x.x[1]
         AYP = x.x[2]
@@ -184,9 +186,14 @@ class GGV:
 
         '''The gear that you start each velocity iteration in'''
         for idx, v in enumerate(self.velocity_range):
+            print("fy data", self.vehicle_state.fr_tire.Fy)
             print(f"Calculating: Long. accel capability for {v} m/s")
+            self.fz_data.append(self.vehicle_state.fr_tire.Fz)
+            self.fz_data.append(self.vehicle_state.fl_tire.Fz)
+            self.fz_data.append(self.vehicle_state.rl_tire.Fz)
+            self.fz_data.append(self.vehicle_state.rr_tire.Fz)
             #Ax_r = self.calc_grip_lim_max_accel(v)
-            Ax_r = self.calc_grip_lin_max_accel(v)
+            Ax_r = self.calc_grip_lim_max_accel(v)
             
             grip_lim_a[idx] = (Ax_r)
 
@@ -204,16 +211,20 @@ class GGV:
         self._power_lim_accel = csaps(self.velocity_range, power_lim_a)
         self.accel_capability = csaps(self.velocity_range, accel_cap)
 
-        self._grip_lim_accel.plot(show=False)
-        self._power_lim_accel.plot(show=False)
-        self.accel_capability.plot()
-
 
         lateral_g = np.empty((len(self.radii_range),))
         if(self._calc_lateral):
             for idx, R in enumerate(self.radii_range):
                 print(f"Calculating: Lat. accel capability for {R}/{self.radii_range[-1]} m")
-                #Stupid naming, idk why i called it g when it's clearly m/s^2 #TODO fix.
+                print("FZ for fr tire", self.vehicle_state.fr_tire.Fz )
+                print("FZ for fl tire", self.vehicle_state.fl_tire.Fz)
+                print("FZ for rr tire", self.vehicle_state.rr_tire.Fz)
+                print("Fz for rl tire", self.vehicle_state.rl_tire.Fz)
+                print("Ay", self.vehicle_state.Ay)
+                self.fz_data.append(self.vehicle_state.fr_tire.Fz)
+                self.fz_data.append(self.vehicle_state.fl_tire.Fz)
+                self.fz_data.append(self.vehicle_state.rl_tire.Fz)
+                self.fz_data.append(self.vehicle_state.rr_tire.Fz)
                 lateral_g[idx] = (self.calc_lateral_accel(R))
 
             lateral_g = np.array(lateral_g)
@@ -226,12 +237,13 @@ class GGV:
 
         else:
             print("WARNING: Loading precalculated lateral envelope")
-            lateral_g = self.lateral_capability
+            lateral_g = np.array(self.lateral_capability)
             velocity_y = lateral_g * 9.81
             velocity_y = np.multiply(velocity_y, self.radii_range)
             velocity_y = np.sqrt(velocity_y)
 
             self.lateral_capability = polyfit(velocity_y, lateral_g, degree=4)
+            #self.lateral_capability.plot()
             
         # Defines the max cornering velocity vs radii *based on lateral acceleration capacity*
         # Not based on steady-state cornering acceleration
@@ -240,12 +252,15 @@ class GGV:
         braking_g = np.empty((len(self.velocity_range),))
         for idx, v in enumerate(self.velocity_range):
             print(f"Calculating: Long. braking capability for {v} m/s")
+            self.fz_data.append(self.vehicle_state.fr_tire.Fz)
+            self.fz_data.append(self.vehicle_state.fl_tire.Fz)
+            self.fz_data.append(self.vehicle_state.rl_tire.Fz)
+            self.fz_data.append(self.vehicle_state.rr_tire.Fz)
             Ax = self.calc_decel(v)
             braking_g[idx] = (Ax)
         self.braking_capability = polyfit(self.velocity_range, braking_g, degree=4)
-
-    
-    '''Calculates the maximum lateral acceleration for a neural steer car, given a predetermined turn radius'''
+   
+    '''Calculates the maximum lateral acceleration for a neutral steer car, given a predetermined turn radius'''
     def vogel(self, x):
         vehicle_state = self.vehicle_state
 
@@ -258,17 +273,14 @@ class GGV:
         R = self.R
 
         V = math.sqrt(R * 9.81 * AYP)
-        A_y = AYP
 
-        state_in = state_models.StateInput(Ax=0, Ay=A_y, v=V, r=R, delta=delta, beta=beta)
+        state_in = state_models.StateInput(Ax=0, Ay=AYP, v=V, r=R, delta=delta, beta=beta)
         vehicle_state.eval(state_in=state_in)
 
         F_f_in = vehicle_state.fl_tire.Fy * math.cos(delta)
         F_f_out = vehicle_state.fr_tire.Fy * math.cos(delta)
        
-        F_xDrag = self.params.Cd * V**2 + (F_f_in + F_f_out) * math.sin(delta) / math.cos(
-            delta
-        )
+        F_xDrag = self.params.Cd * V**2 + (F_f_in + F_f_out) * math.sin(delta) / math.cos(delta)
 
         grip_lim_accel = self._grip_lim_accel.evaluate(V)
 
@@ -286,13 +298,14 @@ class GGV:
         # This is the moment acting on the CG (causing under/oversteer)
         M_z = (F_f_in + F_f_out) * a - (F_r_in + F_r_out) * b - M_z_diff
 
+        # Lateral acceleration in g's, since divided by weight in Newtons
         AY = F_y / self.params.total_weight
 
         # Tries to minimize the objective function such that slip angle is kept at 12 degrees (bounds of tire model)
         slipAngle = vehicle_state.alpha_f - math.radians(-12)
-        diff_AY = A_y - AY
+        diff_AY = AYP -  AY
 
         if self._vogel_selector == 1:
             return [M_z, slipAngle, diff_AY]
         else:
-            return [A_y, f_xplt, vehicle_state.alpha_f, vehicle_state.alpha_r, rscale]
+            return [AY, f_xplt, vehicle_state.alpha_f, vehicle_state.alpha_r, rscale]

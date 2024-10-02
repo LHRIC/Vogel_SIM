@@ -1,0 +1,63 @@
+@startuml
+
+package "Fitting Module" {
+    class "Fitting.py" {
+        + csaps(x, y)
+        + polyfit(x, y, degree)
+    }
+}
+
+package "GGV Module" {
+    class "GGV.py" {
+        + calc_grip_lim_max_accel(v)
+        + calc_power_lim_max_accel(v)
+        + calc_lateral_accel(R)
+        + generate()
+    }
+}
+
+package "Vehicle Dynamics" {
+    class "DYN.py" {
+        + convert_units()
+        + compute_deriv_params()
+    }
+}
+
+package "Aerodynamics" {
+    class "AERO.py" {
+        + compute_deriv_params()
+        + convert_units()
+    }
+}
+
+package "Powertrain" {
+    class "PTN.py" {
+        + compute_deriv_params()
+        + convert_units()
+    }
+}
+
+package "Utilities" {
+    class "MF52.py" {
+        + Fx(Fz, Kappa, Gamma)
+        + Fy(Fz, Alpha, Gamma)
+    }
+}
+
+"Fitting.py" --> "GGV.py" : use > \n [csaps, polyfit]
+"DYN.py" ..> "Vehicle Dynamics" : include
+"AERO.py" ..> "Aerodynamics" : include
+"PTN.py" ..> "Powertrain" : include
+"MF52.py" ..> "Utilities" : include
+
+note right of "GGV.py" : GGV uses fitting functions\nto calculate vehicle dynamics
+
+class VehicleState {
+    +eval(state_in)
+}
+
+VehicleState --> "GGV.py" : data flow\n[state updates]
+VehicleState ..> "DYN.py" : use > \n [compute_deriv_params]
+VehicleState ..> "AERO.py" : use > \n [compute_deriv_params]
+
+@enduml

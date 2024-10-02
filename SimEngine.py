@@ -38,9 +38,9 @@ class Engine:
             Tmax = 1973.419
             Tmin = 1360.978
             score = 250 * ((Tmax / laptime) - 1)/((Tmax / Tmin) - 1) + 25
-            # print("am i going crazy")
-            # print("Laptime (10 laps):", laptime)
-            # print(f"Score: {score}")
+            print("laptime: ", laptime)
+            print("ax data: ")
+            print(f"Score: {score}")
         elif(self._run_mode == "ACCEL"):
             laptime = vehicle.simulate_accel()
 
@@ -76,7 +76,6 @@ class Engine:
             if(self._run_mode == "ENDURANCE" \
                or self._run_mode == "AUTOX"):
                 Ax_f = np.zeros(len(vehicle.ax_f))
-                print("vehicle stuff: ", vehicle.ax_f)
                 Ay_f = np.zeros(len(vehicle.ay_f))
 
                 V_f = np.zeros(len(vehicle.velocity_f))
@@ -87,7 +86,100 @@ class Engine:
                         Ax_f[i]  = vehicle.ax_f[i]
                         Ay_f[i]  = vehicle.ay_f[i]
                         V_f[i]  = vehicle.velocity_f[i]
-                '''
+
+                # plt.plot(range(749),vehicle.cgz)
+                # plt.title('CG z vs step')
+                # plt.xlabel('step')
+                # plt.ylabel('Height, m')
+                # plt.show()
+
+                # plt.plot(range(749),vehicle.vtest)
+                # plt.title('vel vs step')
+                # plt.xlabel('step')
+                # plt.ylabel('m/s')
+                # plt.show()
+
+                # plt.scatter(range(749),vehicle.radi)
+                # plt.title('radii vs step')
+                # plt.xlabel('step')
+                # plt.ylabel('m')
+                # plt.show()
+
+                # fig1, ax1 = plt.subplots()
+                # ax1.set_xlabel('step')
+                # ax1.set_ylabel('Pitch (deg)', color='r')
+                # ax1.plot(range(749),vehicle.roll,color='r')
+                # ax2 = ax1.twinx()
+                # ax2.set_ylabel('Ay (g)', color='b')
+                # ax2.plot(range(749),vehicle.ayp,color='b')
+                # fig1.tight_layout()
+                # plt.show()
+                print('Length, Ax, Ay Roll:', len(vehicle.axp), len(vehicle.ayp), len(vehicle.roll))
+                fig, ax1 = plt.subplots()
+                ax1.set_xlabel('step')
+                ax1.set_ylabel('Roll (deg)', color='r')
+                ax1.plot(range(749),vehicle.roll,color='r',marker='x')
+                ax2 = ax1.twinx()
+                ax2.set_ylabel('Ay (g)', color='b')
+                ax2.plot(range(749),vehicle.ayp,color='b')
+                fig.tight_layout()
+                plt.show()
+
+                plt.hist(vehicle.roll, bins=20, alpha=0.75, color='blue', edgecolor='black')
+                plt.title('Histogram of roll')
+                plt.xlabel('deg')
+                plt.ylabel('Frequency')
+                plt.show()
+
+                plt.hist(vehicle.pitch, bins=20, alpha=0.75, color='blue', edgecolor='black')
+                plt.title('Histogram of pitch')
+                plt.xlabel('deg')
+                plt.ylabel('Frequency')
+                plt.show()
+
+                # plt.plot(range(749),vehicle.roll)
+                # plt.title('roll vs step')
+                # plt.xlabel('step')
+                # plt.ylabel('deg')
+                # # plt.show()
+
+                # plt.plot(range(749),vehicle.pitch)
+                # plt.title('pitch vs step')
+                # plt.xlabel('step')
+                # plt.ylabel('deg')
+                # plt.show()
+
+
+                
+                # plt.hist(vehicle.fz_fl, bins=10, alpha=0.75, color='blue', edgecolor='black')
+                # plt.title('Histogram of Fz of fl')
+                # plt.xlabel('Value')
+                # plt.ylabel('Frequency')
+                # plt.show()
+
+                # plt.hist(vehicle.fz_fr, bins=10, alpha=0.75, color='blue', edgecolor='black')
+                # plt.title('Histogram of Fz of fr')
+                # plt.xlabel('Value')
+                # plt.ylabel('Frequency')
+                # plt.show()
+
+                # plt.hist(vehicle.fz_rl, bins=10, alpha=0.75, color='blue', edgecolor='black')
+                # plt.title('Histogram of Fz of rl')
+                # plt.xlabel('Value')
+                # plt.ylabel('Frequency')
+                # plt.show()
+
+                # plt.hist(vehicle.fz_rr, bins=10, alpha=0.75, color='blue', edgecolor='black')
+                # plt.title('Histogram of Fz of rr')
+                # plt.xlabel('Value')
+                # plt.ylabel('Frequency')
+                # plt.show()
+
+                # plt.hist(vehicle.fz_total, bins=10, alpha=0.75, color='blue', edgecolor='black')
+                # plt.title('Histogram of Fz total')
+                # plt.xlabel('Value')
+                # plt.ylabel('Frequency')
+                # plt.show()
 
                 ploty1, plotz1 = np.meshgrid(np.linspace(np.min(Ay_f), np.max(Ay_f), 60),
                                             np.linspace(np.min(V_f), np.max(V_f), 60))
@@ -125,7 +217,7 @@ class Engine:
                 plt.ylabel('Ay [g]')
                 ax1.set_zlabel('Velocity [m/s]')
 
-                '''
+                
 
                 fig2, ax2 = plt.subplots()
                 ax2.axis('equal')
@@ -217,7 +309,7 @@ class Engine:
         times = []
 
         for param_val in sweep_range:
-            vehicle_params = setups.VehicleSetup(overrides={self._sweep_params[0]: param_val})
+            vehicle_params = setups.Panda(overrides={self._sweep_params[0]: param_val})
 
 
             payloads.append({
@@ -232,11 +324,21 @@ class Engine:
             times = p.map(self.compute_task_authoritative, payloads)
         
         print("Sensitivity: ", (max(times) - min(times)) / (max(sweep_range) - min(sweep_range)))
+        self.scores  = []
+        # print(list(times))
+        for i in range((len((times)))):
+            i = int(i)
+            Tmax = 1973.419
+            Tmin = 1360.978
+            # score = 250 * ((Tmax / laptime) - 1)/((Tmax / Tmin) - 1) + 25
+            score = 250 * ((Tmax / times[i]) - 1)/((Tmax / Tmin) - 1) + 25
+            self.scores.append(score)
         
+        print("scores: ", self.scores)
         fig, ax = plt.subplots()
         ax.plot(sweep_range, list(times), "o-")
         plt.xlabel(xlabel)
-        plt.ylabel("Laptime (s)")
+        plt.ylabel("Scores ")
         plt.show()
 
 
@@ -244,7 +346,7 @@ class Engine:
         params = p["PARAMS"]
         count = p["COUNT"]
 
-        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path)
+        vehicle = Vehicle(params=params, trajectory_path=self._trajectory_path, is_closed=self._is_closed)
         
         vehicle.GGV.generate()
 
