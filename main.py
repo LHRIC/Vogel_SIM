@@ -1,5 +1,4 @@
 from SimEngine import Engine
-import models
 
 def main():
 

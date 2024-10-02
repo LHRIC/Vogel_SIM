@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from multiprocessing import Pool, cpu_count
 import scipy.interpolate as interp
-import models
 import setups
 import csv
 import math
