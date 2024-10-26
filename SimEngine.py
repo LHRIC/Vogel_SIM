@@ -8,6 +8,10 @@ import setups
 import csv
 import math
 
+import itertools
+from mpl_toolkits.mplot3d import Axes3D  
+
+
 #plt.style.use('seaborn-v0_8-white')
 
 class Engine:
@@ -291,54 +295,66 @@ class Engine:
                 input("hit[enter] to end.")
                 plt.close('all') # all open plots are correctly closed after each run
 
-    def sweep(self, num_steps, run_mode="ENDURANCE", xlabel="", **kwargs) -> None:
+    def sweep(self, num_steps, run_mode="ENDURANCE", xlabel="", ylabel="", **kwargs) -> None:
         self._run_mode = run_mode.upper()
 
         self._sweep_params = list(kwargs.keys())
 
-        if(len(kwargs) > 1):
-            print("ERROR: Coupled parameter sweeps are not yet supported")
+        if len(kwargs) > 2:  # Allow up to two parameters
+            print("ERROR: Only 2 parameter sweeps are supported")
             return
 
-        for param in self._sweep_params:
+        for param in self._sweep_params:  # Collect parameter bounds
             self._sweep_bounds.append(kwargs[param])
 
-        sweep_range = np.linspace(self._sweep_bounds[0][0], self._sweep_bounds[0][1], num=num_steps)
-        
+        # Create linspace ranges for the two parameters
+        sweep_range_1 = np.linspace(self._sweep_bounds[0][0], self._sweep_bounds[0][1], num=num_steps)
+        sweep_range_2 = np.linspace(self._sweep_bounds[1][0], self._sweep_bounds[1][1], num=num_steps)
+
+        sweep_combinations = list(itertools.product(sweep_range_1, sweep_range_2))
+
         payloads = []
-        times = []
+        param_val_1_list = []  # Store parameter values for plotting later
+        param_val_2_list = []
+        times = []             # Store times for plotting later
 
-        for param_val in sweep_range:
-            vehicle_params = setups.Panda(overrides={self._sweep_params[0]: param_val})
-
-
+        for param_val_1, param_val_2 in sweep_combinations:
+            vehicle_params = setups.Panda(overrides={
+                self._sweep_params[0]: param_val_1,
+                self._sweep_params[1]: param_val_2
+            })
             payloads.append({
                 'PARAMS': vehicle_params,
-                'COUNT': param_val
+                'COUNT': (param_val_1, param_val_2),
             })
 
+            # Collect values for plotting
+            param_val_1_list.append(param_val_1)
+            param_val_2_list.append(param_val_2)
 
-        
+        # Parallel processing to compute times
         num_processes = cpu_count() * 2
         with Pool(num_processes) as p:
             times = p.map(self.compute_task_authoritative, payloads)
-        
-        print("Sensitivity: ", (max(times) - min(times)) / (max(sweep_range) - min(sweep_range)))
-        self.scores  = []
-        # print(list(times))
-        for i in range((len((times)))):
-            i = int(i)
-            Tmax = 1973.419
-            Tmin = 1360.978
-            # score = 250 * ((Tmax / laptime) - 1)/((Tmax / Tmin) - 1) + 25
-            score = 250 * ((Tmax / times[i]) - 1)/((Tmax / Tmin) - 1) + 25
+
+        # Calculate scores
+        self.scores = []
+        Tmax = 1973.419
+        Tmin = 1360.978
+        for i in range(len(times)):
+            score = 250 * ((Tmax / times[i]) - 1) / ((Tmax / Tmin) - 1) + 25
             self.scores.append(score)
-        
-        print("scores: ", self.scores)
-        fig, ax = plt.subplots()
-        ax.plot(sweep_range, list(times), "o-")
-        plt.xlabel(xlabel)
-        plt.ylabel("Scores ")
+
+        print("Scores:", self.scores)
+
+        # Plot only once after all loop iterations
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.plot_trisurf(param_val_1_list, param_val_2_list, times, cmap='viridis')
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_zlabel("Times")  # You can switch this to "Scores" if needed
         plt.show()
 
 
