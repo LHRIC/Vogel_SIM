@@ -6,6 +6,7 @@ import trajectory.Trajectory as Trajectory
 from numpy.polynomial import Polynomial
 import numpy as np
 import math
+import pandas as pd
 
 
 class Vehicle:
@@ -167,6 +168,8 @@ class Vehicle:
         start_vel = []
         end_vel = []
         in_brake = False
+        rpm_graph = []
+        time = []
 
         for i in self.count:
             i = int(i)
@@ -179,7 +182,12 @@ class Vehicle:
                 self.velocity[i] = self.velocity_r[i]
                 self.ax[i] = -1 * self.ax_r[i]
                 self.ay[i] = self.ay_r[i]
+            # print("Velocity", self.velocity[i], "\n")
+            FX_r, gear_idx, rpm = self.GGV.calc_power_lim_max_accel(self.velocity[i])
+            rpm_graph.append(rpm)
+            time.append(self.time[i])
             
+
             '''Snippet for Little Liam I think, some brakes stuff idr'''
             if(i > 0):
                 if self.ax[i] < 0 and self.ax[i-1] > 0:
@@ -211,9 +219,34 @@ class Vehicle:
         # ax.scatter(self.x,self.y,marker=',')
         # for i, txt in enumerate(range(len(self.x))):
         #     ax.annotate(txt,(self.x[i],self.y[i]))
+        
+        # plt.show()
+
+        df = pd.DataFrame({
+          'Time': time,
+          'RPM': rpm_graph
+    })
+        df['Duration'] = df['Time'].diff().fillna(0)
+        bins = [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000]
+        labels = ['0-1000', '1001-2000', '2001-3000', '3001-4000', '4001-5000', '5001-6000', '6001-7000', '7001-8000', '8001-9000', '9001-10000', '10001-11000', '11001-12000', '12001-13000', '13001-14000']
+        df['RPM Range'] = pd.cut(df['RPM'], bins=bins, labels=labels, right=False)
+        time_spent = df.groupby('RPM Range')['Duration'].sum()
+        time_spent.plot(kind='bar', color='skyblue')
+        plt.xlabel('RPM Range')
+        plt.ylabel('Total Time Spent (seconds)')
+        plt.title('Time Spent in RPM Ranges')
+        plt.xticks(rotation=45)
+        plt.tight_layout() 
+        plt.show()
+
+        plt.hist(rpm_graph, bins=10, alpha=0.75, color='blue', edgecolor='black')
+        plt.title('Histogram of RPM')
+        plt.xlabel('Value')
+        plt.ylabel('Frequency')
+        plt.show()
 
         print('POINTS',len(self.velocity))
-
+        #--------------------------------Dynamics Paramameters -----------------------------#
         # Gathering data for plots
         self.cgz=[]
         self.vtest=[]
@@ -298,6 +331,7 @@ class Vehicle:
  
                 dt = delta_d / vel
                 self.time[count] = time + dt * j
+                print("Time", self.time[count])
                 if is_shifting and vel < v_max:
                     # Currently shifting, do not accelerate
                     dt = delta_d / vel

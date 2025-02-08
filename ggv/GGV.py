@@ -104,12 +104,13 @@ class GGV:
             rpm = v * total_red / self.params.tire_radius * 60 / (2 * math.pi)
 
         # Determine torque at the crankshaft
+        # print("RPM", rpm, "\n")
         crankshaft_torque = np.interp(rpm, self.params.rpm_range, self.params.torque_curve)
         wheel_torque = crankshaft_torque * total_red * self.params.drivetrain_losses
         Fx = wheel_torque / self.params.tire_radius
 
         # gear_idx is what gear we are in after acceling to the input velocity
-        return (Fx, gear_idx)
+        return (Fx, gear_idx, rpm)
 
     def calc_lateral_accel(self, R):
         AYP = self.lateral_capability[np.where(self.radii_range==R)[0][0]]
@@ -197,7 +198,7 @@ class GGV:
             
             grip_lim_a[idx] = (Ax_r)
 
-            FX_r, gear_idx = self.calc_power_lim_max_accel(max(7.5, v))
+            FX_r, gear_idx, rpm = self.calc_power_lim_max_accel(max(7.5, v))
             self.expected_gears.append(gear_idx)
 
             # TODO: Investigate whether or not the grip limited case should subtract drag as well.
@@ -225,7 +226,9 @@ class GGV:
                 self.fz_data.append(self.vehicle_state.fl_tire.Fz)
                 self.fz_data.append(self.vehicle_state.rl_tire.Fz)
                 self.fz_data.append(self.vehicle_state.rr_tire.Fz)
+                # print("Calculating RPM: ", self.calc_power_lim_max_accel(v)[2])
                 lateral_g[idx] = (self.calc_lateral_accel(R))
+
 
             lateral_g = np.array(lateral_g)
             accel_y = lateral_g * 9.81
