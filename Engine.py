@@ -287,4 +287,3 @@ class Engine:
         elif(self._run_mode == "ACCEL"):
             laptime = vehicle.simulate_accel()
         return laptime
-

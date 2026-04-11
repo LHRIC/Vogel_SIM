@@ -61,8 +61,8 @@ class Panda():
         self.friction_scaling_x = 0.6
         self.friction_scaling_y = 0.6
 
-        self.Cl = 2.8 #ClA
-        self.Cd = 1.1
+        self.Cl = 3.0 #ClA
+        self.Cd = 1.2
         #That mean x% of df on the fronts
         self.CoP = self.weight_dist_f + 0.05
 
