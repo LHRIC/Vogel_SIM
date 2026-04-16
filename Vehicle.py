@@ -18,8 +18,7 @@ class Vehicle:
         self.v_max = self.params.shiftpoint / (self.gear_tot/self.params.tire_radius*60/(2 * math.pi))
         self.GGV = GGV.GGV(self.params, self.gear_tot, self.v_max)
         
-        
-
+        # Holds a trajectory object => What does a trajectory object do?
         self.trajectory = Trajectory.Trajectory(trajectory_path, is_closed, self.GGV.radii_range[0], self.GGV.radii_range[-1])
         self._interval = mesh_resolution
 
@@ -168,6 +167,7 @@ class Vehicle:
         end_vel = []
         in_brake = False
 
+        # What does self.count hold??
         for i in self.count:
             i = int(i)
             self.dist[i] = self.dist_f[i]

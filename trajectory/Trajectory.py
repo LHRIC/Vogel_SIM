@@ -3,6 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import math
 
+# The trajectory object holds x and y positions for the path that the car is meant to traverse
+
+
 class Trajectory:
     '''Racing Line Generation'''
     def __init__(self, file, is_closed, r_min, r_max) -> None:
@@ -30,16 +33,26 @@ class Trajectory:
             df = pd.read_excel(file)
         else:
             df = pd.read_csv(file)
-        
-        #normalize ft to meters
+
+        #Normalize ft to meters
         self.points[0] = np.multiply(df["X"].to_numpy(), 0.3048)
         self.points[1] = np.multiply(df["Y"].to_numpy(), 0.3048)
 
-        #TODO dont hardcode, fix later, time crunch
-        curv_df = pd.read_csv("./trajectory/trackmaps/23_michigan_autox_curvature_m.csv")
-        self._curvature = curv_df["curvature"].to_numpy()
-        radii_df = pd.read_csv("./trajectory/trackmaps/23_michigan_autox_radii_m.csv")
-        self.radii = radii_df["radii"].to_numpy()
+        # Derive pre-computed trackmaps paths from the input file path
+        import os, re
+        file_dir  = os.path.dirname(os.path.abspath(file))
+        base_name = os.path.basename(file)
+        stem      = re.sub(r'_ft\.csv$', '', base_name, flags=re.IGNORECASE)
+        trackmaps_dir = os.path.join(file_dir, "trackmaps")
+
+        radii_file = os.path.join(trackmaps_dir, stem + "_radii_m.csv")
+        curv_file  = os.path.join(trackmaps_dir, stem + "_curvature_m.csv")
+
+        radii_df = pd.read_csv(radii_file)
+        curv_df  = pd.read_csv(curv_file)
+
+        self.radii       = radii_df["radii"].to_numpy().astype(float)
+        self._curvature  = curv_df["curvature"].to_numpy().astype(float)
 
     def filter_outliers(self):
         dist = []
