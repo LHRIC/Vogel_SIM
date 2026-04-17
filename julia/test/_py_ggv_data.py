@@ -4,9 +4,9 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 import os; os.chdir(sys.path[0])
 
 import numpy as np
-import setups, state_models
-from utilities import MF52
-from Vehicle import Vehicle
+import python.setups as setups, python.state_models as state_models
+from python.utilities import MF52
+from python.Vehicle import Vehicle
 
 # --- MF52 tire forces at reference conditions ---
 tm = MF52()

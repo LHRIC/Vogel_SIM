@@ -4,8 +4,8 @@ from scipy.optimize import least_squares
 from statistics import mean
 from fitting import csaps, polyfit
 from utilities import MF52
-import setups
-import state_models
+import setups as setups
+import state_models as state_models
 
 class GGV:
     # TODO: setups thing here

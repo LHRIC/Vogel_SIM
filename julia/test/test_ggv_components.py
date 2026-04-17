@@ -23,8 +23,10 @@ TOL       = 0.001   # 0.1 %
 def get_python_data() -> dict:
     code = r"""
 import sys, pathlib, json
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
-import os; os.chdir(sys.path[0])
+repo_root = str(pathlib.Path(__file__).resolve().parents[2])
+python_dir = str(pathlib.Path(repo_root) / "python")
+sys.path.insert(0, python_dir)
+import os; os.chdir(python_dir)
 
 import numpy as np
 import setups, state_models

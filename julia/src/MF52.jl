@@ -1,5 +1,3 @@
-# MF52.jl — included into module VogelSIM
-
 using MAT
 
 struct MF52
@@ -13,6 +11,20 @@ function MF52(base_dir::String)
     fy_mat = matread(joinpath(base_dir, "utilities", "16x7.5-10_R20_Cornering.mat"))
     return MF52(vec(fx_mat["x0"]), vec(fy_mat["x0"]), 800.0)
 end
+
+function MF52(fx_params::Vector{Float64}, fy_params::Vector{Float64})
+    return MF52(fx_params, fy_params, 800.0)
+end
+
+json_schema(::Type{MF52}) = Dict(
+    "type"        => "Object",
+    "required"    => true,
+    "description" => "MF5.2 tire model parameters",
+    "shape"       => Dict(
+        "fx_params" => "Array<Float64> — longitudinal fit coefficients",
+        "fy_params" => "Array<Float64> — lateral fit coefficients",
+    ),
+)
 
 function mf52_Fx(tm::MF52, Fz::Float64, Kappa::Float64, Gamma::Float64)::Float64
     p   = tm.Fx_params

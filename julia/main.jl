@@ -1,4 +1,5 @@
 using Pkg
+using Plots
 Pkg.activate(@__DIR__)
 
 include("src/VogelSIM.jl")
@@ -27,7 +28,31 @@ function main()
     println("Laptime (1 lap):   $(round(laptime_1lap; digits=3)) s")
     println("Laptime (10 laps): $(round(laptime;     digits=3)) s")
     println("Score:             $(round(score;       digits=3))")
-    return laptime_1lap
+    
+
+    return laptime_1lap, vehicle
+
 end
 
-main()
+laptime::Float64, vehicle::Vehicle = main()
+p1 = plot(vehicle.x,vehicle.y)
+
+@userplot TrackPlot
+@recipe function f(cp::TrackPlot)
+    x, y, i = cp.args
+    n = length(x)
+    inds = circshift(1:n, 1 - i)
+    linewidth --> range(0, 10, n)
+    seriesalpha --> range(0, 1, n)
+    aspect_ratio --> 1
+    label --> false
+    x[inds], y[inds]
+end
+
+anim = @animate for i ∈ 1:size(vehicle.time)
+    trackplot(vehicle.x, vehicle.y, i)
+end
+
+gif(anim, "anim_fps30.gif", fps = 30)
+
+display(p)

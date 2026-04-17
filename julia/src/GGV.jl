@@ -1,6 +1,3 @@
-# GGV.jl — included into module VogelSIM
-# Depends on: MF52, TireState, VehicleState, Fitting, Panda
-
 using NLsolve
 
 # Precalculated lateral capability (g) vs radii_range (3.5:1.5:34.5 m), 22 values
@@ -14,7 +11,7 @@ const LATERAL_CAP_PRECOMPUTED = [
 ]
 
 mutable struct GGV
-    params::Panda
+    params::Params
     mf52::MF52
     gear_tot::Float64
     v_max::Float64
@@ -31,7 +28,7 @@ mutable struct GGV
     expected_gears::Vector{Int}
 end
 
-function GGV(params::Panda, mf52::MF52, gear_tot::Float64, v_max::Float64;
+function GGV(params::Params, mf52::MF52, gear_tot::Float64, v_max::Float64;
              calc_lateral::Bool=true)
     radii_range   = collect(3.5:1.5:(36.0 - 1e-9))   # matches np.arange(3.5, 36, 1.5)
     v_lo = 4; v_hi = floor(Int, v_max)
@@ -71,7 +68,7 @@ function calc_power_lim_max_accel(g::GGV, v::Float64)
         rpm_diff  = abs(rpm - new_rpm)
         rpm       = new_rpm
     end
-    τ_crank = _interp1(g.params.rpm_range, g.params.torque_curve, rpm)
+    τ_crank = max_throttle_torque(g.params.torque_curve, rpm)
     Fx_w    = τ_crank * total_red * g.params.drivetrain_losses / g.params.tire_radius
     return Fx_w, gear_idx
 end
@@ -216,14 +213,3 @@ function generate!(g::GGV)
     g.braking_capability = polyfit(vrange, braking_g, 4)
 end
 
-# Simple linear interpolation helper
-function _interp1(xs::Vector{Float64}, ys::Vector{Float64}, x::Float64)::Float64
-    x <= xs[1]   && return ys[1]
-    x >= xs[end] && return ys[end]
-    lo, hi = 1, length(xs)
-    while hi - lo > 1
-        mid = (lo+hi)÷2; xs[mid]<=x ? (lo=mid) : (hi=mid)
-    end
-    t = (x-xs[lo])/(xs[hi]-xs[lo])
-    return ys[lo] + t*(ys[hi]-ys[lo])
-end

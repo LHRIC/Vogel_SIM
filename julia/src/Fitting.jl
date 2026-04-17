@@ -1,5 +1,3 @@
-# Fitting.jl — included into module VogelSIM
-
 using Polynomials
 using Interpolations
 

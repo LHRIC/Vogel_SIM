@@ -54,7 +54,7 @@ mutable struct VehicleState
     rr_tire::TireState
 end
 
-function VehicleState(mf52::MF52, p::Panda)
+function VehicleState(mf52::MF52, p::Params)
     ts() = TireState(mf52, p.friction_scaling_x, p.friction_scaling_y)
     VehicleState(
         p.total_weight_f, p.total_weight_r, p.total_weight,

@@ -1,13 +1,11 @@
-# Vehicle.jl — included into module VogelSIM
-# Depends on: all other modules
-
 mutable struct Vehicle
-    params::Panda
+    params::Params
     mf52::MF52
     gear_tot::Float64
     v_max::Float64
     ggv::GGV
     trajectory::Trajectory
+    track_path::Union{TrackPath,Nothing}  # retained for future path queries; nothing when loaded from CSV
     _interval::Int
     _mesh_size::Int
     # Mesh arrays
@@ -24,24 +22,39 @@ mutable struct Vehicle
     cgz::Vector{Float64}; roll::Vector{Float64}; pitch::Vector{Float64}
 end
 
-function Vehicle(params::Panda, trajectory_path::String, is_closed::Bool;
-                 base_dir::String=".", calc_lateral::Bool=true, mesh_resolution::Int=10)
-    mf52     = MF52(base_dir)
+"""
+    Vehicle(params, track; base_dir, calc_lateral, mesh_resolution)
+
+Construct a `Vehicle` from a `TrackPath`. The `TrackPath` is converted to a
+`Trajectory` internally so the lap simulation runs unchanged. The original
+`TrackPath` is stored on the vehicle for future use (track-width queries, etc.).
+"""
+function _vehicle_from_parts(params::Params, mf52::MF52, traj::Trajectory;
+                             calc_lateral::Bool=true, mesh_resolution::Int=10)
     gear_tot = params.gear_ratios[end] * params.final_drive * params.primary_reduction
     v_max    = params.shiftpoint / (gear_tot/params.tire_radius * 60.0/(2π))
-
-    ggv  = GGV(params, mf52, gear_tot, v_max; calc_lateral=calc_lateral)
-    traj = Trajectory(trajectory_path, is_closed,
-                      ggv.radii_range[1], ggv.radii_range[end])
-
-    iv   = mesh_resolution
-    msz  = (traj.num_points - 1) * iv
-    z()  = zeros(msz)
-
-    Vehicle(params, mf52, gear_tot, v_max, ggv, traj, iv, msz,
+    ggv      = GGV(params, mf52, gear_tot, v_max; calc_lateral=calc_lateral)
+    iv       = mesh_resolution
+    msz      = (traj.num_points - 1) * iv
+    z()      = zeros(msz)
+    Vehicle(params, mf52, gear_tot, v_max, ggv, traj, nothing, iv, msz,
             z(),z(),z(),z(), z(),z(),z(), z(),
             z(),z(),z(), z(),z(), z(),z(),z(), z(),z(),z(),
             Float64[], Float64[], Float64[])
+end
+
+function Vehicle(params::Params, trajectory_path::String, is_closed::Bool;
+                 base_dir::String=".", calc_lateral::Bool=true, mesh_resolution::Int=10)
+    mf52 = MF52(base_dir)
+    traj = Trajectory(trajectory_path, is_closed, 3.5, 36.0)
+    return _vehicle_from_parts(params, mf52, traj;
+                               calc_lateral=calc_lateral, mesh_resolution=mesh_resolution)
+end
+
+function Vehicle(params::Params, mf52::MF52, traj::Trajectory;
+                 calc_lateral::Bool=true, mesh_resolution::Int=10)
+    return _vehicle_from_parts(params, mf52, traj;
+                               calc_lateral=calc_lateral, mesh_resolution=mesh_resolution)
 end
 
 # ── Kinematic helper ─────────────────────────────────────────────

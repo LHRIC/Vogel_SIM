@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import ggv.GGV as GGV
-import setups
-import state_models
+import setups as setups
+import state_models as state_models
 import trajectory.Trajectory as Trajectory
 from numpy.polynomial import Polynomial
 import numpy as np

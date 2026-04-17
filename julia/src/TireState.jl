@@ -1,6 +1,3 @@
-# TireState.jl — included into module VogelSIM
-# Depends on: MF52 (mf52_Fx, mf52_Fy)
-
 mutable struct TireState
     mf52::MF52
     friction_scaling_x::Float64

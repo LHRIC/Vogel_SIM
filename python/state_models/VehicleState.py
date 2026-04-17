@@ -1,5 +1,5 @@
-import setups
-import state_models
+import setups as setups
+import state_models as state_models
 
 import math
 import numpy as np
