@@ -102,7 +102,7 @@ function _vogel_residuals!(res, x, g::GGV, R::Float64)
     F_f_out = vs.fr_tire.Fy * cos(delta)
     F_xDrag = g.params.Cd*V^2 + (F_f_in+F_f_out)*sin(delta)/cos(delta)
 
-    gl = evaluate(g._grip_lim_accel, V)
+    gl = max(evaluate(g._grip_lim_accel, V), 1e-6)
     rscale = max(0.0, 1.0-(F_xDrag/g.params.total_weight/gl)^2)
 
     F_r_in  = vs.rl_tire.Fy * rscale
@@ -156,7 +156,7 @@ function calc_lateral_accel(g::GGV, R::Float64, AYP_guess::Float64)::Float64
     eval!(vs, StateInput(Ax=0.0, Ay=AYP, v=V, r=R, delta=delta, beta=beta))
     F_f_in  = vs.fl_tire.Fy*cos(delta); F_f_out = vs.fr_tire.Fy*cos(delta)
     F_xDrag = g.params.Cd*V^2 + (F_f_in+F_f_out)*sin(delta)/cos(delta)
-    gl      = evaluate(g._grip_lim_accel, V)
+    gl      = max(evaluate(g._grip_lim_accel, V), 1e-6)
     rscale  = max(0.0, 1.0-(F_xDrag/g.params.total_weight/gl)^2)
     F_y     = F_f_in + F_f_out + vs.rl_tire.Fy*rscale + vs.rr_tire.Fy*rscale
     return F_y / g.params.total_weight
@@ -200,7 +200,7 @@ function generate!(g::GGV)
     end
 
     accel_y    = lateral_g .* 9.81
-    velocity_y = sqrt.(accel_y .* radii)
+    velocity_y = sqrt.(abs.(accel_y) .* radii)
 
     g.lateral_capability  = polyfit(velocity_y, lateral_g, 4)
     g.cornering_capability = polyfit(radii, velocity_y, 4)

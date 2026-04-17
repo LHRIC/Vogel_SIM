@@ -2,15 +2,26 @@
 # Exercises all major simulation code paths so PackageCompiler can trace them.
 # Uses synthetic data to avoid requiring fixture files at compile time.
 
-using VogelSIM
+include("../VogelSIM.jl")
+using .VogelSIM
 
-# ── Synthetic tire params (MF52 expects 2 vectors + Fz0) ──────────────────────
-_FX = [0.0, 25.0, 1000.0, 1.0, 0.0, 0.0, -0.2, 1.0, 0.0, 0.0,
-       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-_FY = [0.0, 25.0, 1200.0, 1.0, 0.0, 0.0, -0.15, 1.0, 0.0, 0.0,
-       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+# ── Synthetic tire params (MF52 expects 2 vectors + Fz0=800N) ─────────────────
+# Fx: p[1..15] used — PCX1, PDX1, PDX2, PDX3, PEX1-4, PKX1-3, PHX1-2, PVX1-2
+_FX = [1.65, 1.20, -0.08, 0.0,  # p[1..4]  PCX1 PDX1 PDX2 PDX3
+       0.0,  0.0,  0.0,  0.0,   # p[5..8]  PEX1-4
+       15.0, 0.0,  0.0,         # p[9..11] PKX1-3
+       0.0,  0.0,               # p[12..13] PHX1-2
+       0.0,  0.0]               # p[14..15] PVX1-2
+
+# Fy: p[1..27] — PCY1, PDY1-3, PEY1-5, PKY1-7, PHY1-2, PVY1-4, PPY1-5
+_FY = [1.30, 1.15, -0.10, 0.0,  # p[1..4]   PCY1 PDY1 PDY2 PDY3
+       0.0,  0.0,  0.0,  0.0,   # p[5..8]   PEY1-4
+       0.0,                     # p[9]      PEY5
+       12.0, 1.5,  0.0,         # p[10..12] PKY1-3
+       0.0,  0.0,  0.0,  0.0,   # p[13..16] PKY4-7
+       0.0,  0.0,               # p[17..18] PHY1-2
+       0.0,  0.0,  0.0,  0.0,   # p[19..22] PVY1-4
+       0.0,  0.0,  0.0,  0.0,  0.0]  # p[23..27] PPY1-5
 
 mf52 = MF52(_FX, _FY)
 
@@ -97,7 +108,7 @@ let
     eval!(vs, si)
 
     # ── TireState ────────────────────────────────────────────────────────────
-    ts = TireState(mf52, params)
+    ts = TireState(mf52, params.friction_scaling_x, params.friction_scaling_y)
     ts.Fz = 1200.0
     eval_Fx!(ts)
     ts.alpha = 3.0
@@ -111,7 +122,7 @@ let
     xs = Float64.(1:10); ys = xs .^ 2
     pf = polyfit(xs, ys, 3)
     evaluate(pf, 5.0)
-    sp = csaps(xs, ys, 0.9)
+    sp = csaps(xs, ys)
     evaluate(sp, 5.0)
 
     # ── max_throttle_torque ───────────────────────────────────────────────────

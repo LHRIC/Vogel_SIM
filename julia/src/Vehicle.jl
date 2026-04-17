@@ -34,6 +34,7 @@ function _vehicle_from_parts(params::Params, mf52::MF52, traj::Trajectory;
     gear_tot = params.gear_ratios[end] * params.final_drive * params.primary_reduction
     v_max    = params.shiftpoint / (gear_tot/params.tire_radius * 60.0/(2π))
     ggv      = GGV(params, mf52, gear_tot, v_max; calc_lateral=calc_lateral)
+    generate!(ggv)
     iv       = mesh_resolution
     msz      = (traj.num_points - 1) * iv
     z()      = zeros(msz)
