@@ -3,6 +3,9 @@ using HTTP
 using JSON3
 using Dates
 
+include("../VogelSIM.jl")
+using .VogelSIM
+
 # ── Schema helpers ────────────────────────────────────────────────────────────
 
 # Build the full /lapsim/args schema by reflecting over Params, then
@@ -18,7 +21,7 @@ function lapsim_args_schema()
                  "required" => f ∉ derived),
             json_schema(fieldtype(Params, f)),
         )
-        for f in fieldnames(Params) if f ∉ derived
+        for f in collect(fieldnames(Params))::Vector{Symbol} if f ∉ derived
     ]
 
     # Trajectory and MF52 are not Params fields but are required by Vehicle.
@@ -68,7 +71,7 @@ function _parse_params(raw, tc::TorqueCurve)
     vals = map(fieldnames(Params)) do f
         ft = fieldtype(Params, f)
         k  = string(f)
-        if f in derived
+        if f in collect(derived)::Vector{Symbol}
             zero(ft)                                      # filled by convert_units!
         elseif ft === TorqueCurve
             tc
@@ -142,6 +145,23 @@ function handle_lapsim(req::HTTP.Request)
             "score"           => round(score,         digits=3),
             "v_max_ms"        => round(vehicle.v_max, digits=3),
             "julia_version"   => string(VERSION),
+            "profile" => Dict(
+                "dist"       => vehicle.dist,
+                "time"       => vehicle.time,
+                "x"          => vehicle.x,
+                "y"          => vehicle.y,
+                "velocity"   => vehicle.velocity,
+                "ax"         => vehicle.ax,
+                "ay"         => vehicle.ay,
+                "gear"       => vehicle.gear,
+                "is_shifting" => vehicle.is_shifting,
+                "turn_dir"   => vehicle.turn_dir,
+            ),
+            "state_profile" => Dict(
+                "cgz"   => vehicle.cgz,
+                "roll"  => vehicle.roll,
+                "pitch" => vehicle.pitch,
+            ),
         )
     catch e
         return HTTP.Response(500, ["Content-Type" => "application/json"],

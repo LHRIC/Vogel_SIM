@@ -44,12 +44,13 @@ end
 
 function calc_grip_lim_max_accel(g::GGV, v::Float64)::Float64
     vs = g.vehicle_state
-    A_x_diff = 1.0; Ax = 0.0
-    while A_x_diff > 1e-6
+    A_x_diff = 1.0; Ax = 0.0; iters = 0
+    while A_x_diff > 1e-6 && iters < 500
         Ax += 0.01
         eval!(vs, StateInput(Ax=Ax, Ay=0.0, v=v))
         AX = (vs.rl_tire.Fx + vs.rr_tire.Fx) / g.params.total_weight
         A_x_diff = AX - Ax
+        iters += 1
     end
     eval!(vs, StateInput(Ax=Ax, Ay=0.0, v=v))
     return (vs.rl_tire.Fx + vs.rr_tire.Fx) / g.params.total_weight
@@ -75,12 +76,13 @@ end
 
 function calc_decel(g::GGV, v::Float64)::Float64
     vs = g.vehicle_state
-    A_x_diff = 1.0; Ax = 0.0
-    while A_x_diff > 0.0
+    A_x_diff = 1.0; Ax = 0.0; iters = 0
+    while A_x_diff > 0.0 && iters < 500
         Ax -= 0.01
         eval!(vs, StateInput(Ax=Ax, Ay=0.0, v=v))
         FX = -1.0*(vs.fl_tire.Fx + vs.fr_tire.Fx + vs.rl_tire.Fx + vs.rr_tire.Fx)
         A_x_diff = FX/g.params.total_weight - Ax
+        iters += 1
     end
     eval!(vs, StateInput(Ax=Ax, Ay=0.0, v=v))
     FX = -1.0*(vs.fl_tire.Fx + vs.fr_tire.Fx + vs.rl_tire.Fx + vs.rr_tire.Fx)

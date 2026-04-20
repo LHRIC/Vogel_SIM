@@ -9,14 +9,12 @@ include("GGV.jl")
 include("Trajectory.jl")
 include("TrackPath.jl")
 include("Vehicle.jl")
-include("api/server.jl")
-
 
 export FitFunction, evaluate, polyfit, csaps
 export MF52, mf52_Fx, mf52_Fy
 export json_schema
 export TorqueCurve, max_throttle_torque
-export Panda, Params
+export Panda, Params, convert_units!
 export TireState, eval_Fx!, eval_Fy!
 export StateInput, VehicleState, eval!
 export GGV, generate!,
@@ -24,6 +22,5 @@ export GGV, generate!,
 export Trajectory
 export SplineCurve, Gate, make_gate, Path, TrackPath, build_path, to_trajectory
 export Vehicle, simulate_endurance!, simulate_forwards!, simulate_reverse!
-export start_server
 
 end # module VogelSIM
